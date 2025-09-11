@@ -21,6 +21,8 @@ app.get('/', (req, res) => {
   try {
     await db.connect();
     console.log('✅ Database connected!');
+    const [rows] = await db.query('SELECT DATABASE() AS name');
+    console.log(`✅ Connected to database: ${rows[0].name}`);
 
     app.listen(PORT, () => {
       console.log(`🚀 Server listening on http://localhost:${PORT}`);
