@@ -13,3 +13,8 @@ export const RegisterSchema = Yup.object().shape({
     .oneOf(['user', 'seller'], 'Invalid role')
     .required('Role is required'),
 });
+
+export const LoginSchema = Yup.object().shape({
+  email: Yup.string().email('Invalid email').required('Email is required'),
+  password: Yup.string().required('Password is required'),
+});

@@ -1,19 +1,18 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
-import * as Yup from 'yup';
 
-const LoginSchema = Yup.object().shape({
-  email: Yup.string().email('Invalid email').required('Email is required'),
-  password: Yup.string().required('Password is required'),
-});
+import { handleLoginSubmit } from '@utils/form/auth/registerHandler';
+import { useLoginMutation } from '@api/modules/authApi';
+
+import { LoginSchema } from '@utils/form/auth/registerValidation';
 
 const Login = () => {
-  const handleSubmit = async (values, { setSubmitting }) => {
-    console.log('Login values:', values);
-    // Handle login here (e.g., call your API)
-    setSubmitting(false);
-  };
-
+  const navigate = useNavigate();
+  const [LoginUser, { isLoading }] = useLoginMutation();
+  const dispatch = useDispatch()
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center p-6">
       <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
@@ -22,7 +21,7 @@ const Login = () => {
           <Formik
             initialValues={{ email: '', password: '' }}
             validationSchema={LoginSchema}
-            onSubmit={handleSubmit}
+            onSubmit={handleLoginSubmit(LoginUser, navigate, dispatch)}
           >
             {({ isSubmitting }) => (
               <Form className="space-y-4">

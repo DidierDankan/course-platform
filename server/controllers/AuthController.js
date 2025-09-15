@@ -82,6 +82,18 @@ class AuthController {
     
     return res.status(200).json({ message: 'Logged out successfully' });
   }
+
+  me(req, res) {
+    try {
+      const token = req.cookies.token;
+      if (!token) return res.status(401).json({ message: 'No token' });
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      return res.json({ user: decoded }); // You could re-fetch from DB here if needed
+    } catch (err) {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+  }
 }
 
 export default new AuthController();

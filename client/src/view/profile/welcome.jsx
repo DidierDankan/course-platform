@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-const Login = () => {
+const Welcome = () => {
   return (
     <div>
       <h1>Welcome</h1>
@@ -10,4 +10,4 @@ const Login = () => {
   );
 };
 
-export default Login; // ✅ This is required
+export default Welcome; // ✅ This is required

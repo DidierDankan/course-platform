@@ -7,12 +7,11 @@ import db from './db/connection.js';
 import authRoutes from './routes/authRoutes.js'; // ✅ ADD THIS
 import cookieParser from 'cookie-parser';
 
-app.use(cookieParser());
-
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+app.use(cookieParser());
 
 app.use(cors({
   origin: 'http://localhost:5173', // your Vite frontend

@@ -2,10 +2,10 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   user: null,             // user object with id, email, role, etc.
-  token: null,            // JWT token
   isAuthenticated: false, // auth status
   loading: false,         // useful for UI feedback
   error: null,            // optional: store auth error message
+  initialized: false, // 👈 Add this
 };
 
 const authSlice = createSlice({
@@ -13,17 +13,17 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setCredentials: (state, action) => {
-      const { user, token } = action.payload;
+      const { user } = action.payload;
       state.user = user;
-      state.token = token;
       state.isAuthenticated = true;
       state.error = null;
+      state.initialized = true;
     },
     logout: (state) => {
       state.user = null;
-      state.token = null;
       state.isAuthenticated = false;
       state.error = null;
+      state.initialized = true;
     },
     setLoading: (state, action) => {
       state.loading = action.payload;
