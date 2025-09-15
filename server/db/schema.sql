@@ -1,4 +1,7 @@
 -- Drop existing tables if they exist
+DROP TABLE IF EXISTS user_skills;
+DROP TABLE IF EXISTS qualifications;
+DROP TABLE IF EXISTS user_profiles;
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS payments;
 DROP TABLE IF EXISTS favorites;
@@ -82,4 +85,38 @@ CREATE TABLE comments (
   FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+--USER_PROFILE TABLE
+CREATE TABLE user_profiles (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  full_name VARCHAR(255),
+  bio TEXT,
+  profile_image TEXT,
+  location VARCHAR(255),
+  website VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+--QUALIFICATIONS TABLE
+CREATE TABLE qualifications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  institution VARCHAR(255),
+  description TEXT,
+  certificate_url TEXT,
+  issued_at DATE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+--USER_SKILLS TABLE
+CREATE TABLE user_skills (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  skill VARCHAR(100),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 

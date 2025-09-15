@@ -1,14 +1,14 @@
 // server/routes/authRoutes.js
 import express from 'express';
-import authController from '../controllers/authController';
-import validateRequest from '../middleware/validateRequest';
-import { registerValidation, loginValidation } from '../validators/authValidator';
+import AuthController from '../controllers/AuthController.js';
+import validateRequest from '../middleware/validateRequest.js';
+import { registerValidation, loginValidation } from '../validators/authValidator.js';
 
 const router = express.Router();
 
 // Public auth routes
-router.post('/register', registerValidation, validateRequest, authController.register);
-router.post('/login', loginValidation, validateRequest, authController.login);
-router.post('/logout', authController.logout);
+router.post('/register', registerValidation, validateRequest, AuthController.register);
+router.post('/login', loginValidation, validateRequest, AuthController.login);
+router.post('/logout', AuthController.logout);
 
 export default router;

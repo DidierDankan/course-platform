@@ -4,7 +4,9 @@
     "paths": {
       "@store/*": ["store/*"],
       "@api/*": ["api/*"],
-      "@assets/*": ["assets/*"]
+      "@assets/*": ["assets/*"],
+      "@view/*": ["view/*"],
+      "@utils/*": ["utils/*"],
     }
   },
   "include": ["src"]

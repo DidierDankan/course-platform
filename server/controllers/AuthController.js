@@ -1,5 +1,8 @@
 import jwt from 'jsonwebtoken';
 import UserService from '../db/UserService.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
@@ -46,12 +49,18 @@ class AuthController {
       const token = jwt.sign(
         { id: user.id, email: user.email, role: user.role },
         JWT_SECRET,
-        { expiresIn: '2h' }
+        { expiresIn: '7d' }
       );
+
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // only HTTPS in production
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week
+      });
 
       return res.json({
         message: 'Login successful',
-        token,
         user: {
           id: user.id,
           email: user.email,
@@ -65,7 +74,13 @@ class AuthController {
   }
 
   logout(req, res) {
-    return res.status(200).json({ message: 'Logged out (token removed client-side)' });
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
+    });
+    
+    return res.status(200).json({ message: 'Logged out successfully' });
   }
 }
 
