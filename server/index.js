@@ -3,9 +3,11 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import db from './db/connection.js';
+import path from 'path';
 
 import authRoutes from './routes/authRoutes.js'; // ✅ ADD THIS
 import cookieParser from 'cookie-parser';
+import profileRoutes from './routes/profileRoutes.js';
 
 dotenv.config();
 
@@ -21,6 +23,8 @@ app.use(express.json());
 
 // ✅ Mount your routes here
 app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.get('/', (req, res) => {
   res.send('Server is running!');

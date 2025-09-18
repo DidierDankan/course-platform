@@ -89,11 +89,10 @@ CREATE TABLE comments (
 --USER_PROFILE TABLE
 CREATE TABLE user_profiles (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
+  user_id INT NOT NULL UNIQUE,
   full_name VARCHAR(255),
   bio TEXT,
-  profile_image TEXT,
-  location VARCHAR(255),
+  profile_image VARCHAR(255),
   website VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -103,12 +102,14 @@ CREATE TABLE user_profiles (
 CREATE TABLE qualifications (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  institution VARCHAR(255),
+  title VARCHAR(100) NOT NULL,
+  institution VARCHAR(100),
+  phone VARCHAR(20),
   description TEXT,
   certificate_url TEXT,
   issued_at DATE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  UNIQUE (user_id, title, institution)
 );
 
 --USER_SKILLS TABLE
@@ -117,6 +118,7 @@ CREATE TABLE user_skills (
   user_id INT NOT NULL,
   skill VARCHAR(100),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  UNIQUE (user_id, skill) -- ✅ prevents duplicate skill rows for same user
 );
 
 
