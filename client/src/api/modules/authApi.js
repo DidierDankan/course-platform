@@ -27,7 +27,6 @@ export const authApi = apiSlice.injectEndpoints({
       query: (data) => ({
         url: '/auth/me',
         method: 'GET',
-        body: data,
       }),
     }),
   }),

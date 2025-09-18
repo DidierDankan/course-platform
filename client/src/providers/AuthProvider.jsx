@@ -1,7 +1,7 @@
 // src/providers/AuthProvider.jsx
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { setCredentials, logout } from '@store/slices/authSlice';
+import { setCredentials, logout, setInitialized } from '@store/slices/authSlice';
 import { useGetCurrentUserQuery } from '@api/modules/authApi';
 import Spinner from '@components/ui/Spinner';
 
@@ -12,7 +12,11 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (data?.user) {
       dispatch(setCredentials({ user: data.user }));
-    } else if (isError) {
+    } 
+    if (!isLoading) {
+      dispatch(setInitialized());
+    }
+    if (isError) {
       dispatch(logout());
     }
   }, [data, isError, dispatch]);
