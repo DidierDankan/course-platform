@@ -1,4 +1,4 @@
-export const phone = [
+export const prefixes = [
   { "country": "Afghanistan", "code": "+93", "iso": "AF" },
   { "country": "Albania", "code": "+355", "iso": "AL" },
   { "country": "Algeria", "code": "+213", "iso": "DZ" },

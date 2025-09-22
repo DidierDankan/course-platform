@@ -3,6 +3,7 @@
 export const handleEditSubmit = (EditUser, navigate) => {
   return async (values, { setSubmitting, setErrors }) => {
     try {
+      console.log("SENDING VALUE TO EDIT", values)
       const response = await EditUser(values).unwrap();
       console.log("EDIT PROFILE RESP", response)
       navigate('/profile/welcome');

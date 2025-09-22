@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ErrorMessage, useFormikContext } from 'formik';
 
 const ImageUploadField = () => {
   const { values, setFieldValue } = useFormikContext();
   const [preview, setPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (values.profile_image && typeof values.profile_image === 'string') {
-      // ✅ Ensure preview always points to /uploads/filename.png
       const imagePath = values.profile_image.startsWith('uploads/')
         ? `/${values.profile_image}`
         : `${import.meta.env.VITE_API_URL}/uploads/${values.profile_image}`;
@@ -19,13 +19,10 @@ const ImageUploadField = () => {
   const handleImageChange = (event) => {
     const file = event.currentTarget.files[0];
     if (file) {
-      setFieldValue('profile_image', file); // store file object in Formik
-      setPreview(URL.createObjectURL(file)); // show preview for unsaved file
+      setFieldValue('profile_image', file);
+      setPreview(URL.createObjectURL(file));
     }
   };
-
-  console.log("VALUES", values)
-  console.log("PREVIEW", preview)
 
   return (
     <div className="mb-4">
@@ -33,13 +30,15 @@ const ImageUploadField = () => {
         Profile Image
       </label>
 
+      {/* Hidden input */}
       <input
         id="profile_image"
         name="profile_image"
         type="file"
         accept="image/*"
+        ref={fileInputRef}
         onChange={handleImageChange}
-        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
+        className="hidden"
       />
 
       <ErrorMessage
@@ -48,20 +47,29 @@ const ImageUploadField = () => {
         className="text-red-500 text-sm mt-1"
       />
 
-      {preview && (
-        <div className="mt-4">
-          <p className="text-sm text-gray-500">
-            {typeof values.profile_image === 'string'
-              ? 'Current Image:'
-              : 'Preview (unsaved):'}
-          </p>
-          <img
-            src={preview}
-            alt="Profile"
-            className="mt-2 rounded-md w-32 h-32 object-cover border"
-          />
+      {/* Clickable container */}
+      <div
+        className={`relative mt-4 w-[150px] h-[150px] cursor-pointer rounded-full overflow-hidden border-2 group 
+          ${preview ? 'border-gray-300' : 'border-dashed border-gray-400 bg-gray-50'}`}
+        onClick={() => fileInputRef.current.click()}
+      >
+        {/* Image */}
+        <img
+          src={preview || '/default-avatar.png'}
+          alt="Profile"
+          className="absolute w-full h-full object-cover rounded-full"
+        />
+
+        {/* Overlay */}
+        <div
+          className="absolute w-full h-full inset-0 bg-black/40 flex items-center justify-center rounded-full 
+          opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
+        >
+          <span className="text-white text-sm font-semibold">
+            {preview ? 'Change' : 'Upload'}
+          </span>
         </div>
-      )}
+      </div>
     </div>
   );
 };
