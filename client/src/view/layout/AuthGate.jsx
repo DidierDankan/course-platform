@@ -1,35 +1,36 @@
-// src/providers/AuthProvider.jsx
+// src/view/layout/AuthGate.jsx
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { setCredentials, logout, setInitialized } from '@store/slices/authSlice';
 import { useGetCurrentUserQuery } from '@api/modules/authApi';
+import { setCredentials, logout, setInitialized } from '@store/slices/authSlice';
 import Spinner from '@components/ui/Spinner';
 
-const AuthProvider = ({ children }) => {
+const AuthGate = ({ children }) => {
   const dispatch = useDispatch();
   const { initialized } = useSelector((state) => state.auth);
-  const { data, isLoading, isError } = useGetCurrentUserQuery(undefined, {
-    // don't skip — let backend + cookies decide
+
+  const { data, isError, isLoading } = useGetCurrentUserQuery(undefined, {
     refetchOnMountOrArgChange: true,
   });
-
-  console.log("IS THERE ANY TIME THIS RUNS?", data)
 
   useEffect(() => {
     if (data?.user) {
       dispatch(setCredentials({ user: data.user }));
     }
     if (isError) {
-      dispatch(logout()); // clears redux state
+      dispatch(logout());
     }
+
+    // ✅ always mark initialized once loading is done
     if (!isLoading) {
       dispatch(setInitialized());
     }
   }, [data, isError, isLoading, dispatch]);
+
 
   if (!initialized) return <Spinner />;
 
   return children;
 };
 
-export default AuthProvider;
+export default AuthGate;

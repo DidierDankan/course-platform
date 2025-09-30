@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import UserService from '../db/UserService.js';
 import dotenv from 'dotenv';
+import { generateAccessToken, generateRefreshToken } from '../helpers/tokens.js';
 
 dotenv.config();
 
@@ -38,29 +39,35 @@ class AuthController {
     try {
       const user = await UserService.findByEmail(email);
       if (!user) {
-        return res.status(401).json({ message: 'Invalid credentials.' });
+        return res.status(401).json({ message: "Invalid credentials." });
       }
 
       const isValid = await UserService.verifyPassword(password, user.password);
       if (!isValid) {
-        return res.status(401).json({ message: 'Invalid credentials.' });
+        return res.status(401).json({ message: "Invalid credentials." });
       }
 
-      const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      // ✅ Generate both tokens
+      const accessToken = generateAccessToken(user);
+      const refreshToken = generateRefreshToken(user);
 
-      res.cookie('token', token, {
+      // ✅ Set cookies
+      res.cookie("token", accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // only HTTPS in production
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 15 * 60 * 1000, // 15m
+      });
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
       return res.json({
-        message: 'Login successful',
+        message: "Login successful",
         user: {
           id: user.id,
           email: user.email,
@@ -68,20 +75,65 @@ class AuthController {
         },
       });
     } catch (err) {
-      console.error('Login error:', err);
-      return res.status(500).json({ message: 'Server error.' });
+      console.error("Login error:", err);
+      return res.status(500).json({ message: "Server error." });
+    }
+  }
+  
+  async refresh(req, res) {
+    try {
+      const refreshToken = req.cookies.refreshToken;
+      if (!refreshToken) {
+        return res.status(401).json({ message: "No refresh token provided" });
+      }
+
+      // ✅ Verify refresh token
+      const decoded = jwt.verify(refreshToken, JWT_SECRET);
+
+      // ✅ Issue new access token
+      const accessToken = jwt.sign(
+        { id: decoded.id, email: decoded.email, role: decoded.role },
+        JWT_SECRET,
+        { expiresIn: "15m" }
+      );
+
+      // ✅ Set new access token cookie
+      res.cookie("token", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 15 * 60 * 1000,
+      });
+
+      return res.json({
+        message: "Token refreshed",
+        user: decoded,
+      });
+    } catch (err) {
+      console.error("Refresh error:", err);
+      return res.status(401).json({ message: "Invalid or expired refresh token" });
     }
   }
 
   logout(req, res) {
-    res.clearCookie('token', {
+    // Clear access token
+    res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Lax',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
     });
-    
-    return res.status(200).json({ message: 'Logged out successfully' });
+
+    // Clear refresh token
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    return res.status(200).json({ message: "Logged out successfully" });
   }
+
+
 
   me(req, res) {
     try {

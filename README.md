@@ -68,6 +68,8 @@ course-platform/
     └── server.js
 ```
 
+---
+
 ## 🚀 Getting Started
 
 ### 1️⃣ Clone the Repository
@@ -76,6 +78,8 @@ course-platform/
 git clone https://github.com/DidierDankan/course-platform.git
 cd course-platform
 ```
+
+---
 
 ### 2️⃣ Configure the Database
 
@@ -110,6 +114,7 @@ npm install
 ### 4️⃣ Configure Environment Variables
 
 Create .env files in both server/ and client/ directories.
+
 **server/.env**
 ```env
 PORT=3001
@@ -151,6 +156,8 @@ Profile images are stored in `/server/uploads/` and served at `/uploads/filename
 Skills & qualifications are stored in normalized tables (1 row per skill/qualification)
 
 Uses unique constraints to prevent duplicates (e.g. same skill twice for one user)
+
+---
 
 ## 📚 Future Improvements
 

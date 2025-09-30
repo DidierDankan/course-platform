@@ -1,15 +1,15 @@
 import React from 'react';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
+import { Formik, Form } from 'formik';
 import { useNavigate } from 'react-router-dom';
 import { ProfileSchema } from '@utils/form/profile/editValidation';
 import { useEditProfileMutation, useGetProfileQuery } from '@api/modules/userApi';
 import { handleEditSubmit } from '@utils/form/profile/editHandler';
 
-import ImageUploadField from '@components/ui/ImageUploadField';
-import PhoneInputField from '@components/ui/PhoneInputField';
-import SkillsSelectionField from '@components/ui/SkillsSelectionField';
-import QualificationsFieldArray from '@components/ui/QualificationsFieldArray';
-import FormikInput from '@components/ui/FormikInput';
+import ImageUploadField from '@components/ui/Form/ImageUploadField';
+import PhoneInputField from '@components/ui/Form/PhoneInputField';
+import SkillsSelectionField from '@components/ui/Form/SkillsSelectionField';
+import QualificationsFieldArray from '@components/ui/Form/QualificationsFieldArray';
+import FormikInput from '@components/ui/Form/FormikInput';
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -53,7 +53,7 @@ const EditProfile = () => {
           return (
             <Form className="space-y-6">
               {/* Profile Image */}
-              
+
               <ImageUploadField />
               {/* Profile Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

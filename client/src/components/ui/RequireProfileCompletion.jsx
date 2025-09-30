@@ -1,22 +1,23 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { Navigate } from 'react-router-dom';
 
 const RequireProfileCompletion = ({ children }) => {
-  const { profile } = useSelector((state) => state.user);
-  const navigate = useNavigate();
+  const { profile, isLoading } = useSelector((state) => state.user);
 
-  useEffect(() => {
-    if (!profile) {
-      const isIncomplete =
-        !profile?.name || !profile?.bio || !profile?.qualifications?.length;
+  // Still loading → don’t decide yet
+  if (isLoading) return null;
 
-      if (isIncomplete) {
-        navigate('/profile/edit');
-      }
+  // If profile exists but is incomplete → redirect to edit
+  if (profile) {
+    const isIncomplete =
+      !profile.full_name || !profile.bio || !profile.qualifications?.length;
+
+    if (isIncomplete) {
+      return <Navigate to="/profile/edit" replace />;
     }
-  }, [profile, navigate]);
+  }
 
+  // Otherwise → allow normal route
   return children;
 };
 

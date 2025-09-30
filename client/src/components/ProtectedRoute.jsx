@@ -3,9 +3,9 @@ import { useSelector } from 'react-redux';
 import Spinner from './ui/Spinner';
 
 const ProtectedRoute = ({ element, allowedRoles }) => {
-  const { isAuthenticated, initialized, user } = useSelector((state) => state.auth);
+  const { isAuthenticated, initialized, user } = useSelector((s) => s.auth);
 
-  if (!initialized) return <Spinner />; // or <LoadingSpinner />
+  if (!initialized) return <Spinner />; // wait until /me done
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

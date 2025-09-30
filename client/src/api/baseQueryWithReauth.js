@@ -7,11 +7,6 @@ const mutex = new Mutex();
 const baseQuery = fetchBaseQuery({
   baseUrl: 'http://localhost:3001/api',
   credentials: 'include', // ✅ Required to send cookies
-  // prepareHeaders: (headers, { getState }) => {
-  //   const token = getState().auth.token;
-  //   if (token) headers.set('authorization', `Bearer ${token}`);
-  //   return headers;
-  // }
 });
 
 export const baseQueryWithReauth = async (args, api, extraOptions) => {

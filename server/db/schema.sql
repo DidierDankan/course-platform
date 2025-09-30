@@ -47,6 +47,8 @@ CREATE TABLE course_media (
   course_id INT NOT NULL,
   type ENUM('image', 'video', 'pdf') NOT NULL,
   url TEXT NOT NULL,
+  title VARCHAR(100) NOT NULL,
+  description text NOT NULL,
   uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 );

@@ -31,8 +31,8 @@ const authSlice = createSlice({
       state.error = action.payload;
     },
     setInitialized: (state) => {
-    state.initialized = true; // ✅ New action
-  },
+      state.initialized = true; // ✅ New action
+    },
   },
 });
 

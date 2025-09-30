@@ -1,6 +1,8 @@
 // server/services/UserService.js
 import db from '../db/connection.js';
 import bcrypt from 'bcryptjs';
+import path from 'path'
+import { deleteFileIfExists } from '../utils/fileUtils.js';
 
 class UserService {
   async findByEmail(email) {
@@ -58,7 +60,31 @@ class UserService {
     };
   }
 
+  static async getProfileImage(userId) {
+    const [rows] = await db.query(
+      "SELECT profile_image FROM user_profiles WHERE user_id = ? LIMIT 1",
+      [userId]
+    );
+    return rows.length ? rows[0].profile_image : null;
+  }
+
+  async deleteProfileImage(userId) {
+    const oldImage = await UserService.getProfileImage(userId);
+    if (!oldImage) return;
+
+    const oldPath = path.join(process.cwd(), "uploads", oldImage);
+    await deleteFileIfExists(oldPath);
+
+    // Optionally clear DB column
+    await db.query(
+      "UPDATE user_profiles SET profile_image = NULL WHERE user_id = ?",
+      [userId]
+    );
+  }
+
   async updateUserProfile(userId, updates) {
+    if (!Object.keys(updates).length) return; // nothing to update
+
     const insertData = { user_id: userId, ...updates };
 
     const sql = `
@@ -66,8 +92,7 @@ class UserService {
       ON DUPLICATE KEY UPDATE ?
     `;
 
-    const [result] = await db.query(sql, [insertData, updates]);
-    console.log("UPSERT RESULT USER PROFILE:", result);
+    await db.query(sql, [insertData, updates]);
   }
 
   async insertUserSkills(userId, skills) {
@@ -82,7 +107,6 @@ class UserService {
     `;
 
     const [result] = await db.query(sql, [skillValues]);
-    console.log("UPSERT RESULT SKILLS:", result);
   }
 
   async insertUserQualifications(userId, qualifications) {
@@ -107,7 +131,6 @@ class UserService {
     `;
 
     const [result] = await db.query(sql, [values]);
-    console.log("UPSERT RESULT QUALIFICATIONS:", result);
   }
 
 }

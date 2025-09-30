@@ -1,4 +1,3 @@
-// server/routes/authRoutes.js
 import express from 'express';
 import AuthController from '../controllers/AuthController.js';
 import validateRequest from '../middleware/validateRequest.js';
@@ -13,6 +12,7 @@ router.post('/login', loginValidation, validateRequest, AuthController.login);
 router.post('/logout', AuthController.logout);
 
 // Protected route
+router.get('/refresh', AuthController.refresh);
 router.get('/me', authenticate, AuthController.me);
 
 export default router;

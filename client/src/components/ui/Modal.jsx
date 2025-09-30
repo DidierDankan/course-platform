@@ -1,7 +1,16 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
-const Modal = ({ open, onClose, title, children, footer }) => {
+const SIZE_MAP = {
+  sm: "w-sm",
+  md: "4/12",
+  lg: "w-6/12",
+  xl: "w-9/12",
+  "2xl": "w-2xl",
+  full: "w-full",
+};
+
+const Modal = ({ open, onClose, title, children, footer, size="md" }) => {
   const portalElRef = useRef(null);
   if (!portalElRef.current) {
     portalElRef.current = document.createElement("div");
@@ -54,7 +63,7 @@ const Modal = ({ open, onClose, title, children, footer }) => {
 
   return createPortal(
     <div
-      className="fixed inset-0 pointer-events-none flex items-center justify-center"
+      className={`fixed inset-0 pointer-events-none ${SIZE_MAP[size]} flex items-center justify-center`}
       style={{ zIndex: 2147483647 }} // huge z-index on the wrapper that actually renders
       role="dialog"
       aria-modal="true"

@@ -3,9 +3,8 @@ import Register from '@view/auth/Register';
 import Login from '@view/auth/Login';
 import Welcome from '@view/profile/Welcome';
 import Edit from '@view/profile/edit';
+import PortfolioPage from '@view/profile/Porfolio';
 import RequireProfileCompletion from '@components/ui/RequireProfileCompletion';
-
-// Add your views here as needed
 
 export const routes = [
   {
@@ -30,13 +29,20 @@ export const routes = [
         <Welcome />
       </RequireProfileCompletion>
     ),
-    roles: ['admin', 'seller','user'], // protected route for logged-in users
+    roles: ['admin', 'seller', 'user'], // protected route for logged-in users
   },
   {
     path: '/profile/edit',
+    element: <Edit />,
+    roles: ['admin', 'seller', 'user'],
+  },
+  {
+    path: '/profile/portfolio',
     element: (
-      <Edit />
+      <RequireProfileCompletion>
+        <PortfolioPage />
+      </RequireProfileCompletion>
     ),
-    roles: ['admin', 'seller','user'], // protected route for logged-in users
+    roles: ['admin', 'seller'], // only allow sellers/admins to manage courses
   },
 ];

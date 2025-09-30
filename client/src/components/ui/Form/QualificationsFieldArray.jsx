@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Field, FieldArray, ErrorMessage } from "formik";
-import Modal from "./Modal"; // adjust import path
+import Modal from "../Modal";
 
 const QualificationsFieldArray = ({ name = "qualifications" }) => {
   const [openIndex, setOpenIndex] = useState(null);
