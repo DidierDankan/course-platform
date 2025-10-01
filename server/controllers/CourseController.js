@@ -58,49 +58,62 @@ class CourseController {
     }
   }
 
-
   async updateCourse(req, res) {
     try {
       const { id } = req.params;
-      const { title, description, price } = req.body;
 
-      // 1️⃣ Update course data
+      // 🔎 Debugging + parsing helpers
+      const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+
+      // Handle both "existingVideos[]" and "existingVideos"
+      const existingRaw = toArray(req.body["existingVideos[]"] || req.body.existingVideos);
+      const deletesRaw  = toArray(req.body["deletedVideos[]"] || req.body.deletedVideos);
+      const metaRaw     = toArray(req.body["meta[]"] || req.body.meta);
+
+      let metas = [];
+      let existingVideos = [];
+      let deleteIds = [];
+
+      try { metas = metaRaw.map((s) => JSON.parse(s)); } catch (e) { console.warn("⚠️ meta[] JSON parse failed:", e); }
+      try { existingVideos = existingRaw.map((s) => JSON.parse(s)); } catch (e) { console.warn("⚠️ existingVideos[] JSON parse failed:", e); }
+      try { deleteIds = deletesRaw.map((s) => Number(s)); } catch (e) { console.warn("⚠️ deletedVideos[] cast failed:", e); }
+
+      // 🟢 Now continue with your real update logic
+      const { title, description, price } = req.body;
       await CourseService.updateCourseById(id, { title, description, price });
 
-      // 2️⃣ Replace thumbnail (if a new one is uploaded)
-      if (req.files?.thumbnail?.length) {
-        // Optionally: delete previous thumbnail before inserting
-        await CourseService.deleteCourseThumbnail(id);
-        await CourseService.insertCourseMedia(id, req.files.thumbnail[0]);
-      }
+      // Handle new video inserts
+      const files = req.files?.videos || [];
+      const insertResults = await Promise.all(
+        files.map((file, idx) => {
+          const meta = metas[idx] || {};
+          return CourseService.insertCourseMedia(id, file, meta);
+        })
+      );
 
-      // 3️⃣ Append new videos (if any)
-      if (req.files?.videos?.length) {
-        const metaArray = Array.isArray(req.body["meta[]"])
-          ? req.body["meta[]"]
-          : [req.body["meta[]"]];
-
-        await Promise.all(
-          req.files.videos.map((file, idx) => {
-            const meta = metaArray[idx] ? JSON.parse(metaArray[idx]) : {};
-            return CourseService.insertCourseMedia(id, file, meta);
+      // Handle updates
+      const updateResults = await Promise.all(
+        existingVideos.map((v) =>
+          CourseService.updateVideoMeta(v.id, {
+            title: v.title,
+            description: v.description,
+            duration: v.duration,
           })
-        );
-      }
+        )
+      );
 
-      // 4️⃣ Get updated course (with fresh media)
+      // Handle deletions
+      const deleteResults = await Promise.all(
+        deleteIds.map((vid) => CourseService.deleteMediaByIdWithFile(vid))
+      );
+
       const updatedCourse = await CourseService.fetchCourseById(id);
-
-      res.json({
-        message: "Course updated successfully",
-        course: updatedCourse,
-      });
+      res.json({ message: "Course updated successfully", course: updatedCourse });
     } catch (err) {
       console.error("Error updating course:", err);
       res.status(500).json({ message: "Failed to update course" });
     }
   }
-
 
   async getCourseMedia(req, res) {
     try {
@@ -129,29 +142,13 @@ class CourseController {
     try {
       const { id } = req.params;
 
-      // 1️⃣ Fetch all media for this course
-      const [mediaRows] = await db.query(
-        "SELECT url FROM course_media WHERE course_id = ?",
-        [id]
-      );
+      // delete media first
+      await CourseService.deleteAllCourseMedia(id);
 
-      // 2️⃣ Delete physical files from /uploads
-      await Promise.all(
-        mediaRows.map(async (m) => {
-          const filePath = path.join(process.cwd(), m.url.replace(/^\//, "")); 
-          try {
-            await fs.unlink(filePath);
-          } catch (err) {
-            console.warn(`⚠️ Could not delete file ${filePath}:`, err.message);
-          }
-        })
-      );
+      // then delete the course itself
+      await CourseService.deleteCourseById(id);
 
-      // 3️⃣ Delete DB records
-      await db.query("DELETE FROM course_media WHERE course_id = ?", [id]);
-      await db.query("DELETE FROM courses WHERE id = ?", [id]);
-
-      res.json({ message: "✅ Course and all media deleted successfully" });
+      res.json({ message: "Course and media deleted successfully" });
     } catch (err) {
       console.error("Error deleting course:", err);
       res.status(500).json({ message: "Failed to delete course" });

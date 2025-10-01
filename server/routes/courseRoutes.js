@@ -26,7 +26,15 @@ router.post(
   ]),
   CourseController.addCourse // saves both course & media in one go
 );
-router.put("/:id", authorizeRoles("admin", "seller"), CourseController.updateCourse);
+router.put(
+  "/:id",
+  authorizeRoles("admin", "seller"),
+  upload.fields([
+    { name: "thumbnail", maxCount: 1 },
+    { name: "videos", maxCount: 20 },
+  ]),
+  CourseController.updateCourse
+);
 router.delete("/:id", authorizeRoles("admin", "seller"), CourseController.deleteCourse);
 router.delete("/media/:mediaId", authorizeRoles("admin", "seller"), CourseController.deleteMedia);
 
