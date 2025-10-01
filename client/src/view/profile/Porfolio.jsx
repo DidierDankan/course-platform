@@ -28,8 +28,13 @@ const PortfolioPage = () => {
     setModalOpen(true);
   };
 
+  const handlecancel = () => {
+    setSelectedCourse(null);
+    setModalOpen(false);
+  };
 
-  const handleDelete = async () => {
+
+  const handleDelete = async (course) => {
     if (!confirm(`Are you sure you want to delete "${course.title}"?`)) return;
 
     try {
@@ -92,7 +97,7 @@ const PortfolioPage = () => {
                     <Pencil size={18} />
                   </button>
                   <button
-                    onClick={handleDelete}
+                    onClick={() => handleDelete(course)}
                     className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
                     title="Delete course"
                     disabled={isDeleting}
@@ -108,7 +113,7 @@ const PortfolioPage = () => {
       )}
 
       {/* Modal for Add/Edit */}
-      <CourseModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      <CourseModal open={modalOpen} onClose={handlecancel} course={selectedCourse} />
     </div>
   );
 };

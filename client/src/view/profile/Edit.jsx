@@ -44,12 +44,10 @@ const EditProfile = () => {
         }}
         validationSchema={ProfileSchema}
         onSubmit={ (values, formikHelpers) => {
-          console.log('✅ Formik onSubmit triggered!', values);
           return handleEditSubmit(editUser, navigate)(values, formikHelpers);
         }}
       >
         {({ values, errors, touched, isSubmitting, isValid, dirty, setFieldValue }) => {
-          console.log(values)
           return (
             <Form className="space-y-6">
               {/* Profile Image */}

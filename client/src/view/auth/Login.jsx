@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 
@@ -48,10 +48,19 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition"
+                  className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition mt-[15px]"
                 >
                   {isSubmitting ? 'Logging in...' : 'Login'}
                 </button>
+                
+                <Link
+                  to="/"
+                >
+                  <button className="w-full block text-center bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition no-underline mt-[10px]">
+                    Back
+                  </button>
+                </Link>
+
               </Form>
             )}
           </Formik>

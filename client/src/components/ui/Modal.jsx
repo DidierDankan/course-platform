@@ -63,7 +63,7 @@ const Modal = ({ open, onClose, title, children, footer, size="md" }) => {
 
   return createPortal(
     <div
-      className={`fixed inset-0 pointer-events-none ${SIZE_MAP[size]} flex items-center justify-center`}
+      className={`fixed inset-0 pointer-events-none ${SIZE_MAP[size]} flex items-center justify-center bg-[#808080]`}
       style={{ zIndex: 2147483647 }} // huge z-index on the wrapper that actually renders
       role="dialog"
       aria-modal="true"

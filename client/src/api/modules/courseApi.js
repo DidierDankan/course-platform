@@ -18,10 +18,10 @@ export const courseApi = createApi({
       invalidatesTags: ["Course"],
     }),
     updateCourse: builder.mutation({
-      query: ({ id, ...body }) => ({
+      query: ({ id, formData }) => ({
         url: `/courses/${id}`,
         method: "PUT",
-        body,
+        body: formData,
       }),
       invalidatesTags: ["Course"],
     }),

@@ -22,10 +22,12 @@ const CourseVideos = ({ videos, onAdd, onRemove, onUpdate }) => {
       const url = URL.createObjectURL(selectedVideo.file);
       setVideoURL(url);
       return () => URL.revokeObjectURL(url);
+    } else if (selectedVideo?.url) {
+      setVideoURL(selectedVideo.url); // 👈 use backend URL
     } else {
       setVideoURL(null);
     }
-  }, [selectedVideo?.file]);
+  }, [selectedVideo?.file, selectedVideo?.url]);
 
   return (
     <div>
@@ -91,7 +93,6 @@ const CourseVideos = ({ videos, onAdd, onRemove, onUpdate }) => {
                 key={selectedIndex}
                 src={videoURL}
                 controls
-                autoPlay
                 className="w-full max-h-[70vh] rounded-md"
               />
             )}

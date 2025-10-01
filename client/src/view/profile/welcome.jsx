@@ -61,7 +61,6 @@ const Welcome = () => {
     );
   }
 
-  console.log(profile)
 
   return (
     <div className="p-4">
