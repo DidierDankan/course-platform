@@ -8,11 +8,11 @@ const ProtectedRoute = ({ element, allowedRoles }) => {
   if (!initialized) return <Spinner />; // wait until /me done
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (!allowedRoles.includes(user?.role)) {
-    return <Navigate to="/profile/welcome" replace />;
+    return <Navigate to="/auth" replace />;
   }
 
   return element;

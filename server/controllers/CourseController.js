@@ -1,6 +1,29 @@
 import CourseService from "../db/CourseService.js";
 
 class CourseController {
+  async getAllCourses(req, res) {
+  try {
+    const limit = parseInt(req.query.limit) || 6;
+    const page = parseInt(req.query.page) || 1;
+    const offset = (page - 1) * limit;
+
+    console.log("📡 getAllCourses called:", { page, limit, offset });
+
+    const result = await CourseService.fetchAllCourses(limit, offset);
+
+    console.log("✅ getAllCourses result:", {
+      count: result?.length || 0,
+      sample: result?.[0] || null,
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error("❌ Error fetching public courses:", err);
+    res.status(500).json({ message: "Failed to fetch courses" });
+  }
+}
+
+
   async getCourses(req, res) {
     try {
       const { seller_id } = req.query;

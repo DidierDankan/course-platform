@@ -5,6 +5,10 @@ export const courseApi = createApi({
   reducerPath: 'courseApi',
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
+    getAllCourses: builder.query({
+      query: ({ page = 1, limit = 6 } = {}) => `/courses/all?page=${page}&limit=${limit}`,
+      providesTags: ["Courses"],
+    }),
     getCourses: builder.query({
       query: (sellerId) => `/courses?seller_id=${sellerId}`,
       providesTags: ["Course"],
@@ -47,6 +51,7 @@ export const courseApi = createApi({
 });
 
 export const {
+  useGetAllCoursesQuery,
   useGetCoursesQuery,
   useAddCourseMutation,
   useUpdateCourseMutation,

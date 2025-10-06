@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-export default function Landing() {
+export default function Auth() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center p-6">
       <div className="max-w-3xl text-center">

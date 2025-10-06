@@ -8,6 +8,8 @@ import { authorizeRoles } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+router.get('/all', CourseController.getAllCourses);
+
 // ✅ Require authentication for everything in this router
 router.use(authenticate);
 

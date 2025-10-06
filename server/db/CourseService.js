@@ -6,6 +6,25 @@ const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 
 class CourseService {
 
+  async fetchAllCourses(limit, offset){
+    const [rows] = await db.query(
+        `
+        SELECT 
+          c.id, c.title, c.description, c.price, c.created_at,
+          MAX(CASE WHEN m.type = 'image' THEN m.url END) AS thumbnail_url,
+          SUM(CASE WHEN m.type = 'video' THEN m.duration END) AS total_duration
+        FROM courses c
+        LEFT JOIN course_media m ON m.course_id = c.id
+        GROUP BY c.id
+        ORDER BY c.created_at DESC
+        LIMIT ? OFFSET ?
+        `,
+        [limit, offset]
+      );
+
+      return rows
+  }
+
   async fetchCoursesWithThumbnails(sellerId = null) {
     const [rows] = await db.query(
       `

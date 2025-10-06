@@ -6,7 +6,7 @@ const PublicRoute = ({ element }) => {
 
   // If user is already logged in → send them to welcome page
   if (isAuthenticated) {
-    return <Navigate to="/profile/welcome" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return element;

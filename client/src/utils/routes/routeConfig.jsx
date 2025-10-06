@@ -1,4 +1,3 @@
-import Landing from '@view/Landing';
 import Register from '@view/auth/Register';
 import Login from '@view/auth/Login';
 import Welcome from '@view/profile/Welcome';
@@ -8,17 +7,12 @@ import RequireProfileCompletion from '@components/ui/RequireProfileCompletion';
 
 export const routes = [
   {
-    path: '/',
-    element: <Landing />,
-    roles: ['all'], // accessible to everyone
-  },
-  {
-    path: '/register',
+    path: '/auth/register',
     element: <Register />,
     roles: ['all'],
   },
   {
-    path: '/login',
+    path: '/auth/login',
     element: <Login />,
     roles: ['all'],
   },
@@ -29,7 +23,7 @@ export const routes = [
         <Welcome />
       </RequireProfileCompletion>
     ),
-    roles: ['admin', 'seller', 'user'], // protected route for logged-in users
+    roles: ['admin', 'seller', 'user'],
   },
   {
     path: '/profile/edit',
@@ -43,6 +37,6 @@ export const routes = [
         <PortfolioPage />
       </RequireProfileCompletion>
     ),
-    roles: ['admin', 'seller'], // only allow sellers/admins to manage courses
+    roles: ['admin', 'seller'],
   },
 ];
