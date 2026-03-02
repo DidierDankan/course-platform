@@ -82,7 +82,7 @@ const QualificationsFieldArray = ({ name = "qualifications" }) => {
                       remove(openIndex);
                       setOpenIndex(null);
                     }}
-                    className="text-red-600 hover:underline"
+                    className="text-red-600 hover:underline mr-[5px]"
                   >
                     Delete
                   </button>

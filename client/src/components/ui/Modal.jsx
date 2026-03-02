@@ -2,51 +2,45 @@ import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 const SIZE_MAP = {
-  sm: "w-sm",
-  md: "4/12",
-  lg: "w-6/12",
-  xl: "w-9/12",
-  "2xl": "w-2xl",
-  full: "w-full",
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-3xl",
+  xl: "max-w-5xl",
+  "2xl": "max-w-7xl",
+  full: "w-full h-full",
 };
 
-const Modal = ({ open, onClose, title, children, footer, size="md" }) => {
+const Modal = ({ open, onClose, title, children, footer, size = "md" }) => {
   const portalElRef = useRef(null);
   if (!portalElRef.current) {
     portalElRef.current = document.createElement("div");
     portalElRef.current.setAttribute("data-portal", "modal");
   }
 
-  // Mount the portal node only while open + apply inline styles
+  // Mount/unmount portal node
   useEffect(() => {
     const el = portalElRef.current;
     if (!open) return;
 
-    // Apply your inline styles while open
     Object.assign(el.style, {
-        position: "absolute",
-        top: "0",
-        right: "0",
-        bottom: "0",
-        left: "0",
-        background: "#00000059",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      // optional: make the container inert; the modal content itself handles z-index
-      // pointerEvents: "none",
+      position: "fixed",
+      inset: "0",
+      zIndex: 2147483647,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "rgba(0,0,0,0.55)", // the dim backdrop around the modal
     });
 
     document.body.appendChild(el);
 
-    // Cleanup: remove styles and node when closing/unmounting
     return () => {
       el.removeAttribute("style");
-      if (el.parentNode) el.parentNode.removeChild(el);
+      el.remove();
     };
   }, [open]);
 
-  // ESC + body scroll lock only while open
+  // ESC close + scroll lock
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === "Escape" && onClose?.();
@@ -63,38 +57,42 @@ const Modal = ({ open, onClose, title, children, footer, size="md" }) => {
 
   return createPortal(
     <div
-      className={`fixed inset-0 pointer-events-none ${SIZE_MAP[size]} flex items-center justify-center bg-[#808080]`}
-      style={{ zIndex: 2147483647 }} // huge z-index on the wrapper that actually renders
+      className={`fixed inset-0 flex items-center justify-center px-4 w-[50%]`}
+      style={{ zIndex: 2147483647 }}
       role="dialog"
       aria-modal="true"
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 pointer-events-auto"
+        className="absolute inset-0 bg-[var(--color-text)]/40"
         onClick={onClose}
         aria-hidden="true"
       />
+
       {/* Panel */}
       <div
-        className="relative z-10 pointer-events-auto w-full max-w-lg mx-4 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl"
+        className={`relative z-10 w-full ${SIZE_MAP[size]} rounded-[var(--radius)] shadow-[var(--shadow-strong)] bg-[var(--color-bg)] text-[var(--color-text)] overflow-hidden`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-black/10 dark:border-white/10 px-4 py-3">
-          <h3 className="text-lg font-semibold">{title}</h3>
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[var(--color-muted)]/20 px-5 py-3 bg-[var(--color-primary)] text-white">
+          <h3 className="text-lg font-semibold ml-[5px] text-[var(--color-text-white)]">{title}</h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/10"
+            className="p-1 rounded-md hover:bg-[var(--color-primary-light)] transition mr-[5px]"
             aria-label="Close"
           >
             ×
           </button>
         </div>
 
-        <div className="p-4">{children}</div>
+        {/* Body */}
+        <div className="p-5 p-[10px]">{children}</div>
 
+        {/* Footer */}
         {footer && (
-          <div className="px-4 py-3 border-t border-black/10 dark:border-white/10 flex justify-end gap-2">
+          <div className="px-5 py-3 border-t border-[var(--color-muted)]/20 flex justify-end gap-3 bg-[var(--color-bg)] p-[5px]">
             {footer}
           </div>
         )}

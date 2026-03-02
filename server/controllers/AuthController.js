@@ -9,27 +9,52 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
 class AuthController {
   async register(req, res) {
-    const { email, password, role } = req.body;
-
-    if (!email || !password || !role) {
-      return res.status(400).json({ message: 'All fields are required.' });
-    }
-
-    if (role === 'admin') {
-        return res.status(403).json({ message: 'Cannot assign admin role via registration.' });
-    }
-
     try {
-      const existingUser = await UserService.findByEmail(email);
-      if (existingUser) {
-        return res.status(409).json({ message: 'Email already registered.' });
+      const { email, password, role } = req.body;
+
+      // 1️⃣ Validate required fields
+      if (!email || !password || !role) {
+        return res.status(400).json({ message: "All fields are required." });
       }
 
-      await UserService.createUser({ email, password, role });
-      return res.status(201).json({ message: 'User registered successfully.' });
+      const normalizedRole = role.toLowerCase();
+
+      // 2️⃣ Only allow learner or instructor
+      const allowedRoles = ["user", "seller"];
+      if (!allowedRoles.includes(normalizedRole)) {
+        return res.status(400).json({ message: "Invalid role." });
+      }
+
+      // 3️⃣ Prevent admin registration
+      if (normalizedRole === "admin") {
+        return res.status(403).json({ message: "Cannot assign admin role via registration." });
+      }
+
+      // 4️⃣ Check if user already exists
+      const existingUser = await UserService.findByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({ message: "Email already registered." });
+      }
+
+      // 5️⃣ Create user (UserService handles hashing & validation)
+      const newUser = await UserService.createUser({
+        email,
+        password,
+        role: normalizedRole,
+      });
+
+      // 6️⃣ Return success + minimal safe info
+      return res.status(201).json({
+        message: "User registered successfully.",
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          role: newUser.role,
+        },
+      });
     } catch (err) {
-      console.error('Register error:', err);
-      return res.status(500).json({ message: 'Server error.' });
+      console.error("❌ Register error:", err);
+      return res.status(500).json({ message: "Server error." });
     }
   }
 

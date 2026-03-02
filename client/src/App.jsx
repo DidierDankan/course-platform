@@ -7,41 +7,45 @@ import ProfileGate from "@view/layout/ProfileGate";
 
 import HomePage from "@view/HomePage";
 import Auth from "@view/auth";
+import Header from "@components/ui/Header"; // always visible
 
 export default function App() {
   return (
     <Router>
-      <Routes>
-        {/* 🌍 Public routes — no AuthGate */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/auth/*" element={<Auth />} />
+      {/* ✅ Global user hydration wrapper */}
+      <AuthGate>
+        <Header />
 
-        {/* 🔐 Protected routes */}
-        {routes.map(({ path, element, roles }) =>
-          roles.includes("all") ? (
-            <Route
-              key={path}
-              path={path}
-              element={<PublicRoute element={element} />}
-            />
-          ) : (
-            <Route
-              key={path}
-              path={path}
-              element={
-                <AuthGate>
+        <Routes>
+          {/* 🌍 Public pages */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/auth/*" element={<Auth />} />
+
+          {/* 🔐 Protected routes */}
+          {routes.map(({ path, element, roles }) =>
+            roles.includes("all") ? (
+              <Route
+                key={path}
+                path={path}
+                element={<PublicRoute element={element} />}
+              />
+            ) : (
+              <Route
+                key={path}
+                path={path}
+                element={
                   <ProfileGate>
                     <ProtectedRoute
                       element={element}
                       allowedRoles={Array.isArray(roles) ? roles : [roles]}
                     />
                   </ProfileGate>
-                </AuthGate>
-              }
-            />
-          )
-        )}
-      </Routes>
+                }
+              />
+            )
+          )}
+        </Routes>
+      </AuthGate>
     </Router>
   );
 }

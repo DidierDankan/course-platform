@@ -16,6 +16,31 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* 🌈 Brand colors */
+  --color-primary: #5b21b6;    /* deep purple */
+  --color-primary-light: #7c3aed;
+  --color-primary-dark: #4c1d95;
+  --color-text-white: #ffffff;
+  --color-text-grayshblue: #ede9fe;
+
+  --color-accent: #4f46e5;     /* indigo accent */
+  --color-accent-hover: #4338ca;
+
+  /* 🎨 Neutral palette */
+  --color-bg: #f8fafc;
+  --color-text: #0f172a;
+  --color-muted: #475569;
+
+  /* ⚙️ Layout tokens */
+  --header-height: 72px;
+  --radius: 12px;
+  --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-strong: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
 body {
@@ -35,14 +60,6 @@ a {
 a:hover {
   color: #535bf2;
 }
-
-/* body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-} */
 
 h1 {
   font-size: 3.2em;
@@ -66,6 +83,22 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+.input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius);
+  background: white;
+  color: var(--color-text);
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
 }
 
 @media (prefers-color-scheme: light) {

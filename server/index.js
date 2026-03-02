@@ -10,6 +10,7 @@ import db from './db/connection.js';
 import authRoutes from './routes/authRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
 import courseRoutes from './routes/courseRoutes.js'
+import enrollmentRoutes from "./routes/enrollmentRoutes.js"
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/courses', courseRoutes);
+app.use("/api/enrollments", enrollmentRoutes);
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.get('/', (req, res) => {
@@ -41,8 +43,6 @@ app.get('/', (req, res) => {
 // ✅ Connect to DB, then start server
 (async () => {
   try {
-    await db.connect();
-    console.log('✅ Database connected!');
     const [rows] = await db.query('SELECT DATABASE() AS name');
     console.log(`✅ Connected to database: ${rows[0].name}`);
 
@@ -51,6 +51,6 @@ app.get('/', (req, res) => {
     });
   } catch (err) {
     console.error('❌ DB Connection Error:', err.message);
-    process.exit(1); // ⛔ Stop app if DB fails
+    process.exit(1);
   }
 })();

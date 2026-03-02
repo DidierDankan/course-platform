@@ -11,11 +11,25 @@ class UserService {
   }
 
   async createUser({ email, password, role }) {
+    // 1️⃣ Normalize inputs
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedRole = role.toLowerCase();
+
+    // 2️⃣ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    await db.query(
-      'INSERT INTO users (email, password, role) VALUES (?, ?, ?)',
-      [email, hashedPassword, role]
+
+    // 3️⃣ Insert user and return result
+    const [result] = await db.query(
+      "INSERT INTO users (email, password, role) VALUES (?, ?, ?)",
+      [normalizedEmail, hashedPassword, normalizedRole]
     );
+
+    // 4️⃣ Return the created user (so controller can send it)
+    return {
+      id: result.insertId,
+      email: normalizedEmail,
+      role: normalizedRole,
+    };
   }
 
   async verifyPassword(inputPassword, hashedPassword) {

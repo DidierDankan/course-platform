@@ -1,9 +1,8 @@
 import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import Header from "@components/ui/Header";
 import QualificationsAccordion from "@components/ui/QualificationsAccordion";
-import { ExternalLink, Phone, UserRound } from "lucide-react";
+import { ExternalLink, Phone, BookOpen } from "lucide-react";
 import SkillTags from "@components/ui/SkillTags";
 import ProfileImg from "@components/ui/ProfileImg";
 
@@ -50,10 +49,9 @@ const Welcome = () => {
 
   if (isLoading) {
     return (
-      <div className="p-4">
-        <Header />
-        <div className="animate-pulse space-y-4 mt-4">
-          <div className="h-6 bg-gray-200 rounded w-1/3" />
+      <div className="min-h-screen bg-[#f8fafc]">
+        <div className="animate-pulse space-y-4 mt-8 max-w-[800px] mx-auto p-6">
+          <div className="h-8 bg-gray-200 rounded w-1/3" />
           <div className="h-4 bg-gray-200 rounded w-1/2" />
           <div className="h-4 bg-gray-200 rounded w-2/3" />
         </div>
@@ -61,77 +59,98 @@ const Welcome = () => {
     );
   }
 
-
   return (
-    <div className="p-4">
-      <Header />
+    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
 
-      {/* Hero */}
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-[auto,1fr] gap-6 items-start">
-
-        <ProfileImg hideName={true} />
-        <div className="space-y-4">
-          <h1 className="text-2xl font-bold">
-            Welcome back, {profile?.full_name || "User"}!
+      <main className="max-w-[900px] mx-auto px-[20px] py-[28px]">
+        {/* Badge + Heading */}
+        <div className="text-center mb-[26px]">
+          <div className="inline-flex items-center gap-[8px] text-[12px] uppercase tracking-[0.08em] text-[#475569] bg-[#e2e8f0] rounded-[999px] px-[10px] py-[4px] mb-[10px]">
+            <BookOpen size={14} />
+            <span>Welcome back</span>
+          </div>
+          <h1 className="text-[28px] sm:text-[34px] font-extrabold leading-[1.2] text-[#1e293b]">
+            {profile?.full_name || "Learner"}
           </h1>
+          <p className="mt-[4px] text-[#475569] text-[15px]">
+            Your personalized learning and teaching dashboard.
+          </p>
+        </div>
 
-          {profile?.bio && (
-            <div>
-              <h2 className="text-sm font-semibold text-gray-600 mb-1">About</h2>
-              <p className="text-gray-800">{profile.bio}</p>
-            </div>
-          )}
+        {/* Profile Card */}
+        <div className="bg-white border border-[#e2e8f0] shadow-[0_8px_24px_rgba(0,0,0,0.08)] rounded-[16px] p-[24px] sm:p-[32px] grid grid-cols-1 md:grid-cols-[auto,1fr] gap-[24px] items-start">
+          <ProfileImg hideName={true} />
 
-          {profile?.email && (
-            <div>
-              <p className="text-gray-800">{profile.email}</p>
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-4 text-sm">
-            {profile?.phone && (
-              <div className="inline-flex items-center gap-2 text-gray-700">
-                <Phone className="w-4 h-4" />
-                <span>{profile.phone}</span>
+          <div className="space-y-[16px]">
+            {/* Bio */}
+            {profile?.bio && (
+              <div>
+                <h2 className="text-[14px] font-semibold text-[#475569] mb-[4px]">
+                  About
+                </h2>
+                <p className="text-[15px] text-[#0f172a] leading-relaxed">
+                  {profile.bio}
+                </p>
               </div>
             )}
 
-            {profile?.website && (
-              <div className="inline-flex items-center gap-2 text-blue-700">
-                <ExternalLink className="w-4 h-4" />
-                <a
-                  href={ensureHttp(profile.website)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline underline-offset-2 break-all"
-                >
-                  {profile.website}
-                </a>
-              </div>
-            )}
+            {/* Contact */}
+            <div className="flex flex-wrap gap-[14px] text-[14px]">
+              {profile?.email && (
+                <div className="inline-flex items-center gap-[6px] text-[#334155]">
+                  <span className="font-medium">Email:</span> {profile.email}
+                </div>
+              )}
+              {profile?.phone && (
+                <div className="inline-flex items-center gap-[6px] text-[#334155]">
+                  <Phone size={16} />
+                  <span>{profile.phone}</span>
+                </div>
+              )}
+              {profile?.website && (
+                <div className="inline-flex items-center gap-[6px] text-[#1e40af]">
+                  <ExternalLink size={16} />
+                  <a
+                    href={ensureHttp(profile.website)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline underline-offset-2 break-all"
+                  >
+                    {profile.website}
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Skills */}
+            <div>
+              <h2 className="text-[14px] font-semibold text-[#475569] mb-[6px]">
+                Skills
+              </h2>
+              <SkillTags skills={skills} />
+            </div>
+          </div>
+        </div>
+
+        {/* Qualifications */}
+        <section className="mt-[36px]">
+          <div className="flex items-center justify-between mb-[12px]">
+            <h2 className="text-[18px] sm:text-[20px] font-bold text-[#1e293b]">
+              Qualifications
+            </h2>
+            <Link
+              to="/profile/edit"
+              className="text-[14px] text-[#4f46e5] font-medium hover:underline"
+            >
+              Edit Profile
+            </Link>
           </div>
 
-          {/* Skills as tags */}
-          <div>
-            <h2 className="text-sm font-semibold text-gray-600 mb-2">Skills</h2>
-            <SkillTags skills={skills} />
+          <div className="bg-white border border-[#e2e8f0] rounded-[12px] p-[18px] shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
+            <QualificationsAccordion items={qualifications} />
           </div>
-        </div>
-      </div>
-
-      {/* Qualifications (Accordion) */}
-      <div className="mt-8">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Qualifications</h2>
-          <Link to="/profile/edit" className="text-sm text-blue-700 hover:underline">
-            Edit profile
-          </Link>
-        </div>
-
-        <div className="mt-3">
-          <QualificationsAccordion items={qualifications} />
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 };

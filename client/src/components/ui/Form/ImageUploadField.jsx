@@ -26,8 +26,8 @@ const ImageUploadField = () => {
 
   return (
     <div className="mb-4">
-      <label htmlFor="profile_image" className="block text-sm font-medium text-gray-700">
-        Profile Image
+      <label htmlFor="profile_image" className="text-[16px] font-semibold text-[#1e293b] mb-[8px]">
+        Profile Picture
       </label>
 
       {/* Hidden input */}

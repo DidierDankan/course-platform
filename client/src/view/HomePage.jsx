@@ -1,5 +1,4 @@
 import { useInfiniteCourses } from "@hooks/useInfiniteCourses";
-import Header from "@components/ui/Header";
 import Spinner from "@components/ui/Spinner";
 import Footer from "@components/ui/Footer";
 import { BookOpen } from "lucide-react";
@@ -9,9 +8,7 @@ export default function HomePage() {
   const { courses, isLoading, isError, hasMore, loadMoreRef } = useInfiniteCourses(6);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
-      <Header />
-
+    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pt-[72px]">
       {/* Hero */}
       <section className="max-w-[1100px] mx-auto px-[16px] mt-[18px]">
         <div className="text-center">
@@ -24,7 +21,7 @@ export default function HomePage() {
             Learn new skills with curated, practical courses.
           </h1>
           <p className="mt-[10px] text-[14px] sm:text-[16px] text-[#475569]">
-            Bite-sized lessons, real projects, and instructors who ship.
+            Bite-sized lessons, real projects, and instructors who deliver.
           </p>
         </div>
 
