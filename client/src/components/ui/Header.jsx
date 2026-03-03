@@ -54,18 +54,24 @@ const Header = () => {
           {isAuthenticated && user?.role === "user" && (
             <>
               <Link
-                to="/user/welcome"
+                to="/user/dashboard"
                 className="text-[var(--color-text-white)] hover:text-[var(--color-text-grayshblue)] transition-colors"
               >
                 Dashboard
               </Link>
 
               <Link
-                to="/cart"
+                to="user/courses"
                 className="relative hover:text-[var(--color-text-grayshblue)] transition-colors"
-                title="Cart"
               >
-                <ShoppingCart size={20} />
+                My Courses
+              </Link>
+
+              <Link
+                to="user/favorites"
+                className="relative hover:text-[var(--color-text-grayshblue)] transition-colors"
+              >
+                Favorites
               </Link>
 
               <button
@@ -81,7 +87,7 @@ const Header = () => {
             (user?.role === "seller" || user?.role === "admin") && (
               <>
                 <Link
-                  to="/profile/welcome"
+                  to="/profile/dashboard"
                   className="text-[var(--color-text-white)] hover:text-[var(--color-text-grayshblue)] transition-colors mr-[10px]"
                 >
                   Dashboard

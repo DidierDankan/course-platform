@@ -188,6 +188,40 @@ class CourseService {
     );
     return media;
   }
+
+
+  async fetchCourseForWatching(courseId) {
+    const [rows] = await db.query(
+      `SELECT id, title, description, price, thumbnail_url, media_url
+      FROM courses
+      WHERE id = ?`,
+      [courseId]
+    );
+
+    return rows[0];
+  }
+
+  async fetchCourseWatchData(courseId) {
+    const [courseRows] = await db.query(
+      `SELECT id, title, description, price, thumbnail_url
+      FROM courses
+      WHERE id = ?`,
+      [courseId]
+    );
+
+    const course = courseRows[0];
+    if (!course) return null;
+
+    const [lessons] = await db.query(
+      `SELECT id, url, title, description, duration
+      FROM course_media
+      WHERE course_id = ?
+      ORDER BY position ASC`,
+      [courseId]
+    );
+
+    return { course, lessons };
+  }
   
   /**
    * Fetch single media URL (useful before deleting file from disk)

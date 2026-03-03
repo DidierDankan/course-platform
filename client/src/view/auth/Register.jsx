@@ -90,7 +90,6 @@ export default function Register() {
                         name="role"
                         value="user"
                         className="accent-[#4f46e5]"
-                        checked
                       />
                       <span>Student</span>
                     </label>

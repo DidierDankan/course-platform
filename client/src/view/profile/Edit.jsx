@@ -114,7 +114,7 @@ const EditProfile = () => {
                   {hasProfileData && (
                     <button
                       type="button"
-                      onClick={() => navigate("/profile/welcome")}
+                      onClick={() => navigate("/profile/dashboard")}
                       className="bg-[#e2e8f0] hover:bg-[#cbd5e1] text-[#334155] font-medium text-[14px] px-[16px] py-[10px] rounded-[8px] transition"
                     >
                       Cancel

@@ -4,7 +4,7 @@ export const handleRegisterSubmit = (registerUser, navigate) => {
   return async (values, { setSubmitting, setErrors }) => {
     try {
       await registerUser(values).unwrap();
-      navigate('/login');
+      navigate('/auth/login');
     } catch (err) {
       setErrors({ email: err?.data?.message || 'Registration failed' });
     }
@@ -22,7 +22,7 @@ export const handleLoginSubmit = (LoginUser, navigate, dispatch) => {
         user: response.user,
       }));
 
-      navigate('/profile/welcome');
+      navigate('/profile/dashboard');
     } catch (err) {
       setErrors({ email: err?.data?.message || 'Login failed' });
     }

@@ -40,4 +40,6 @@ router.put(
 router.delete("/:id", authorizeRoles("admin", "seller"), CourseController.deleteCourse);
 router.delete("/media/:mediaId", authorizeRoles("admin", "seller"), CourseController.deleteMedia);
 
+router.get("/:id/watch", authenticate, CourseController.watch);
+
 export default router;

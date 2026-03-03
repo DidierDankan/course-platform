@@ -1,28 +1,34 @@
 import CourseService from "../db/CourseService.js";
+import EnrollmentService from "../db/EnrollmentService.js";
 
 class CourseController {
-  async getAllCourses(req, res) {
-  try {
-    const limit = parseInt(req.query.limit) || 6;
-    const page = parseInt(req.query.page) || 1;
-    const offset = (page - 1) * limit;
 
-    console.log("📡 getAllCourses called:", { page, limit, offset });
-
-    const result = await CourseService.fetchAllCourses(limit, offset);
-
-    console.log("✅ getAllCourses result:", {
-      count: result?.length || 0,
-      sample: result?.[0] || null,
-    });
-
-    res.json(result);
-  } catch (err) {
-    console.error("❌ Error fetching public courses:", err);
-    res.status(500).json({ message: "Failed to fetch courses" });
+  constructor() {
+    this.watch = this.watch.bind(this);
   }
-}
 
+
+  async getAllCourses(req, res) {
+    try {
+      const limit = parseInt(req.query.limit) || 6;
+      const page = parseInt(req.query.page) || 1;
+      const offset = (page - 1) * limit;
+
+      console.log("📡 getAllCourses called:", { page, limit, offset });
+
+      const result = await CourseService.fetchAllCourses(limit, offset);
+
+      console.log("✅ getAllCourses result:", {
+        count: result?.length || 0,
+        sample: result?.[0] || null,
+      });
+
+      res.json(result);
+    } catch (err) {
+      console.error("❌ Error fetching public courses:", err);
+      res.status(500).json({ message: "Failed to fetch courses" });
+    }
+  }
 
   async getCourses(req, res) {
     try {
@@ -177,6 +183,29 @@ class CourseController {
       res.status(500).json({ message: "Failed to delete course" });
     }
   }
+
+  async watch(req, res) {
+    try {
+      const userId = req.user.id;
+      const courseId = Number(req.params.id);
+
+      const enrollment = await EnrollmentService.getEnrollment(userId, courseId);
+      if (!enrollment) {
+        return res.status(403).json({ ok: false, message: "Not enrolled" });
+      }
+
+      const watchData = await CourseService.fetchCourseWatchData(courseId);
+      if (!watchData) {
+        return res.status(404).json({ ok: false, message: "Course not found" });
+      }
+
+      return res.json({ ok: true, ...watchData, enrollment });
+    } catch (err) {
+      console.error("watch error:", err);
+      return res.status(500).json({ ok: false, message: "Server error" });
+    }
+  }
+  
 }
 
 export default new CourseController();

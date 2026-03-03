@@ -4,6 +4,7 @@ import Welcome from '@view/profile/Welcome';
 import Edit from '@view/profile/edit';
 import PortfolioPage from '@view/profile/Porfolio';
 import RequireProfileCompletion from '@components/ui/RequireProfileCompletion';
+import UserWelcome from '@view/user/Welcome'
 
 export const routes = [
   {
@@ -17,13 +18,13 @@ export const routes = [
     roles: ['all'],
   },
   {
-    path: '/profile/welcome',
+    path: '/profile/dashboard',
     element: (
       <RequireProfileCompletion>
         <Welcome />
       </RequireProfileCompletion>
     ),
-    roles: ['admin', 'seller', 'user'],
+    roles: ['admin', 'seller'],
   },
   {
     path: '/profile/edit',
@@ -38,5 +39,20 @@ export const routes = [
       </RequireProfileCompletion>
     ),
     roles: ['admin', 'seller'],
+  },
+  {
+  path: '/user/dashboard',
+    element: <UserWelcome />,
+    roles: ['admin', 'user'],
+  },
+  {
+    path: '/user/courses',
+    element: '',
+    roles: ['admin', 'user'],
+  },
+  {
+    path: '/user/favorites',
+    element: '',
+    roles: ['admin', 'user'],
   },
 ];
