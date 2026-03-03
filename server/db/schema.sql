@@ -1,5 +1,6 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS lesson_progress;
 DROP TABLE IF EXISTS user_skills;
 DROP TABLE IF EXISTS qualifications;
 DROP TABLE IF EXISTS user_profiles;
@@ -19,6 +20,7 @@ CREATE TABLE users (
   email VARCHAR(191) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
   role ENUM('admin', 'seller', 'user') NOT NULL DEFAULT 'user',
+  stripe_customer_id VARCHAR(255) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -29,28 +31,29 @@ CREATE TABLE courses (
   description TEXT,
   price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   seller_id INT,
+  is_subscription_only TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- ENROLLMENTS (UPDATED for progress + resume)
+-- ENROLLMENTS
 CREATE TABLE enrollments (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   course_id INT NOT NULL,
-  progress INT NOT NULL DEFAULT 0,                 -- 0..100
-  completed TINYINT(1) NOT NULL DEFAULT 0,         -- boolean
-  last_watched_media_id INT NULL,                  -- which lesson
-  last_position_seconds INT NOT NULL DEFAULT 0,    -- resume time
+  progress INT NOT NULL DEFAULT 0,
+  completed TINYINT(1) NOT NULL DEFAULT 0,
+  last_watched_media_id INT NULL,
+  last_position_seconds INT NOT NULL DEFAULT 0,
   enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   UNIQUE KEY unique_enrollment (user_id, course_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+  FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 );
 
--- COURSE MEDIA (LESSONS)
+-- COURSE MEDIA
 CREATE TABLE course_media (
   id INT AUTO_INCREMENT PRIMARY KEY,
   course_id INT NOT NULL,
@@ -58,8 +61,8 @@ CREATE TABLE course_media (
   url TEXT NOT NULL,
   title VARCHAR(100) NOT NULL,
   description TEXT,
-  position INT NOT NULL DEFAULT 0,                -- order in course
-  duration_seconds INT NULL,                      -- optional
+  position INT NOT NULL DEFAULT 0,
+  duration_seconds INT NULL,
   uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
@@ -85,10 +88,12 @@ CREATE TABLE payments (
   course_id INT NOT NULL,
   status ENUM('pending', 'paid', 'failed', 'canceled') DEFAULT 'pending',
   amount DECIMAL(10,2) NOT NULL,
-  payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  payment_date TIMESTAMP NULL,
   stripe_session_id VARCHAR(255),
-  FOREIGN KEY (user_id) REFERENCES users(id),
-  FOREIGN KEY (course_id) REFERENCES courses(id)
+
+  UNIQUE KEY uniq_payment_user_course (user_id, course_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 );
 
 -- COMMENTS
@@ -114,7 +119,7 @@ CREATE TABLE user_profiles (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- QUALIFICATIONS (FIXED)
+-- QUALIFICATIONS
 CREATE TABLE qualifications (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
@@ -129,7 +134,7 @@ CREATE TABLE qualifications (
   UNIQUE KEY unique_qualification (user_id, title, institution)
 );
 
--- USER SKILLS (FIXED)
+-- USER SKILLS
 CREATE TABLE user_skills (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
@@ -139,6 +144,7 @@ CREATE TABLE user_skills (
   UNIQUE KEY unique_skill (user_id, skill)
 );
 
+-- LESSON PROGRESS
 CREATE TABLE lesson_progress (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
@@ -149,7 +155,23 @@ CREATE TABLE lesson_progress (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   UNIQUE KEY uniq_user_media (user_id, media_id),
+  INDEX idx_lp_user_course (user_id, course_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
   FOREIGN KEY (media_id) REFERENCES course_media(id) ON DELETE CASCADE
+);
+
+CREATE TABLE subscriptions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  seller_id INT NOT NULL,
+  stripe_subscription_id VARCHAR(255) NOT NULL,
+  status ENUM('active','past_due','canceled','incomplete') NOT NULL,
+  current_period_end TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uniq_user_seller (user_id, seller_id),
+
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
 );

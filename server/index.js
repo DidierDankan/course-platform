@@ -12,17 +12,28 @@ import profileRoutes from './routes/profileRoutes.js';
 import courseRoutes from './routes/courseRoutes.js'
 import enrollmentRoutes from "./routes/enrollmentRoutes.js"
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js"
+import PaymentController from "./controllers/PaymentController.js"
 
 dotenv.config();
 
+
 const app = express();
 const PORT = process.env.PORT || 3001;
+
 app.use(cookieParser());
+
+app.post(
+  "/api/payments/webhook",
+  express.raw({ type: "application/json" }),
+  (req, res) => PaymentController.webhook(req, res)
+);
 
 app.use(cors({
   origin: 'http://localhost:5173', // your Vite frontend
   credentials: true               // ✅ Allow cookies
 }));
+
 app.use(express.json());
 
 app.use((req, res, next) => {
@@ -36,6 +47,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/courses', courseRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/payments", paymentRoutes);
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.get('/', (req, res) => {
