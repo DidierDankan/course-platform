@@ -139,6 +139,18 @@ class CourseController {
     }
   }
 
+  async getPublicCourse(req, res) {
+    try {
+      const courseId = Number(req.params.id);
+      const data = await CourseService.fetchCoursePublic(courseId);
+      if (!data) return res.status(404).json({ ok: false, message: "Course not found" });
+      return res.json({ ok: true, course: data });
+    } catch (err) {
+      console.error("getPublicCourse error:", err);
+      return res.status(500).json({ ok: false, message: "Server error" });
+    }
+  }
+
   async getCourseMedia(req, res) {
     try {
       const media = await CourseService.fetchCourseMedia(req.params.id);

@@ -236,6 +236,42 @@ class CourseService {
     return rows[0];
   }
 
+  async fetchCoursePublic(courseId) {
+    const [[course]] = await db.query(
+      `SELECT id, title, description, price, seller_id, is_subscription_only, created_at
+      FROM courses
+      WHERE id = ?`,
+      [courseId]
+    );
+    if (!course) return null;
+
+    const [media] = await db.query(
+      `SELECT id, type, title, description, order_index, duration,
+              CASE WHEN is_preview = 1 THEN url ELSE NULL END AS url,
+              is_preview
+      FROM course_media
+      WHERE course_id = ? AND type = 'video'
+      ORDER BY order_index ASC`,
+      [courseId]
+    );
+
+    // thumbnail (optional)
+    const [[thumb]] = await db.query(
+      `SELECT url
+      FROM course_media
+      WHERE course_id = ? AND type = 'image'
+      ORDER BY uploaded_at DESC
+      LIMIT 1`,
+      [courseId]
+    );
+
+    return {
+      ...course,
+      thumbnail_url: thumb?.url || null,
+      lessons: media,
+    };
+  }
+
   async fetchCourseWatchData(courseId) {
     const [courseRows] = await db.query(
       `SELECT id, title, description, price
