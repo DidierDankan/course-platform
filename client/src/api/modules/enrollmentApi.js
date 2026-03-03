@@ -1,10 +1,8 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "../baseQueryWithReauth";
+import { apiSlice } from "@api/apiSlice";
 
-export const enrollmentApi = createApi({
-  reducerPath: "enrollmentApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["Enrollments", "Dashboard"],
+
+export const enrollmentApi = apiSlice.injectEndpoints({
+  reducerPath: "api",
   endpoints: (builder) => ({
     getMyEnrollments: builder.query({
       query: () => "/enrollments",
@@ -21,10 +19,10 @@ export const enrollmentApi = createApi({
     }),
 
     updateProgress: builder.mutation({
-      query: ({ courseId, progress, completed }) => ({
+      query: ({ courseId, progress, completed, lastWatchedMediaId, lastPositionSeconds }) => ({
         url: `/enrollments/${courseId}`,
         method: "PATCH",
-        body: { progress, completed },
+        body: { progress, completed, lastWatchedMediaId, lastPositionSeconds },
       }),
       invalidatesTags: ["Enrollments", "Dashboard"],
     }),

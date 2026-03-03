@@ -62,16 +62,14 @@ class CourseController {
 
       // 3️⃣ Insert Videos (with meta)
       if (req.files?.videos?.length) {
-        // Use `req.body.meta` instead
-        const rawMeta = req.body.meta || []; // could be string or array
+        const rawMeta = req.body.meta || [];
         const metaArray = Array.isArray(rawMeta) ? rawMeta : [rawMeta];
 
-        await Promise.all(
-          req.files.videos.map((file, idx) => {
-            const meta = metaArray[idx] ? JSON.parse(metaArray[idx]) : {};
-            return CourseService.insertCourseMedia(courseId, file, meta);
-          })
-        );
+        const metas = metaArray.map((m) => {
+          try { return JSON.parse(m); } catch { return {}; }
+        });
+
+        await CourseService.insertCourseVideos(courseId, req.files.videos, metas);
       }
 
       // 4️⃣ Fetch the full course (optional but useful for client)
@@ -113,12 +111,9 @@ class CourseController {
 
       // Handle new video inserts
       const files = req.files?.videos || [];
-      const insertResults = await Promise.all(
-        files.map((file, idx) => {
-          const meta = metas[idx] || {};
-          return CourseService.insertCourseMedia(id, file, meta);
-        })
-      );
+      if (files.length) {
+        await CourseService.insertCourseVideos(id, files, metas);
+      }
 
       // Handle updates
       const updateResults = await Promise.all(

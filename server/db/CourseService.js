@@ -125,10 +125,7 @@ class CourseService {
     );
     return result.affectedRows;
   }
-  
-  /**
-   * Insert a media file for a course
-   */
+
   async insertCourseMedia(courseId, file, meta = {}) {
     const { title = null, description = null, duration = null } = meta;
 
@@ -150,6 +147,44 @@ class CourseService {
         duration,
       ]
     );
+  }
+  
+  /**
+   * Insert a media file for a course
+   */
+  // CourseService.js
+  async insertCourseVideos(courseId, files, metaArray = []) {
+    // Find current max order_index for this course's videos
+    const [[r]] = await db.query(
+      `SELECT COALESCE(MAX(order_index), -1) AS maxOrder
+      FROM course_media
+      WHERE course_id = ? AND type = 'video'`,
+      [courseId]
+    );
+
+    let next = Number(r.maxOrder) + 1;
+
+    // Insert sequentially (or build a bulk insert)
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const meta = metaArray[i] || {};
+      const { title = null, description = null, duration = null } = meta;
+
+      await db.query(
+        `INSERT INTO course_media (course_id, type, url, uploaded_at, title, description, duration, order_index)
+        VALUES (?, 'video', ?, NOW(), ?, ?, ?, ?)`,
+        [
+          courseId,
+          `/uploads/${file.filename}`,
+          title,
+          description,
+          duration,
+          next,
+        ]
+      );
+
+      next += 1;
+    }
   }
 
   async fetchCourseById(courseId) {
@@ -203,7 +238,7 @@ class CourseService {
 
   async fetchCourseWatchData(courseId) {
     const [courseRows] = await db.query(
-      `SELECT id, title, description, price, thumbnail_url
+      `SELECT id, title, description, price
       FROM courses
       WHERE id = ?`,
       [courseId]
@@ -213,10 +248,10 @@ class CourseService {
     if (!course) return null;
 
     const [lessons] = await db.query(
-      `SELECT id, url, title, description, duration
+      `SELECT id, url, title, description, duration, order_index
       FROM course_media
-      WHERE course_id = ?
-      ORDER BY position ASC`,
+      WHERE course_id = ? AND type = 'video'
+      ORDER BY order_index ASC, id ASC`,
       [courseId]
     );
 

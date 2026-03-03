@@ -1,9 +1,7 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQueryWithReauth } from '../baseQueryWithReauth';
+import { apiSlice } from "@api/apiSlice";
 
-export const courseApi = createApi({
-  reducerPath: 'courseApi',
-  baseQuery: baseQueryWithReauth,
+export const courseApi = apiSlice.injectEndpoints({
+  reducerPath: 'api',
   endpoints: (builder) => ({
     getAllCourses: builder.query({
       query: ({ page = 1, limit = 6 } = {}) => `/courses/all?page=${page}&limit=${limit}`,
@@ -28,6 +26,10 @@ export const courseApi = createApi({
         body: formData,
       }),
       invalidatesTags: ["Course"],
+    }),
+    watchCourse: builder.query({
+      query: (courseId) => `/courses/${courseId}/watch`,
+      providesTags: (r, e, courseId) => [{ type: "Course", id: courseId }],
     }),
     deleteCourse: builder.mutation({
       query: (courseId) => ({
@@ -58,4 +60,5 @@ export const {
   useDeleteCourseMutation,
   useGetMediaQuery,
   useDeleteMediaMutation,
+  useWatchCourseQuery,
 } = courseApi;

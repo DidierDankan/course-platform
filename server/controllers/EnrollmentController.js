@@ -65,6 +65,8 @@ class EnrollmentController {
       const userId = req.user.id;
       const courseId = Number(req.params.courseId);
 
+      console.log("PATCH progress payload:", req.body);
+
       const { progress, completed, lastWatchedMediaId, lastPositionSeconds } = req.body;
 
       await EnrollmentService.updateProgress({

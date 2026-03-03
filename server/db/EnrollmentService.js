@@ -63,27 +63,108 @@ class EnrollmentService {
     return rows[0];
   }
 
-  // server/db/EnrollmentService.js
-  async updateProgress({ userId, courseId, progress, completed, lastWatchedMediaId, lastPositionSeconds }) {
-    await db.query(
-      `
-      UPDATE enrollments
-      SET progress = ?,
-          completed = ?,
-          last_watched_media_id = ?,
-          last_position_seconds = ?,
-          updated_at = NOW()
-      WHERE user_id = ? AND course_id = ?
-      `,
-      [
-        progress,
-        completed ? 1 : 0,
-        lastWatchedMediaId ?? null,
-        lastPositionSeconds ?? 0,
-        userId,
-        courseId,
-      ]
-    );
+  async updateProgress({
+    userId,
+    courseId,
+    completed,
+    lastWatchedMediaId,
+    lastPositionSeconds,
+  }) {
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      const mediaId = lastWatchedMediaId ? Number(lastWatchedMediaId) : null;
+      const seconds = Number.isFinite(Number(lastPositionSeconds))
+        ? Math.max(0, Math.floor(Number(lastPositionSeconds)))
+        : 0;
+
+      // 1) Always update enrollment resume pointer
+      await conn.query(
+        `
+        UPDATE enrollments
+        SET last_watched_media_id = ?,
+            last_position_seconds = ?,
+            updated_at = NOW()
+        WHERE user_id = ? AND course_id = ?
+        `,
+        [mediaId, seconds, userId, courseId]
+      );
+
+      // 2) Upsert lesson_progress for the current lesson (course_media_id)
+      if (mediaId) {
+        const isCompleted = completed ? 1 : 0;
+
+        await conn.query(
+          `
+          INSERT INTO lesson_progress
+            (user_id, course_media_id, completed, completed_at, last_position_seconds, updated_at)
+          VALUES
+            (?, ?, ?, ?, ?, NOW())
+          ON DUPLICATE KEY UPDATE
+            completed = GREATEST(completed, VALUES(completed)),
+            completed_at = CASE
+              WHEN GREATEST(completed, VALUES(completed)) = 1
+              THEN COALESCE(completed_at, VALUES(completed_at))
+              ELSE completed_at
+            END,
+            last_position_seconds = VALUES(last_position_seconds),
+            updated_at = NOW()
+          `,
+          [
+            userId,
+            mediaId,
+            isCompleted,
+            isCompleted ? new Date() : null,
+            isCompleted ? 0 : seconds,
+          ]
+        );
+      }
+
+      // 3) Compute COURSE progress from lesson_progress (completed lessons / total lessons)
+      const [[tot]] = await conn.query(
+        `SELECT COUNT(*) AS total
+         FROM course_media
+         WHERE course_id = ? AND type = 'video'`,
+        [courseId]
+      );
+
+      const [[done]] = await conn.query(
+        `SELECT COUNT(*) AS done
+         FROM lesson_progress lp
+         JOIN course_media cm ON cm.id = lp.course_media_id
+         WHERE lp.user_id = ?
+           AND cm.course_id = ?
+           AND cm.type = 'video'
+           AND lp.completed = 1`,
+        [userId, courseId]
+      );
+
+      const total = Number(tot.total) || 0;
+      const doneCount = Number(done.done) || 0;
+
+      const courseProgress = total ? Math.floor((doneCount / total) * 100) : 0;
+      const courseCompleted = total > 0 && doneCount >= total ? 1 : 0;
+
+      // 4) Save COURSE progress into enrollments.progress
+      await conn.query(
+        `
+        UPDATE enrollments
+        SET progress = ?,
+            completed = ?,
+            updated_at = NOW()
+        WHERE user_id = ? AND course_id = ?
+        `,
+        [courseProgress, courseCompleted, userId, courseId]
+      );
+
+      await conn.commit();
+    } catch (e) {
+      await conn.rollback();
+      throw e;
+    } finally {
+      conn.release();
+    }
   }
 
 }

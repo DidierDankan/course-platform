@@ -5,6 +5,7 @@ import Edit from '@view/profile/edit';
 import PortfolioPage from '@view/profile/Porfolio';
 import RequireProfileCompletion from '@components/ui/RequireProfileCompletion';
 import UserWelcome from '@view/user/Welcome'
+import WatchCourse from '@view/user/WhatchCourse';
 
 export const routes = [
   {
@@ -49,6 +50,11 @@ export const routes = [
     path: '/user/courses',
     element: '',
     roles: ['admin', 'user'],
+  },
+  {
+    path: "/courses/:id/watch",
+    element: <WatchCourse />,
+    roles: ["admin", "user", "seller"], // any enrolled user/seller can watch
   },
   {
     path: '/user/favorites',

@@ -1,10 +1,7 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "../baseQueryWithReauth";
+import { apiSlice } from "@api/apiSlice";
 
-export const dashboardApi = createApi({
-  reducerPath: "dashboardApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["Dashboard"],
+export const dashboardApi = apiSlice.injectEndpoints({
+  reducerPath: "api",
   endpoints: (builder) => ({
     getMyDashboard: builder.query({
       query: () => "/dashboard/me/dashboard",

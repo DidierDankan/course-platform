@@ -1,9 +1,7 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQueryWithReauth } from '../baseQueryWithReauth';
+import { apiSlice } from '@api/apiSlice';
 
-export const userApi = createApi({
-  reducerPath: 'userApi',
-  baseQuery: baseQueryWithReauth,
+export const userApi = apiSlice.injectEndpoints({
+  reducerPath: 'api',
   endpoints: (builder) => ({
     getProfile: builder.query({
       query: () => ({
