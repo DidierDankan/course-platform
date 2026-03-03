@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { handleLoginSubmit } from '@utils/form/auth/registerHandler';
@@ -11,6 +11,9 @@ const Login = () => {
   const navigate = useNavigate();
   const [LoginUser, { isLoading }] = useLoginMutation();
   const dispatch = useDispatch();
+
+  const location = useLocation();
+  const from = location.state?.from || "/";
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc] text-[#0f172a]">
@@ -34,7 +37,7 @@ const Login = () => {
           <Formik
             initialValues={{ email: '', password: '' }}
             validationSchema={LoginSchema}
-            onSubmit={handleLoginSubmit(LoginUser, navigate, dispatch)}
+            onSubmit={handleLoginSubmit(LoginUser, navigate, dispatch, from)}
           >
             {({ isSubmitting }) => (
               <Form className="space-y-[16px]">

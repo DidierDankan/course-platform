@@ -6,6 +6,9 @@ import PortfolioPage from '@view/profile/Porfolio';
 import RequireProfileCompletion from '@components/ui/RequireProfileCompletion';
 import UserWelcome from '@view/user/Welcome'
 import WatchCourse from '@view/user/WhatchCourse';
+import PaymentSuccess from '@view/payment/PaymentSuccess';
+import PaymentCancel from '@view/payment/PaymentCancel';
+import CoursePreview from '@view/courses/CoursePreview';
 
 export const routes = [
   {
@@ -47,6 +50,11 @@ export const routes = [
     roles: ['admin', 'user'],
   },
   {
+    path: "/courses/:id",
+    element: <CoursePreview />,
+    roles: ["all"],
+  },
+  {
     path: '/user/courses',
     element: '',
     roles: ['admin', 'user'],
@@ -61,4 +69,15 @@ export const routes = [
     element: '',
     roles: ['admin', 'user'],
   },
+
+  {
+  path: "/payment/success",
+  element: <PaymentSuccess />,
+  roles: ["user", "seller", "admin"], // must be logged in (checkout uses customer)
+},
+{
+  path: "/payment/cancel",
+  element: <PaymentCancel />,
+  roles: ["all"], // can be public if you want
+},
 ];

@@ -49,6 +49,10 @@ export const courseApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ["Media"],
     }),
+    getPublicCourse: builder.query({
+      query: (courseId) => `/courses/${courseId}/public`,
+      providesTags: (r, e, courseId) => [{ type: "Course", id: courseId }],
+    }),
   }),
 });
 
@@ -61,4 +65,5 @@ export const {
   useGetMediaQuery,
   useDeleteMediaMutation,
   useWatchCourseQuery,
+  useGetPublicCourseQuery
 } = courseApi;

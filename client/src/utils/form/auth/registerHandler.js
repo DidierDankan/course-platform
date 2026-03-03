@@ -22,7 +22,7 @@ export const handleLoginSubmit = (LoginUser, navigate, dispatch) => {
         user: response.user,
       }));
 
-      navigate('/profile/dashboard');
+      navigate(from, { replace: true });
     } catch (err) {
       setErrors({ email: err?.data?.message || 'Login failed' });
     }
