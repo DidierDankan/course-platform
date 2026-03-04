@@ -1,54 +1,45 @@
-import { useEffect, useRef, useState } from "react";
+// src/hooks/useInfiniteCourses.js
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useGetAllCoursesQuery } from "@api/modules/courseApi";
 
-/**
- * Infinite scroll hook for paginated public courses.
- * Works with backend endpoint /api/courses/all?page={n}&limit=6
- */
-export function useInfiniteCourses(limit = 6) {
+export const useInfiniteCourses = (limit = 6, filters = {}) => {
   const [page, setPage] = useState(1);
-  const [courses, setCourses] = useState([]);
+  const [all, setAll] = useState([]);
   const loadMoreRef = useRef(null);
 
-  // ✅ Call your RTK query with pagination
-  const { data, isFetching, isError } = useGetAllCoursesQuery({ page, limit });
+  const queryArgs = useMemo(
+    () => ({ page, limit, ...filters }),
+    [page, limit, filters]
+  );
 
-  // ✅ Append new courses each time `data` changes
+  const { data, isLoading, isError, error } = useGetAllCoursesQuery(queryArgs);
+
+  // reset when filters change
   useEffect(() => {
-    if (data && Array.isArray(data) && data.length > 0) {
-      setCourses((prev) => {
-        const newOnes = data.filter((c) => !prev.some((p) => p.id === c.id));
-        return [...prev, ...newOnes];
-      });
+    setPage(1);
+    setAll([]);
+  }, [JSON.stringify(filters)]);
+
+  useEffect(() => {
+    if (Array.isArray(data)) {
+      setAll((prev) => (page === 1 ? data : [...prev, ...data]));
     }
-  }, [data]);
+  }, [data, page]);
 
-  // ✅ Infinite scroll observer
+  const hasMore = (data?.length || 0) === limit;
+
   useEffect(() => {
-    const node = loadMoreRef.current;
-    if (!node || isFetching) return;
+    if (!loadMoreRef.current) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !isFetching && data?.length >= limit) {
-          setPage((p) => p + 1);
-        }
-      },
-      { rootMargin: "200px" }
-    );
+    const obs = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore && !isLoading) {
+        setPage((p) => p + 1);
+      }
+    });
 
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [isFetching, data, limit]);
+    obs.observe(loadMoreRef.current);
+    return () => obs.disconnect();
+  }, [hasMore, isLoading]);
 
-  const hasMore = data?.length >= limit;
-
-  return {
-    courses,
-    isLoading: isFetching && courses.length === 0,
-    isFetching,
-    isError,
-    hasMore,
-    loadMoreRef,
-  };
-}
+  return { courses: all, isLoading, isError, error, hasMore, loadMoreRef };
+};

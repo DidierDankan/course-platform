@@ -7,22 +7,27 @@ class CourseController {
     this.watch = this.watch.bind(this);
   }
 
-
+  // server/controllers/CourseController.js
   async getAllCourses(req, res) {
     try {
       const limit = parseInt(req.query.limit) || 6;
       const page = parseInt(req.query.page) || 1;
       const offset = (page - 1) * limit;
 
-      console.log("📡 getAllCourses called:", { page, limit, offset });
+      const filters = {
+        q: req.query.q || "",
+        minPrice: req.query.minPrice,
+        maxPrice: req.query.maxPrice,
+        free: req.query.free,
+        subscriptionOnly: req.query.subscriptionOnly,
+        minDuration: req.query.minDuration,
+        maxDuration: req.query.maxDuration,
+        tutor: req.query.tutor,
+        sellerId: req.query.sellerId,
+        sort: req.query.sort || "newest",
+      };
 
-      const result = await CourseService.fetchAllCourses(limit, offset);
-
-      console.log("✅ getAllCourses result:", {
-        count: result?.length || 0,
-        sample: result?.[0] || null,
-      });
-
+      const result = await CourseService.fetchAllCourses(limit, offset, filters);
       res.json(result);
     } catch (err) {
       console.error("❌ Error fetching public courses:", err);

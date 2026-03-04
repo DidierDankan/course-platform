@@ -44,6 +44,24 @@ const CourseCard = ({ course }) => {
         <h3 className="text-[16px] font-semibold leading-[1.35] mb-[6px]">
           {course.title}
         </h3>
+        
+        {/* ✅ Tutor link */}
+        {(course?.seller_id || course?.tutor_name) && (
+          <div className="text-[12px] text-[#475569] mb-[8px]">
+            By{" "}
+            {course?.seller_id ? (
+              <Link
+                to={`/sellers/${course.seller_id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-[#4f46e5] font-semibold hover:underline"
+              >
+                {course.tutor_name || "Instructor"}
+              </Link>
+            ) : (
+              <span className="font-semibold">{course.tutor_name}</span>
+            )}
+          </div>
+        )}
 
         {/* Description */}
         <p className="text-[13px] text-[#475569] line-clamp-2 mb-[10px] flex-1">

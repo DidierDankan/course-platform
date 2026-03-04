@@ -4,7 +4,14 @@ export const courseApi = apiSlice.injectEndpoints({
   reducerPath: 'api',
   endpoints: (builder) => ({
     getAllCourses: builder.query({
-      query: ({ page = 1, limit = 6 } = {}) => `/courses/all?page=${page}&limit=${limit}`,
+      query: (params = {}) => {
+        const sp = new URLSearchParams();
+        Object.entries(params).forEach(([k, v]) => {
+          if (v === undefined || v === null || v === "") return;
+          sp.set(k, String(v));
+        });
+        return `/courses/all?${sp.toString()}`;
+      },
       providesTags: ["Courses"],
     }),
     getCourses: builder.query({

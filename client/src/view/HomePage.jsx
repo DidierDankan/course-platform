@@ -3,6 +3,7 @@ import Spinner from "@components/ui/Spinner";
 import Footer from "@components/ui/Footer";
 import { BookOpen } from "lucide-react";
 import CourseCard from "@components/ui/CourseCard";
+import { Link } from "react-router-dom";
 
 export default function HomePage() {
   const { courses, isLoading, isError, hasMore, loadMoreRef } = useInfiniteCourses(6);
@@ -36,7 +37,11 @@ export default function HomePage() {
 
       {/* Courses */}
       <section className="max-w-[1100px] mx-auto px-[16px] mt-[22px] pb-[40px]">
-        <h2 className="text-[18px] sm:text-[20px] font-bold mb-[12px]">Popular Courses</h2>
+        <div className="flex items-center align-center justify-between">
+
+          <h2 className="text-[18px] sm:text-[20px] font-bold mb-[12px]">Popular Courses</h2>
+          <span className="text-[18px] sm:text-[20px] font-bold mb-[12px]"><Link to="/courses">See all</Link></span>
+        </div>
 
         {isLoading ? (
           <Spinner />

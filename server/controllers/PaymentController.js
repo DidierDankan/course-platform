@@ -1,6 +1,8 @@
 import PaymentService from "../db/PaymentService.js";
 import { stripe } from "../lib/stripe.js";
 
+const CLIENT_URL = process.env.CLIENT_URL;
+
 class PaymentController {
   // POST /api/payments/checkout
   async createCheckoutSession(req, res) {
@@ -24,8 +26,8 @@ class PaymentController {
 
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
-        customer: customerId,
-
+        payment_method_types: ["card"],
+        customer: customerId, // if you created one, optional
         line_items: [
           {
             price_data: {
@@ -36,18 +38,23 @@ class PaymentController {
             quantity: 1,
           },
         ],
+        success_url: `${CLIENT_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${CLIENT_URL}/courses/${courseId}`,
 
-        // ✅ Save card for future payments
-        payment_intent_data: {
-          setup_future_usage: "off_session",
-          metadata: {
-            user_id: String(userId),
-            course_id: String(course.id),
-          },
+        // ✅ metadata available directly in checkout.session.completed
+        metadata: {
+          user_id: String(userId),
+          course_id: String(courseId),
         },
 
-        success_url: `${process.env.CLIENT_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.CLIENT_URL}/payment/cancel`,
+        // ✅ also store metadata in PaymentIntent
+        payment_intent_data: {
+          metadata: {
+            user_id: String(userId),
+            course_id: String(courseId),
+          },
+          setup_future_usage: "off_session", // enables save card
+        },
       });
 
       await PaymentService.upsertPendingPayment({
@@ -83,11 +90,23 @@ class PaymentController {
       if (event.type === "checkout.session.completed") {
         const session = event.data.object;
 
-        // session.payment_intent exists for payment mode
-        const pi = await stripe.paymentIntents.retrieve(session.payment_intent);
+        console.log("session.metadata", session.metadata);
+        console.log("session.payment_intent", session.payment_intent);
 
-        const userId = Number(pi.metadata.user_id);
-        const courseId = Number(pi.metadata.course_id);
+        // session.payment_intent exists for payment mode
+        let userId = Number(session.metadata?.user_id);
+        let courseId = Number(session.metadata?.course_id);
+
+        if ((!userId || !courseId) && session.payment_intent) {
+          const pi = await stripe.paymentIntents.retrieve(session.payment_intent);
+          userId = Number(pi.metadata?.user_id);
+          courseId = Number(pi.metadata?.course_id);
+        }
+
+        if (!Number.isFinite(userId) || !Number.isFinite(courseId)) {
+          console.error("❌ userId/courseId invalid", { userId, courseId });
+          return res.status(400).send("Invalid metadata");
+        }
 
         await PaymentService.markPaymentPaid({ userId, courseId, sessionId: session.id });
         await PaymentService.createEnrollmentIfNeeded({ userId, courseId });

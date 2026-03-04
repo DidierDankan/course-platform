@@ -13,7 +13,9 @@ import courseRoutes from './routes/courseRoutes.js'
 import enrollmentRoutes from "./routes/enrollmentRoutes.js"
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js"
+import publicRoutes from "./routes/publicRoutes.js"
 import PaymentController from "./controllers/PaymentController.js"
+
 
 dotenv.config();
 
@@ -48,6 +50,7 @@ app.use('/api/courses', courseRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/public", publicRoutes);
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.get('/', (req, res) => {

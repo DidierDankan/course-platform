@@ -135,7 +135,7 @@ export default function UserDashboard() {
               My courses
             </h2>
             <Link
-              to="/my-courses"
+              to="/user/courses"
               className="text-[14px] text-[#4f46e5] font-medium hover:underline"
             >
               See all

@@ -6,23 +6,98 @@ const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 
 class CourseService {
 
-  async fetchAllCourses(limit, offset){
-    const [rows] = await db.query(
-        `
-        SELECT 
-          c.id, c.title, c.description, c.price, c.created_at,
-          MAX(CASE WHEN m.type = 'image' THEN m.url END) AS thumbnail_url,
-          SUM(CASE WHEN m.type = 'video' THEN m.duration END) AS total_duration
-        FROM courses c
-        LEFT JOIN course_media m ON m.course_id = c.id
-        GROUP BY c.id
-        ORDER BY c.created_at DESC
-        LIMIT ? OFFSET ?
-        `,
-        [limit, offset]
-      );
+  // server/db/CourseService.js
+  async fetchAllCourses(limit, offset, filters = {}) {
+    const {
+      q,
+      minPrice,
+      maxPrice,
+      free,
+      subscriptionOnly,
+      minDuration,
+      maxDuration,
+      tutor,      // name search
+      sellerId,   // exact
+      sort = "newest",
+    } = filters;
 
-      return rows
+    const where = [];
+    const params = [];
+
+    // Search title/description
+    if (q) {
+      where.push(`(c.title LIKE ? OR c.description LIKE ? OR up.full_name LIKE ?)`);
+      params.push(`%${q}%`, `%${q}%`, `%${q}%`);
+    }
+
+    // Price filters
+    if (free === "1" || free === 1 || free === true) {
+      where.push(`c.price = 0`);
+    } else {
+      if (minPrice !== undefined && minPrice !== null && minPrice !== "") {
+        where.push(`c.price >= ?`);
+        params.push(Number(minPrice));
+      }
+      if (maxPrice !== undefined && maxPrice !== null && maxPrice !== "") {
+        where.push(`c.price <= ?`);
+        params.push(Number(maxPrice));
+      }
+    }
+
+    // Subscription only
+    if (subscriptionOnly === "1" || subscriptionOnly === 1 || subscriptionOnly === true) {
+      where.push(`c.is_subscription_only = 1`);
+    }
+
+    // Tutor
+    if (sellerId) {
+      where.push(`c.seller_id = ?`);
+      params.push(Number(sellerId));
+    } else if (tutor) {
+      where.push(`up.full_name LIKE ?`);
+      params.push(`%${tutor}%`);
+    }
+
+    // Duration filters (seconds) using your aggregated SUM(video.duration)
+    // NOTE: your DB currently uses `course_media.duration` (int) in some places.
+    // This query uses m.duration (same as your existing fetchAllCourses).
+    const durationHaving = [];
+    const havingParams = [];
+    if (minDuration !== undefined && minDuration !== null && minDuration !== "") {
+      durationHaving.push(`SUM(CASE WHEN m.type = 'video' THEN m.duration END) >= ?`);
+      havingParams.push(Number(minDuration));
+    }
+    if (maxDuration !== undefined && maxDuration !== null && maxDuration !== "") {
+      durationHaving.push(`SUM(CASE WHEN m.type = 'video' THEN m.duration END) <= ?`);
+      havingParams.push(Number(maxDuration));
+    }
+
+    // Sorting
+    let orderBy = `c.created_at DESC`;
+    if (sort === "price_asc") orderBy = `c.price ASC, c.created_at DESC`;
+    if (sort === "price_desc") orderBy = `c.price DESC, c.created_at DESC`;
+    if (sort === "duration_desc") orderBy = `total_duration DESC, c.created_at DESC`;
+
+    const sql = `
+      SELECT 
+        c.id, c.title, c.description, c.price, c.created_at, c.seller_id,
+        COALESCE(up.full_name, u.email) AS tutor_name,
+        MAX(CASE WHEN m.type = 'image' THEN m.url END) AS thumbnail_url,
+        COALESCE(SUM(CASE WHEN m.type = 'video' THEN m.duration END), 0) AS total_duration
+      FROM courses c
+      LEFT JOIN users u ON u.id = c.seller_id
+      LEFT JOIN user_profiles up ON up.user_id = c.seller_id
+      LEFT JOIN course_media m ON m.course_id = c.id
+      ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+      GROUP BY c.id
+      ${durationHaving.length ? `HAVING ${durationHaving.join(" AND ")}` : ""}
+      ORDER BY ${orderBy}
+      LIMIT ? OFFSET ?
+    `;
+
+    const finalParams = [...params, ...havingParams, Number(limit), Number(offset)];
+    const [rows] = await db.query(sql, finalParams);
+    return rows;
   }
 
   async fetchCoursesWithThumbnails(sellerId = null) {

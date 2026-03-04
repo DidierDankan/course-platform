@@ -22,28 +22,30 @@ export default function App() {
           <Route path="/auth/*" element={<Auth />} />
 
           {/* 🔐 Protected routes */}
-          {routes.map(({ path, element, roles }) =>
-            roles.includes("all") ? (
-              <Route
-                key={path}
-                path={path}
-                element={<PublicRoute element={element} />}
-              />
-            ) : (
+          {routes.map(({ path, element, roles, publicOnly }) => {
+            // ✅ truly public route
+            if (roles.includes("all") && !publicOnly) {
+              return <Route key={path} path={path} element={element} />;
+            }
+
+            // ✅ public-only route (login/register)
+            if (roles.includes("all") && publicOnly) {
+              return <Route key={path} path={path} element={<PublicRoute element={element} />} />;
+            }
+
+            // 🔐 protected route
+            return (
               <Route
                 key={path}
                 path={path}
                 element={
                   <ProfileGate>
-                    <ProtectedRoute
-                      element={element}
-                      allowedRoles={Array.isArray(roles) ? roles : [roles]}
-                    />
+                    <ProtectedRoute element={element} allowedRoles={roles} />
                   </ProfileGate>
                 }
               />
-            )
-          )}
+            );
+          })}
         </Routes>
       </AuthGate>
     </Router>

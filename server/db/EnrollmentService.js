@@ -36,13 +36,35 @@ class EnrollmentService {
     );
   }
 
+  // EnrollmentService.js
   async getEnrollmentsByUser(userId) {
     const [rows] = await db.query(
       `
-      SELECT e.*, c.title, c.description, c.thumbnail_url, c.price
+      SELECT
+        e.course_id,
+        e.progress,
+        e.completed,
+        e.last_watched_media_id,
+        e.last_position_seconds,
+        e.enrolled_at,
+        e.updated_at,
+
+        c.title,
+        c.description,
+        c.price,
+
+        -- thumbnail from course_media (image)
+        MAX(CASE WHEN m.type = 'image' THEN m.url END) AS thumbnail_url,
+
+        -- optional: total duration from videos
+        SUM(CASE WHEN m.type = 'video' THEN COALESCE(m.duration, 0) ELSE 0 END) AS total_duration
+
       FROM enrollments e
-      JOIN courses c ON e.course_id = c.id
+      JOIN courses c ON c.id = e.course_id
+      LEFT JOIN course_media m ON m.course_id = c.id
+
       WHERE e.user_id = ?
+      GROUP BY e.course_id
       ORDER BY e.enrolled_at DESC
       `,
       [userId]
