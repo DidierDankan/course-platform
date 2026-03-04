@@ -92,10 +92,20 @@ export default function CoursePreview() {
             {course.description || "No description provided."}
           </p>
 
-          <div className="mt-[14px] flex items-center justify-center gap-[10px]">
-            <CourseCTA courseId={course.id} price={course.price} sellerId={course.seller_id} />
+          <div className="mt-[14px] flex flex-col sm:flex-row items-center justify-center gap-[10px]">
+            <div className="flex items-center gap-[10px]">
+              <CourseCTA
+                courseId={course.id}
+                price={course.price}
+                sellerId={course.seller_id}
+              />
+
+              {/* ❤️ Favorite */}
+              <FavoriteButton courseId={course.id} />
+            </div>
+
             <Link
-              to="/"
+              to="/courses"
               className="text-[14px] text-[#4f46e5] font-medium hover:underline"
             >
               Back to courses
@@ -150,7 +160,6 @@ export default function CoursePreview() {
             {(course.lessons || []).length ? (
               <ul className="divide-y divide-[#e2e8f0]">
                 {(course.lessons || []).map((l) => {
-                    console.log("L RIGHT HERE", l)
                   const isPreview = l.is_preview === 1;
                   return (
                     <li key={l.id} className="p-[14px] flex items-start justify-between gap-[12px]">

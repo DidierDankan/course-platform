@@ -61,8 +61,9 @@ CREATE TABLE course_media (
   url TEXT NOT NULL,
   title VARCHAR(100) NOT NULL,
   description TEXT,
-  position INT NOT NULL DEFAULT 0,
-  duration_seconds INT NULL,
+  duration INT NULL,
+  order_index INT NOT NULL DEFAULT 0,
+  is_preview INT NOT NULL DEFAULT 0,
   uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,

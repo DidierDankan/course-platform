@@ -3,6 +3,7 @@ import { Clock } from "lucide-react";
 import { useSelector } from "react-redux";
 import CourseCTA from "@components/ui/CourseCTA";
 import { Link } from "react-router-dom";
+import FavoriteButton from "./FavoriteButton";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -27,8 +28,7 @@ const CourseCard = ({ course }) => {
     : "https://images.unsplash.com/photo-1522199710521-72d69614c702?q=80&w=1200&auto=format&fit=crop";
 
   return (
-    <div className="rounded-[12px] border border-[#e5e7eb] bg-[#ffffff] shadow-[0_6px_24px_rgba(0,0,0,0.08)] overflow-hidden hover:shadow-[0_12px_32px_rgba(0,0,0,0.12)] transition-shadow flex flex-col">
-      
+    <div className="relative rounded-[12px] border border-[#e5e7eb] bg-[#ffffff] shadow-[0_6px_24px_rgba(0,0,0,0.08)] overflow-hidden hover:shadow-[0_12px_32px_rgba(0,0,0,0.12)] transition-shadow flex flex-col">
       {/* Thumbnail */}
       <Link to={`/courses/${course.id}`}>
         <img
@@ -38,13 +38,16 @@ const CourseCard = ({ course }) => {
           loading="lazy"
         />
       </Link>
+      <div className="absolute top-[10px] right-[10px] z-10">
+        <FavoriteButton courseId={course.id} />
+      </div>
 
       <div className="p-[14px] flex flex-col flex-1">
         {/* Title */}
         <h3 className="text-[16px] font-semibold leading-[1.35] mb-[6px]">
           {course.title}
         </h3>
-        
+
         {/* ✅ Tutor link */}
         {(course?.seller_id || course?.tutor_name) && (
           <div className="text-[12px] text-[#475569] mb-[8px]">

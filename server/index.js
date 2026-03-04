@@ -14,6 +14,7 @@ import enrollmentRoutes from "./routes/enrollmentRoutes.js"
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js"
 import publicRoutes from "./routes/publicRoutes.js"
+import favoriteRoutes from "./routes/favoriteRoutes.js"
 import PaymentController from "./controllers/PaymentController.js"
 
 
@@ -50,6 +51,7 @@ app.use('/api/courses', courseRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/favorites", favoriteRoutes);
 app.use("/api/public", publicRoutes);
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
