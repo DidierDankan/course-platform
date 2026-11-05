@@ -6,6 +6,7 @@ import { courseHandler } from "@utils/form/profile/courseHandler";
 import Modal from "@components/ui/Modal";
 import FormikInput from "./Form/FormikInput";
 import CourseVideos from "./CourseVideos";
+import { CURRENCY } from "@utils/currency";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -109,7 +110,7 @@ const CourseModal = ({ open, onClose, course }) => {
                         >
                         <FormikInput name="title" label="Course Title" />
                         <FormikInput name="description" label="Description" as="textarea" />
-                        <FormikInput name="price" label="Price (USD)" type="number" />
+                        <FormikInput name="price" label={`Price (${CURRENCY.code})`} type="number" />
 
                         {/* ✅ Thumbnail Upload */}
                         <div>

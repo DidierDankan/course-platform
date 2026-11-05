@@ -12,7 +12,7 @@ export const handleRegisterSubmit = (registerUser, navigate) => {
   };
 };
 
-export const handleLoginSubmit = (LoginUser, navigate, dispatch) => {
+export const handleLoginSubmit = (LoginUser, navigate, dispatch, from="/") => {
   return async (values, { setSubmitting, setErrors }) => {
     try {
       const response = await LoginUser(values).unwrap();

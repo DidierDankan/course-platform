@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import CourseCTA from "@components/ui/CourseCTA";
 import { Link } from "react-router-dom";
 import FavoriteButton from "./FavoriteButton";
+import { formatPrice } from "@utils/currency";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -78,7 +79,7 @@ const CourseCard = ({ course }) => {
             <span>{formatDuration(totalSeconds)}</span>
           </div>
           <div className="text-[14px] font-bold text-[#1e40af]">
-            ${Number(course.price).toFixed(2)}
+            {formatPrice(course.price)}
           </div>
         </div>
 

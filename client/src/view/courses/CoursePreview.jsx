@@ -4,6 +4,7 @@ import { BookOpen, Lock, Play, Clock } from "lucide-react";
 import Spinner from "@components/ui/Spinner";
 import CourseCTA from "@components/ui/CourseCTA";
 import { useGetPublicCourseQuery } from "@api/modules/courseApi";
+import FavoriteButton from "@components/ui/FavoriteButton";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -68,7 +69,7 @@ export default function CoursePreview() {
     );
   }
 
-  if (!course) return null;
+  if (!course) return  "Course not found" ;
 
   const thumbnail = course.thumbnail_url
     ? `${API_BASE_URL}${course.thumbnail_url}`
@@ -166,7 +167,7 @@ export default function CoursePreview() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-[8px]">
                           <div className="text-[13px] font-semibold text-[#1e293b] truncate">
-                            {l.position ? `${l.position}. ` : ""}{l.title}
+                            {l.order_index ? `${l.order_index}. ` : ""}{l.title}
                           </div>
 
                           {isPreview ? (

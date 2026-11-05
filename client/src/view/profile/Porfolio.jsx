@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+
 import { useGetCoursesQuery, useDeleteCourseMutation } from "@api/modules/courseApi";
-import { Plus, Pencil, Trash2, BookOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, Eye } from "lucide-react";
 
 import CourseModal from "@components/ui/CourseModal";
+import { formatPrice } from "@utils/currency";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -113,11 +116,18 @@ const PortfolioPage = () => {
                       {course.description}
                     </p>
                     <p className="mt-[10px] text-[15px] font-bold text-[#4f46e5]">
-                      ${course.price}
+                      {formatPrice(course.price)}
                     </p>
                   </div>
 
                   <div className="flex gap-[10px]">
+                    <Link
+                      to={`/courses/${course.id}/watch`}
+                      className="p-[6px] text-[#334155] hover:text-[#4f46e5] transition"
+                      title="View as student"
+                    >
+                      <Eye size={18} />
+                    </Link>
                     <button
                       onClick={() => handleEdit(course)}
                       className="p-[6px] text-[#334155] hover:text-[#4f46e5] transition"

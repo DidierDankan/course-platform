@@ -62,6 +62,7 @@ export default function WatchCourse() {
   }, [activeLessonId, enrollment, activeLesson]);
 
   const debouncedSave = (payload) => {
+    if (!enrollment) return; // owner/admin preview: nothing to save
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => updateProgress(payload), 900);
   };
@@ -87,12 +88,14 @@ export default function WatchCourse() {
   const handleEnded = async () => {
     const el = videoRef.current;
 
-    await updateProgress({
-      courseId,
-      completed: true,                      // ✅ ended = completed
-      lastWatchedMediaId: activeLessonId,
-      lastPositionSeconds: 0,               // ✅ reset on completion
-    });
+    if (enrollment) {
+      await updateProgress({
+        courseId,
+        completed: true,                      // ✅ ended = completed
+        lastWatchedMediaId: activeLessonId,
+        lastPositionSeconds: 0,               // ✅ reset on completion
+      });
+    }
 
     // Auto-next lesson
     const idx = lessons.findIndex((l) => l.id === activeLessonId);

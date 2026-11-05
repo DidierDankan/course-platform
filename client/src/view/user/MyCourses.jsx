@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { BookOpen, Search, ArrowRight, Clock } from "lucide-react";
 import { useGetMyEnrollmentsQuery } from "@api/modules/enrollmentApi";
+import { formatPrice } from "@utils/currency";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -83,7 +84,7 @@ function MyCourseCard({ item }) {
             </div>
 
             <div className="font-semibold text-[#1e40af]">
-              €{Number(item.price || 0).toFixed(2)}
+              {formatPrice(item.price)}
             </div>
           </div>
         </div>

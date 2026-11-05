@@ -1,6 +1,7 @@
 // src/components/ui/CourseFilters.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
+import { CURRENCY } from "@utils/currency";
 
 const DURATIONS = [
   { label: "Any duration", value: "" },
@@ -101,7 +102,7 @@ export default function CourseFilters({ value, onChange }) {
 
         {/* Price */}
         <div>
-          <label className="text-[13px] text-[#475569]">Min price (€)</label>
+          <label className="text-[13px] text-[#475569]">Min price ({CURRENCY.code})</label>
           <input
             type="number"
             value={value.minPrice || ""}
@@ -111,7 +112,7 @@ export default function CourseFilters({ value, onChange }) {
         </div>
 
         <div>
-          <label className="text-[13px] text-[#475569]">Max price (€)</label>
+          <label className="text-[13px] text-[#475569]">Max price ({CURRENCY.code})</label>
           <input
             type="number"
             value={value.maxPrice || ""}
