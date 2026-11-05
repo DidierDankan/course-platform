@@ -5,6 +5,7 @@ import upload from "../middleware/uploadMiddleware.js";
 
 import { authenticate } from "../middleware/authMiddleware.js";
 import { authorizeRoles } from "../middleware/authMiddleware.js";
+import { requireCourseOwner, requireMediaOwner } from "../middleware/courseOwnership.js";
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.use(authenticate);
 // ✅ Public read-only route? (Optional)
 // If you want users to be able to SEE courses but not add/edit
 router.get("/", CourseController.getCourses);
-router.get("/:id/media", CourseController.getCourseMedia);
+router.get("/:id/media", requireCourseOwner, CourseController.getCourseMedia);
 
 // ✅ Restricted to admin/seller
 router.post(
@@ -32,14 +33,15 @@ router.post(
 router.put(
   "/:id",
   authorizeRoles("admin", "seller"),
+  requireCourseOwner, // before upload, so refused requests don't save files
   upload.fields([
     { name: "thumbnail", maxCount: 1 },
     { name: "videos", maxCount: 20 },
   ]),
   CourseController.updateCourse
 );
-router.delete("/:id", authorizeRoles("admin", "seller"), CourseController.deleteCourse);
-router.delete("/media/:mediaId", authorizeRoles("admin", "seller"), CourseController.deleteMedia);
+router.delete("/:id", authorizeRoles("admin", "seller"), requireCourseOwner, CourseController.deleteCourse);
+router.delete("/media/:mediaId", authorizeRoles("admin", "seller"), requireMediaOwner, CourseController.deleteMedia);
 
 router.get("/:id/watch", authenticate, CourseController.watch);
 

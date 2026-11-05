@@ -183,7 +183,8 @@ class CourseService {
     return result.affectedRows;
   }
 
-  async updateVideoMeta(id, { title, description, duration }) {
+  // Only touches the row if it belongs to courseId, so a video id from another course is ignored.
+  async updateVideoMeta(id, courseId, { title, description, duration }) {
     const fields = [];
     const vals = [];
 
@@ -193,9 +194,9 @@ class CourseService {
 
     if (!fields.length) return 0;
 
-    vals.push(id);
+    vals.push(id, courseId);
     const [result] = await db.query(
-      `UPDATE course_media SET ${fields.join(", ")} WHERE id = ?`,
+      `UPDATE course_media SET ${fields.join(", ")} WHERE id = ? AND course_id = ?`,
       vals
     );
     return result.affectedRows;
@@ -349,7 +350,7 @@ class CourseService {
 
   async fetchCourseWatchData(courseId) {
     const [courseRows] = await db.query(
-      `SELECT id, title, description, price
+      `SELECT id, title, description, price, seller_id
       FROM courses
       WHERE id = ?`,
       [courseId]
@@ -369,6 +370,35 @@ class CourseService {
     return { course, lessons };
   }
   
+  /** Owner of a course, or null if the course doesn't exist. */
+  async fetchCourseSellerId(courseId) {
+    const [[row]] = await db.query("SELECT seller_id FROM courses WHERE id = ?", [courseId]);
+    return row ? row.seller_id : null;
+  }
+
+  /** What protectVideos needs to decide who may load a file under /uploads. */
+  async fetchMediaAccessByUrl(url) {
+    const [[row]] = await db.query(
+      `SELECT m.type, m.is_preview, m.course_id, c.seller_id
+       FROM course_media m JOIN courses c ON c.id = m.course_id
+       WHERE m.url = ?
+       LIMIT 1`,
+      [url]
+    );
+    return row;
+  }
+
+  /** Course and owner a media row belongs to, or undefined if it doesn't exist. */
+  async fetchMediaOwner(mediaId) {
+    const [[row]] = await db.query(
+      `SELECT m.course_id, c.seller_id
+       FROM course_media m JOIN courses c ON c.id = m.course_id
+       WHERE m.id = ?`,
+      [mediaId]
+    );
+    return row;
+  }
+
   /**
    * Fetch single media URL (useful before deleting file from disk)
    */
@@ -442,11 +472,13 @@ class CourseService {
     await db.query("DELETE FROM courses WHERE id = ?", [courseId]);
   }
 
-  async deleteMediaByIdWithFile(mediaId) {
+  // Only deletes the row (and its file) if it belongs to courseId.
+  async deleteMediaByIdWithFile(mediaId, courseId) {
     const [[row]] = await db.query(
-      "SELECT url FROM course_media WHERE id = ?",
-      [mediaId]
+      "SELECT url FROM course_media WHERE id = ? AND course_id = ?",
+      [mediaId, courseId]
     );
+    if (!row) return 0;
 
     // delete file (best-effort)
     if (row?.url) {
@@ -455,8 +487,8 @@ class CourseService {
     }
 
     const [result] = await db.query(
-      "DELETE FROM course_media WHERE id = ?",
-      [mediaId]
+      "DELETE FROM course_media WHERE id = ? AND course_id = ?",
+      [mediaId, courseId]
     );
     return result.affectedRows; // 👈 important
   }

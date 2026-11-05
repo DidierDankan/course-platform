@@ -37,8 +37,10 @@ class CourseController {
 
   async getCourses(req, res) {
     try {
-      const { seller_id } = req.query;
-      const courses = await CourseService.fetchCoursesWithThumbnails(seller_id);
+      // This list includes every video URL, so sellers only get their own courses.
+      // Only admins may ask for another seller (or, with no seller_id, everyone).
+      const sellerId = req.user.role === "admin" ? req.query.seller_id : req.user.id;
+      const courses = await CourseService.fetchCoursesWithThumbnails(sellerId);
       res.json(courses);
     } catch (err) {
       console.error("Error fetching courses:", err);
@@ -123,7 +125,7 @@ class CourseController {
       // Handle updates
       const updateResults = await Promise.all(
         existingVideos.map((v) =>
-          CourseService.updateVideoMeta(v.id, {
+          CourseService.updateVideoMeta(v.id, id, {
             title: v.title,
             description: v.description,
             duration: v.duration,
@@ -133,7 +135,7 @@ class CourseController {
 
       // Handle deletions
       const deleteResults = await Promise.all(
-        deleteIds.map((vid) => CourseService.deleteMediaByIdWithFile(vid))
+        deleteIds.map((vid) => CourseService.deleteMediaByIdWithFile(vid, id))
       );
 
       const updatedCourse = await CourseService.fetchCourseById(id);
@@ -201,22 +203,26 @@ class CourseController {
       const userId = req.user.id;
       const courseId = Number(req.params.id);
 
-      const enrollment = await EnrollmentService.getEnrollment(userId, courseId);
-      if (!enrollment) {
-        return res.status(403).json({ ok: false, message: "Not enrolled" });
-      }
-
       const watchData = await CourseService.fetchCourseWatchData(courseId);
       if (!watchData) {
         return res.status(404).json({ ok: false, message: "Course not found" });
       }
 
-      return res.json({ ok: true, ...watchData, enrollment });
+      const isOwner = Number(watchData.course.seller_id) === Number(userId);
+      const isAdmin = req.user.role === "admin";
+      const enrollment = await EnrollmentService.getEnrollment(userId, courseId);
+
+      if (!enrollment && !isOwner && !isAdmin) {
+        return res.status(403).json({ ok: false, message: "Not enrolled" });
+      }
+
+      return res.json({ ok: true, ...watchData, enrollment: enrollment || null });
     } catch (err) {
       console.error("watch error:", err);
       return res.status(500).json({ ok: false, message: "Server error" });
     }
   }
+
   
 }
 

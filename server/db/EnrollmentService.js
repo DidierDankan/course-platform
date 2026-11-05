@@ -1,34 +1,43 @@
 // server/db/EnrollmentService.js
 import db from "./connection.js";
 
+const httpError = (status, message) => Object.assign(new Error(message), { status });
+
 class EnrollmentService {
+  // Direct enrollment is only for free courses. Paid courses are enrolled by the
+  // Stripe webhook (PaymentService.createEnrollmentIfNeeded) after payment.
   async createEnrollment({ userId, courseId }) {
-    // 1) course must exist + get owner
+    // 1) course must exist + get owner and price
     const [courseRows] = await db.query(
-      `SELECT seller_id FROM courses WHERE id = ? LIMIT 1`,
+      `SELECT seller_id, price, is_subscription_only FROM courses WHERE id = ? LIMIT 1`,
       [courseId]
     );
 
     const course = courseRows[0];
     if (!course) {
-      throw new Error("Course not found.");
+      throw httpError(404, "Course not found.");
     }
 
     // 2) block seller enrolling in their own course
     if (Number(course.seller_id) === Number(userId)) {
-      throw new Error("You cannot enroll in your own course.");
+      throw httpError(400, "You cannot enroll in your own course.");
     }
 
-    // 3) prevent duplicates
+    // 3) paid and subscription-only courses must go through checkout
+    if (Number(course.price) > 0 || Number(course.is_subscription_only) === 1) {
+      throw httpError(403, "This course must be purchased.");
+    }
+
+    // 4) prevent duplicates
     const [exists] = await db.query(
       `SELECT id FROM enrollments WHERE user_id = ? AND course_id = ? LIMIT 1`,
       [userId, courseId]
     );
     if (exists.length) {
-      throw new Error("User is already enrolled in this course.");
+      throw httpError(409, "User is already enrolled in this course.");
     }
 
-    // 4) insert
+    // 5) insert
     await db.query(
       `INSERT INTO enrollments (user_id, course_id, enrolled_at)
       VALUES (?, ?, NOW())`,

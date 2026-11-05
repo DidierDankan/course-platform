@@ -1,5 +1,6 @@
 import PaymentService from "../db/PaymentService.js";
 import { stripe } from "../lib/stripe.js";
+import { CURRENCY } from "../lib/currency.js";
 
 const CLIENT_URL = process.env.CLIENT_URL;
 
@@ -31,7 +32,7 @@ class PaymentController {
         line_items: [
           {
             price_data: {
-              currency: "eur",
+              currency: CURRENCY,
               product_data: { name: course.title },
               unit_amount: Math.round(Number(course.price) * 100),
             },

@@ -22,12 +22,13 @@ class EnrollmentController {
       await EnrollmentService.createEnrollment({ userId, courseId: course_id });
       return res.status(201).json({ ok: true, message: "Enrollment successful!" });
     } catch (err) {
-      // If already enrolled, treat as 409 conflict (optional but better)
-      const msg = err?.message || "Server error";
-      const status = msg.includes("already enrolled") ? 409 : 500;
+      // Expected refusals carry a status (404, 400, 403, 409); anything else is a server error.
+      if (err?.status) {
+        return res.status(err.status).json({ ok: false, message: err.message });
+      }
 
       console.error("Enrollment error:", err);
-      return res.status(status).json({ ok: false, message: msg });
+      return res.status(500).json({ ok: false, message: "Server error" });
     }
   }
 
@@ -64,6 +65,11 @@ class EnrollmentController {
     try {
       const userId = req.user.id;
       const courseId = Number(req.params.courseId);
+
+      const enrollment = await EnrollmentService.getEnrollment(userId, courseId);
+      if (!enrollment) {
+        return res.status(403).json({ ok: false, message: "Not enrolled" });
+      }
 
       console.log("PATCH progress payload:", req.body);
 
