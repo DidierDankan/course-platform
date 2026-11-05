@@ -8,7 +8,7 @@ import FormikInput from "./Form/FormikInput";
 import CourseVideos from "./CourseVideos";
 import { CURRENCY } from "@utils/currency";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const CourseModal = ({ open, onClose, course }) => {
     const [addCourse, { isLoading: isSaving }] = useAddCourseMutation();

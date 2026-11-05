@@ -6,7 +6,7 @@ import CourseCTA from "@components/ui/CourseCTA";
 import { useGetPublicCourseQuery } from "@api/modules/courseApi";
 import FavoriteButton from "@components/ui/FavoriteButton";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const formatDuration = (seconds) => {
   const s = Number(seconds);
@@ -21,12 +21,33 @@ const formatDuration = (seconds) => {
   return `${secs}s`;
 };
 
+const CourseNotFound = () => (
+  <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pt-[72px]">
+    <main className="max-w-[900px] mx-auto px-[20px] py-[28px]">
+      <div className="bg-white border border-[#e2e8f0] rounded-[16px] p-[18px] shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
+        <div className="text-[18px] font-bold text-[#1e293b]">Course not found</div>
+        <div className="mt-[6px] text-[14px] text-[#475569]">
+          This course doesn’t exist or is no longer available.
+        </div>
+        <Link
+          to="/courses"
+          className="mt-[14px] inline-flex rounded-[12px] bg-[#4f46e5] px-[14px] py-[10px] text-[13px] font-semibold text-white hover:opacity-95"
+        >
+          Browse courses
+        </Link>
+      </div>
+    </main>
+  </div>
+);
+
 export default function CoursePreview() {
   const { id } = useParams();
   const courseId = Number(id);
+  // "abc", "1.5", "0" or "-3" can never be a course, so don't even ask the server.
+  const isValidId = Number.isInteger(courseId) && courseId > 0;
 
   const { data, isLoading, isError, error, refetch } = useGetPublicCourseQuery(courseId, {
-    skip: !courseId,
+    skip: !isValidId,
   });
 
   const course = data?.course;
@@ -35,6 +56,8 @@ export default function CoursePreview() {
     const lessons = course?.lessons || [];
     return lessons.find((l) => l.is_preview === 1 && l.url) || null;
   }, [course?.lessons]);
+
+  if (!isValidId) return <CourseNotFound />;
 
   if (isLoading) {
     return (
@@ -45,6 +68,9 @@ export default function CoursePreview() {
       </div>
     );
   }
+
+  // The server answered "no such course": nothing to retry.
+  if (isError && error?.status === 404) return <CourseNotFound />;
 
   if (isError) {
     return (
@@ -69,7 +95,7 @@ export default function CoursePreview() {
     );
   }
 
-  if (!course) return  "Course not found" ;
+  if (!course) return <CourseNotFound />;
 
   const thumbnail = course.thumbnail_url
     ? `${API_BASE_URL}${course.thumbnail_url}`

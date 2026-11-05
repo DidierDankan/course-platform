@@ -6,6 +6,7 @@ import { handleLoginSubmit } from '@utils/form/auth/registerHandler';
 import { useLoginMutation } from '@api/modules/authApi';
 import { LoginSchema } from '@utils/form/auth/registerValidation';
 import { BookOpen } from 'lucide-react';
+import { APP_NAME } from '@utils/brand';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ const Login = () => {
         <div className="text-center mb-[24px]">
           <div className="inline-flex items-center gap-[8px] text-[12px] uppercase tracking-[0.08em] text-[#475569] bg-[#e2e8f0] rounded-[999px] px-[10px] py-[4px] mb-[10px]">
             <BookOpen size={14} />
-            <span>Welcome back to LearnHub</span>
+            <span>Welcome back to {APP_NAME}</span>
           </div>
           <h1 className="text-[28px] sm:text-[32px] font-extrabold leading-[1.15] text-[#1e293b]">
             Sign in to your account

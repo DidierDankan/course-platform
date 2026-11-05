@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLogoutMutation } from "@api/modules/authApi";
 import { logout as logoutAction } from "@store/slices/authSlice";
 import { useEffect, useState } from "react";
+import { APP_NAME } from "@utils/brand";
 
 const Header = () => {
   const dispatch = useDispatch();
@@ -60,7 +61,7 @@ const Header = () => {
             scrolled ? "text-[#0f172a]" : "text-white"
           }`}
         >
-          LearnHub
+          {APP_NAME}
         </Link>
 
         {/* Navigation */}

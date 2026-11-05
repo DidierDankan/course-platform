@@ -5,7 +5,7 @@ import { BookOpen, Search, ArrowRight, Clock } from "lucide-react";
 import { useGetMyEnrollmentsQuery } from "@api/modules/enrollmentApi";
 import { formatPrice } from "@utils/currency";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const clampPct = (n) => Math.max(0, Math.min(100, Number(n) || 0));
 

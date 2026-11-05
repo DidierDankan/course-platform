@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
     "paths": {
-      "@store/*": ["store/*"],
-      "@api/*": ["api/*"],
-      "@assets/*": ["assets/*"],
-      "@view/*": ["view/*"],
-      "@utils/*": ["utils/*"],
-      "@components/*": ["components/*"],
-      "@hooks/*":["hooks/*"]
+      "@store/*": ["./src/store/*"],
+      "@api/*": ["./src/api/*"],
+      "@assets/*": ["./src/assets/*"],
+      "@view/*": ["./src/view/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@components/*": ["./src/components/*"],
+      "@hooks/*": ["./src/hooks/*"]
     }
   },
   "include": ["src"]

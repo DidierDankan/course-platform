@@ -4,7 +4,7 @@ import { BookOpen, ExternalLink, Lock } from "lucide-react";
 import { useGetSellerPublicQuery } from "@api/modules/publicApi";
 import CourseCard from "@components/ui/CourseCard";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const normalizeMediaUrl = (p) => {
   if (!p) return "";

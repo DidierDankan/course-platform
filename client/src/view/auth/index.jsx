@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
+import { APP_NAME } from '@utils/brand';
 
 export default function Auth() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center p-6">
       <div className="max-w-3xl text-center">
         <h1 className="text-4xl md:text-6xl font-bold text-indigo-800 mb-4">
-          Welcome to LearnHub
+          Welcome to {APP_NAME}
         </h1>
         <p className="text-gray-600 text-lg md:text-xl mb-8">
           A powerful course platform where sellers teach and learners grow.

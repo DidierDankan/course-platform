@@ -5,7 +5,7 @@ import { logout, setCredentials } from '@store/slices/authSlice';
 const mutex = new Mutex();
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: 'http://localhost:3001/api',
+  baseUrl: `${import.meta.env.VITE_API_URL}/api`,
   credentials: 'include', // ✅ Required to send cookies
 });
 

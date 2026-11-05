@@ -4,6 +4,7 @@ import Footer from "@components/ui/Footer";
 import { BookOpen } from "lucide-react";
 import CourseCard from "@components/ui/CourseCard";
 import { Link } from "react-router-dom";
+import { APP_NAME } from "@utils/brand";
 
 export default function HomePage() {
   const { courses, isLoading, isError, hasMore, loadMoreRef } = useInfiniteCourses(6);
@@ -15,7 +16,7 @@ export default function HomePage() {
         <div className="text-center">
           <div className="inline-flex items-center gap-[8px] text-[12px] uppercase tracking-[0.08em] text-[#475569] bg-[#e2e8f0] rounded-[999px] px-[10px] py-[4px] mb-[10px]">
             <BookOpen size={14} />
-            <span>Welcome to LearnHub</span>
+            <span>Welcome to {APP_NAME}</span>
           </div>
 
           <h1 className="text-[28px] sm:text-[36px] font-extrabold leading-[1.15]">

@@ -8,7 +8,7 @@ import { Plus, Pencil, Trash2, BookOpen, Eye } from "lucide-react";
 import CourseModal from "@components/ui/CourseModal";
 import { formatPrice } from "@utils/currency";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const PortfolioPage = () => {
   const { profile } = useSelector((state) => state.user);

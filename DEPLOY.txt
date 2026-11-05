@@ -1,0 +1,272 @@
+=====================================================================
+  DEPLOY GUIDE: course-platform (Lumen) for free, for a portfolio
+=====================================================================
+
+Free plans change often. Before you start, check each service's current free
+plan page (limits, sleeping, credit card needed or not).
+
+This file is the deploy procedure. Tasks and their steps live in TODO.txt;
+section 2 below only holds the code changes that exist because of this deploy
+setup. If TODO.txt and this file disagree, this file wins.
+
+
+---------------------------------------------------------------------
+0. THE PLAN
+---------------------------------------------------------------------
+
+  Visitor's browser
+        |
+        v
+  VERCEL  (React client, https://<name>.vercel.app)
+        |   /api/*  and  /uploads/*  are forwarded ("rewrites") to Render,
+        |   so the browser only ever talks to ONE domain -> login cookies work
+        v
+  RENDER  (Express server, https://<name>.onrender.com)
+        |                         |
+        v                         v
+  AIVEN (MySQL database)    SUPABASE STORAGE (images + videos)
+
+  STRIPE (test mode) sends the payment webhook straight to Render.
+
+Why not everything on Vercel?
+  Vercel runs a backend as short-lived functions: no permanent disk (your
+  uploads/ folder would vanish), small request size limits (no video uploads)
+  and Stripe webhooks are harder. A normal always-on server (Render) fits Express.
+
+Why the "rewrites" trick?
+  If the client is on vercel.app and the API on onrender.com, they are two
+  different sites. Browsers block or don't send cookies between different sites,
+  so login would break. Forwarding /api through Vercel makes it one site.
+
+
+---------------------------------------------------------------------
+1. ACCOUNTS TO CREATE (all free)
+---------------------------------------------------------------------
+
+  [ ] GitHub      - your code is already at github.com/DidierDankan/course-platform
+  [ ] Vercel      - sign up with GitHub
+  [ ] Render      - sign up with GitHub
+  [ ] Aiven       - free MySQL plan
+  [ ] Supabase    - free project (you only use its Storage)
+  [ ] Stripe      - you already have the "Lumen" sandbox (stay in TEST mode;
+                    rename its public name to Lumen, see TODO.txt)
+
+
+---------------------------------------------------------------------
+2. CODE CHANGES BEFORE DEPLOYING
+---------------------------------------------------------------------
+Do these locally, test with `npm run dev`, then commit and push.
+
+2.0 Finish these TODO.txt items first (they block or affect the deploy)
+    [ ] fix schema.sql (+ migrations)        - step 3 below needs a schema that works on a fresh DB
+    [ ] JWT secrets: config.js, two secrets  - section 4 lists JWT_ACCESS_SECRET / JWT_REFRESH_SECRET
+    [ ] expired token -> 401 (not 403)       - otherwise live sessions log out after 15 min
+    [ ] rate limiting on login/register      - includes app.set("trust proxy", 1) for Render
+    [ ] helmet                               - its CSP must allow the Supabase storage domain (after 2.2)
+    [ ] webhook payment_status check
+    [ ] CORS origin from CLIENT_URL
+
+2.1 Database connection: port + SSL  (server/db/connection.js)
+    Aiven gives you a host, a port (NOT 3306) and requires SSL.
+    1. add to createPool:
+         port: Number(process.env.DB_PORT) || 3306,
+         ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: true, ca: process.env.DB_CA_CERT } : undefined,
+    2. locally leave DB_SSL unset, so WAMP keeps working
+    3. on Render you will set DB_SSL=true and paste Aiven's CA certificate into DB_CA_CERT
+
+2.2 Uploads: disk -> Supabase Storage  (the biggest change)
+    Render's free plan has no permanent disk: files saved to uploads/ are
+    deleted on every restart/deploy. So files must live in Supabase.
+    1. Supabase -> Storage -> create TWO buckets:
+         "public-media"  (Public)   -> thumbnails and profile photos
+         "course-videos" (Private)  -> lesson videos
+    2. server: npm install @supabase/supabase-js
+    3. new file server/lib/storage.js: create the Supabase client with
+       SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (server only, never in the client)
+    4. uploadMiddleware.js: switch multer to memoryStorage() and lower
+       MAX_FILE_SIZE_MB to 50 (Supabase free per-file limit, and Render has little memory)
+    5. where files are saved (CourseService insertCourseMedia/insertCourseVideos,
+       profile update): upload the buffer to the right bucket with the same
+       uuid + extension name, and store the bucket path in the url column
+       (e.g. "videos/<uuid>.mp4", "images/<uuid>.png")
+    6. images: return the bucket's public URL to the client
+    7. videos: keep protectVideos.js as the gate. After the same owner/admin/
+       enrolled/preview check, answer with a redirect (302) to a short-lived
+       signed URL: createSignedUrl(path, SIGNED_URL_TTL_SECONDS), e.g. 15 min
+       trade-off: whoever holds the link can watch until it expires, so keep it
+       short; if playback errors after expiry, the watch page reloads the video
+       src at the same position (production version: HLS streaming with
+       per-segment tokens, or a CDN with signed cookies)
+    8. deletes (deleteMediaByIdWithFile, deleteAllCourseMedia, old profile image):
+       remove the object from the bucket instead of fs.unlink
+    9. test locally: create a course, watch as buyer, delete it, check the bucket
+
+2.3 JWT secrets
+    Done as part of the TODO.txt item "JWT secrets: one config, two secrets, no fallback"
+    (see 2.0). Result needed here: the server refuses to start without
+    JWT_ACCESS_SECRET and JWT_REFRESH_SECRET.
+
+2.4 API address for the live build
+    1. [x] no localhost fallbacks left in client/src (all read VITE_API_URL)
+    2. create client/.env.production with one line:
+         VITE_API_URL=
+       (empty = relative URLs like /api/... , which Vercel forwards to Render)
+    3. with Supabase, images/videos get full https URLs from the server, so
+       change the places that do `${API_BASE_URL}${url}` to use url as-is
+       when it already starts with http
+
+2.5 Vercel config  (new file client/vercel.json)
+    {
+      "rewrites": [
+        { "source": "/api/:path*",     "destination": "https://<your-render-name>.onrender.com/api/:path*" },
+        { "source": "/uploads/:path*", "destination": "https://<your-render-name>.onrender.com/uploads/:path*" },
+        { "source": "/(.*)",           "destination": "/index.html" }
+      ]
+    }
+    The last rule makes React Router pages (/courses/10, /user/dashboard)
+    work when someone opens or refreshes them directly.
+    Fill in the Render name after step 4.
+
+2.6 Cookies
+    server/controllers/AuthController.js already uses
+      secure: process.env.NODE_ENV === "production", sameSite: "lax"
+    That is correct with the rewrites setup. Just set NODE_ENV=production on Render.
+
+2.7 Small things (all tracked in TODO.txt)
+    [ ] client/index.html: <title>Lumen</title> (part of the rename)
+    [ ] replace the "react ultimate 2" thumbnail (it shows an internal IP) and sample videos
+    [ ] remove debugging console.log lines
+
+
+---------------------------------------------------------------------
+3. DATABASE ON AIVEN
+---------------------------------------------------------------------
+1. Aiven -> Create service -> MySQL -> Free plan -> pick a region near you (Europe)
+2. wait until it is "Running", then open it and note:
+     host, port, user (avnadmin), password, database name (defaultdb)
+   and download the CA certificate (ca.pem)
+3. export your local database (Git Bash, project folder):
+     /c/wamp64/bin/mysql/mysql9.1.0/bin/mysqldump.exe -u root -p \
+       --no-tablespaces --set-gtid-purged=OFF --routines \
+       course_platform > course_platform.sql
+   (delete the e2e test users/courses first, or start from the migrations /
+    schema.sql and create clean demo data instead. Don't use schema.sql until
+    the TODO.txt fix is done: today it fails on a fresh database)
+4. import it into Aiven:
+     /c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -h <host> -P <port> -u avnadmin -p \
+       --ssl-mode=REQUIRED defaultdb < course_platform.sql
+5. check: connect the same way and run  SHOW TABLES;
+6. do NOT commit course_platform.sql (it contains password hashes); add it to .gitignore
+
+Note: free databases can be paused/powered off after a period of no use.
+Read Aiven's free plan terms and restart it from the console if that happens.
+
+
+---------------------------------------------------------------------
+4. SERVER ON RENDER
+---------------------------------------------------------------------
+1. Render -> New -> Web Service -> connect the GitHub repo
+2. settings:
+     Root Directory:  server
+     Runtime:         Node
+     Build Command:   npm install
+     Start Command:   node index.js
+     Instance type:   Free
+3. Environment variables (Render -> Environment):
+     NODE_ENV=production
+     DB_HOST=<aiven host>
+     DB_PORT=<aiven port>
+     DB_USER=avnadmin
+     DB_PASS=<aiven password>
+     DB_NAME=defaultdb
+     DB_SSL=true
+     DB_CA_CERT=<paste the whole ca.pem content>
+     JWT_ACCESS_SECRET=<long random string, see below>
+     JWT_REFRESH_SECRET=<a different long random string>
+     STRIPE_SECRET_KEY=sk_test_...        (test key only)
+     STRIPE_WEBHOOK_SECRET=<from step 6, fill in later>
+     CLIENT_URL=https://<your-name>.vercel.app
+     SUPABASE_URL=<from Supabase -> Project Settings -> API>
+     SUPABASE_SERVICE_ROLE_KEY=<same page, service_role key>
+     SIGNED_URL_TTL_SECONDS=900
+   Make each JWT secret (run twice, use different values):
+     node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+   Render sets PORT by itself; index.js already reads process.env.PORT.
+4. Deploy, then open https://<name>.onrender.com/  -> should say "Server is running!"
+5. check the Render logs for "Connected to database"
+
+Note: the free plan sleeps after ~15 minutes without visitors. The first
+visit after that takes up to about a minute. Mention it on your portfolio
+("first load may take a minute, free hosting").
+
+
+---------------------------------------------------------------------
+5. CLIENT ON VERCEL
+---------------------------------------------------------------------
+1. put your Render address into client/vercel.json (step 2.5), commit, push
+2. Vercel -> Add New -> Project -> import the GitHub repo
+3. settings:
+     Root Directory:    client
+     Framework Preset:  Vite
+     Build Command:     npm run build
+     Output Directory:  dist
+4. Environment variables: none needed (client/.env.production is in the repo)
+   Never put secret keys in VITE_ variables: they end up in the browser.
+5. Deploy, then open https://<name>.vercel.app
+6. if you chose a different Vercel name, update CLIENT_URL on Render and redeploy it
+
+Note: if large video uploads fail through Vercel's forwarding (request size
+limits), upload your demo course videos while testing locally against the
+live database/storage, or keep demo videos small. Check Vercel's current
+limits for rewrites to external URLs.
+
+
+---------------------------------------------------------------------
+6. STRIPE WEBHOOK (test mode)
+---------------------------------------------------------------------
+1. Stripe dashboard, TEST mode -> Developers -> Webhooks -> Add endpoint
+2. URL:    https://<name>.onrender.com/api/payments/webhook
+   (straight to Render, not through Vercel: Stripe's signature check needs the raw request)
+3. event:  checkout.session.completed
+4. copy the endpoint's "Signing secret" (whsec_...) into STRIPE_WEBHOOK_SECRET on Render, redeploy
+   (it is different from the one `stripe listen` prints locally)
+
+
+---------------------------------------------------------------------
+7. TEST THE LIVE SITE
+---------------------------------------------------------------------
+  [ ] home and /courses load, thumbnails show
+  [ ] refresh on /courses/10 works (not a Vercel 404)
+  [ ] register + login, then refresh: still logged in
+  [ ] seller: complete profile, create a course with a thumbnail and a small video
+  [ ] logged out: the course page shows, the video does NOT play
+  [ ] student: buy with card 4242 4242 4242 4242, any future date, any CVC
+  [ ] after paying: enrolled, the video plays, progress saves
+  [ ] Stripe dashboard -> Webhooks: the event shows a 200 response
+  [ ] another seller can't edit/delete the course (403)
+  [ ] stay on a page for 16+ minutes, click around: still logged in (token refresh works)
+  [ ] 11 wrong logins in a row: the 11th gets 429 (rate limiting works behind Render's proxy)
+  [ ] browser devtools console: no Content-Security-Policy errors for images or videos
+
+
+---------------------------------------------------------------------
+8. MAKE IT PORTFOLIO-READY
+---------------------------------------------------------------------
+  [ ] demo accounts: one student, one seller with 2-3 good courses
+  [ ] on the login page, show:
+        demo student: ...   demo seller: ...
+        test card: 4242 4242 4242 4242, any future date, any CVC
+        "Payments are in Stripe test mode, nobody is charged"
+  [ ] README: live link, screenshots, tech stack, features, how to run locally
+  [ ] portfolio card: live link + GitHub link + 2-3 lines on what you built
+      (Stripe checkout + webhooks, role-based access, protected video delivery)
+
+
+---------------------------------------------------------------------
+9. LIMITS OF THE FREE SETUP (good to know, fine for a portfolio)
+---------------------------------------------------------------------
+  - Render free sleeps after inactivity (slow first load)
+  - free database and storage have small limits (keep demo videos short)
+  - free plans can pause unused projects (Supabase pauses inactive free projects;
+    check Aiven's terms too): open the site now and then, or restart from the console
+  - Stripe stays in test mode; real payments would need a verified Stripe account

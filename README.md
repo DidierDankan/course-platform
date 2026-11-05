@@ -1,6 +1,6 @@
-# 🎓 Course Platform
+# 🎓 Lumen
 
-A **full-stack course subscription platform** built with **React (Vite)**, **Node.js**, and **MySQL** — featuring authentication, profile management, role-based dashboards, and course management. Designed as a scalable real-world app structure, perfect for learning and extending.
+A **full-stack video-course marketplace** built with **React (Vite)**, **Node.js**, and **MySQL** — featuring authentication, profile management, role-based dashboards, and course management. Designed as a scalable real-world app structure, perfect for learning and extending.
 
 ---
 

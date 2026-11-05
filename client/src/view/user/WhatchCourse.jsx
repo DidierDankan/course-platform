@@ -4,7 +4,7 @@ import { useWatchCourseQuery } from "@api/modules/courseApi";
 import { useUpdateProgressMutation } from "@api/modules/enrollmentApi";
 import { PlayCircle, ListVideo } from "lucide-react";
 
-const API_ORIGIN = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_ORIGIN = import.meta.env.VITE_API_URL;
 
 export const toAbsoluteUrl = (url) => {
   if (!url) return "";

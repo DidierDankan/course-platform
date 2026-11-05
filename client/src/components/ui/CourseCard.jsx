@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import FavoriteButton from "./FavoriteButton";
 import { formatPrice } from "@utils/currency";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const formatDuration = (seconds) => {
   if (!seconds || isNaN(seconds)) return "0m";
