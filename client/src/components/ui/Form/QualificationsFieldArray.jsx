@@ -28,7 +28,7 @@ const QualificationsFieldArray = ({ name = "qualifications" }) => {
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Qualifications</h3>
-              <button type="button" className="btn btn-sm" onClick={handleAdd}>
+              <button type="button" className="button button-secondary button-small" onClick={handleAdd}>
                 + Add
               </button>
             </div>
@@ -89,7 +89,7 @@ const QualificationsFieldArray = ({ name = "qualifications" }) => {
                   <button
                     type="button"
                     onClick={() => setOpenIndex(null)}
-                    className="btn btn-primary"
+                    className="button button-primary button-small"
                   >
                     Done
                   </button>

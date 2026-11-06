@@ -1,0 +1,55 @@
+/*
+ * Global element rules shared by both themes, ported from the reference designs
+ * (design/brutal and design/cinematic, src/index.css: identical in both apart from values).
+ * Values come only from --lm-* variables. In @layer base, so any utility or component class wins.
+ * .sr-only is not repeated here: Tailwind's sr-only utility is the same rule.
+ */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-width: 320px;
+    margin: 0;
+    color: var(--lm-ink);
+    background: var(--lm-bg);
+    font-family: var(--lm-font-body);
+    line-height: 1.5;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button {
+    color: inherit;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

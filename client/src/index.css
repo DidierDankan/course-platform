@@ -2,20 +2,13 @@
 
 /* Lumen design system: token names, per-theme values, shared components */
 @import "./styles/tokens.css";
+@import "./styles/base.css";
 @import "./styles/theme-brutal.css";
 @import "./styles/theme-cinematic.css";
 @import "./styles/components.css";
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
   height: 100%;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 
   /* Legacy palette: still used by current pages. Remove once Phase 2 has moved them to --lm-* tokens. */
   /* 🌈 Brand colors */
@@ -45,10 +38,7 @@
 }
 
 body {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  height: 100vh
+  min-height: 100%;
 }
 
 #root { height: 100%; position: relative }

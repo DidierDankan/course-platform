@@ -151,11 +151,12 @@ const CourseModal = ({ open, onClose, course }) => {
                         )}
 
                         <div className="flex justify-end gap-2 pt-4">
-                            <button type="button" className="btn-secondary mr-[5px]" onClick={onClose}>
+                            <button type="button" className="button button-secondary button-small" onClick={onClose}>
                                 Cancel
                             </button>
-                            <button type="submit" disabled={isSaving} className="btn-primary">
-                                {isSaving ? "Saving..." : isEdit ? "Update Course" : "Save Course"}
+                            <button type="submit" disabled={isSaving} className={`button button-primary button-small ${isSaving ? "is-loading" : ""}`} aria-busy={isSaving}>
+                                {isSaving && <span className="spinner" aria-hidden="true" />}
+                                {isSaving ? "Saving…" : isEdit ? "Update Course" : "Save Course"}
                             </button>
                         </div>
                         </Form>
