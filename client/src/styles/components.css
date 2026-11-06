@@ -141,6 +141,258 @@
     padding: var(--lm-card-padding);
   }
 
+  /* course or hero image; without a thumbnail, the theme's own still (--lm-hero-image) */
+  .course-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .course-image-fallback {
+    background: var(--lm-hero-image) center / cover no-repeat;
+  }
+
+  /* ---------- Course card internals (reference: .course-card markup) ---------- */
+  .course-card {
+    display: flex;
+    flex-direction: column;
+  }
+  .card-visual > a {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .card-visual .course-image {
+    transition: transform var(--lm-card-image-speed);
+  }
+  .course-card:hover .card-visual .course-image {
+    transform: scale(var(--lm-card-image-zoom));
+  }
+  .card-visual .card-label {
+    position: absolute;
+    left: var(--lm-card-inset);
+    top: var(--lm-card-inset);
+    pointer-events: none;
+  }
+  .preview-play {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    color: var(--lm-play-fg);
+    background: var(--lm-play-bg);
+    border: var(--lm-play-line);
+    border-radius: 50%;
+    box-shadow: var(--lm-shadow-label);
+    opacity: 0;
+    transform: translate(-50%, -40%);
+    transition:
+      opacity var(--lm-speed-card),
+      transform var(--lm-speed-card);
+    pointer-events: none;
+  }
+  .course-card:hover .preview-play,
+  .card-visual > a:focus-visible .preview-play {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  .card-visual > a:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: -4px;
+  }
+
+  /* favorite toggle: the look is shared; the card pins it to the image corner */
+  .favorite {
+    width: var(--lm-fav-size);
+    height: var(--lm-fav-size);
+    display: inline-grid;
+    place-items: center;
+    color: var(--lm-fav-fg);
+    background: var(--lm-fav-bg);
+    border: var(--lm-border-w) solid var(--lm-fav-line);
+    border-radius: 50%;
+    box-shadow: var(--lm-shadow-label);
+    cursor: pointer;
+    transition:
+      transform var(--lm-speed),
+      box-shadow var(--lm-speed),
+      color var(--lm-speed);
+  }
+  .favorite:hover {
+    transform: var(--lm-small-press-transform);
+    box-shadow: var(--lm-shadow-press);
+  }
+  .favorite.is-favorite {
+    color: var(--lm-fav-active-fg);
+    background: var(--lm-fav-active-bg);
+  }
+  .favorite.is-favorite svg {
+    fill: currentColor;
+  }
+  .favorite:disabled {
+    cursor: wait;
+  }
+  .favorite:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 2px;
+  }
+  .card-visual .favorite {
+    position: absolute;
+    z-index: 1;
+    right: var(--lm-card-inset);
+    top: var(--lm-card-inset);
+  }
+
+  .card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .card-body h3 {
+    min-height: 2.7em;
+    margin: 0 0 8px;
+    font-family: var(--lm-font-display);
+    font-size: var(--lm-card-title-size);
+    font-weight: var(--lm-card-title-weight);
+    line-height: 1.35;
+    letter-spacing: var(--lm-card-title-tracking);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-body h3 a:hover {
+    text-decoration: underline;
+  }
+  .card-body h3 a:focus-visible,
+  .instructor:focus-visible,
+  .card-action:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 2px;
+  }
+  .instructor {
+    align-self: flex-start;
+    margin-bottom: 12px;
+    color: var(--lm-instructor-fg);
+    font-size: var(--lm-instructor-size);
+    font-weight: 700;
+    text-decoration: var(--lm-instructor-decoration);
+    text-decoration-thickness: 2px;
+  }
+  .instructor:hover {
+    text-decoration: underline;
+  }
+  .card-body > p {
+    min-height: 3.1em;
+    margin: 0 0 15px;
+    color: var(--lm-muted);
+    font-size: var(--lm-card-copy-size);
+    line-height: 1.55;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-meta {
+    margin-top: auto;
+    padding: 12px 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    color: var(--lm-meta-fg);
+    border-top: var(--lm-border-w) solid var(--lm-line);
+    font-family: var(--lm-font-mono);
+    font-size: var(--lm-meta-size);
+    font-weight: 600;
+    letter-spacing: var(--lm-meta-tracking);
+    text-transform: uppercase;
+  }
+
+  .mini-progress {
+    padding-bottom: 11px;
+  }
+  .progress-track {
+    height: var(--lm-progress-height);
+    margin-bottom: 7px;
+    overflow: hidden;
+    background: var(--lm-progress-track-bg);
+    border: var(--lm-progress-line);
+    border-radius: var(--lm-progress-radius);
+  }
+  .progress-track > span {
+    display: block;
+    height: 100%;
+    background: var(--lm-progress-fill);
+    border-right: var(--lm-progress-edge);
+  }
+  .mini-progress small {
+    color: var(--lm-muted);
+    font-family: var(--lm-font-mono);
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: var(--lm-meta-tracking);
+    text-transform: uppercase;
+  }
+
+  /* the card's call to action: Buy / Login to buy / Redirecting / Continue learning / View */
+  .card-action {
+    width: 100%;
+    height: 43px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: var(--lm-action-fg);
+    background: var(--lm-action-bg);
+    border: var(--lm-border-w) solid var(--lm-action-line);
+    border-radius: var(--lm-radius-input);
+    box-shadow: var(--lm-shadow-label);
+    font-family: var(--lm-font-mono);
+    font-size: var(--lm-action-size);
+    font-weight: 700;
+    text-transform: var(--lm-action-transform);
+    cursor: pointer;
+    transition:
+      transform var(--lm-speed),
+      box-shadow var(--lm-speed),
+      background var(--lm-speed),
+      border-color var(--lm-speed),
+      color var(--lm-speed);
+  }
+  .card-action:hover {
+    color: var(--lm-action-hover-fg);
+    background: var(--lm-action-hover-bg);
+    border-color: var(--lm-action-hover-line);
+    box-shadow: var(--lm-shadow-press);
+    transform: var(--lm-small-press-transform);
+  }
+  .card-action.is-loading,
+  .card-action.is-loading:hover {
+    justify-content: center;
+    color: var(--lm-loading-fg);
+    background: var(--lm-loading-bg);
+    border-color: var(--lm-loading-line);
+    box-shadow: var(--lm-shadow-loading);
+    transform: none;
+    cursor: wait;
+  }
+
+  @media (max-width: 700px) {
+    /* no hover on touch: keep the card still and the play badge visible */
+    .course-card:hover {
+      transform: none;
+      box-shadow: var(--lm-shadow-card);
+    }
+    .preview-play {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+    }
+  }
+
   /* ---------- Badge / label ---------- */
   .card-label {
     display: inline-block;

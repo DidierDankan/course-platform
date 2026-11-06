@@ -30,16 +30,6 @@
     border-left: var(--lm-hero-image-divider);
     border-radius: var(--lm-hero-image-radius);
   }
-  .course-image {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  /* no featured course (or no thumbnail): the theme's own still */
-  .course-image-fallback {
-    background: var(--lm-hero-image) center / cover no-repeat;
-  }
   .hero-shade {
     position: absolute;
     inset: 0;

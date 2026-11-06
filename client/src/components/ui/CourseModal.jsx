@@ -7,6 +7,7 @@ import Modal from "@components/ui/Modal";
 import FormikInput from "./Form/FormikInput";
 import CourseVideos from "./CourseVideos";
 import { CURRENCY } from "@utils/currency";
+import { formatDuration } from "@utils/duration";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -62,11 +63,6 @@ const CourseModal = ({ open, onClose, course }) => {
         })
     );
 
-    const formatDuration = (seconds) => {
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-    };
 
     return (
         <Modal open={open} onClose={onClose} title="Add Course" size="xl">

@@ -258,4 +258,43 @@
   --lm-teach-title-size: 57px;
   --lm-teach-rule: var(--lm-line);
   --lm-teach-copy-fg: var(--lm-ink);
+
+  /* course card internals */
+  --lm-card-inset: 10px;
+  --lm-card-image-zoom: 1.04;
+  --lm-card-image-speed: 0.35s;
+  --lm-small-press-transform: translate(2px, 2px);
+  --lm-play-bg: var(--lm-accent-2);
+  --lm-play-fg: var(--lm-ink);
+  --lm-play-line: var(--lm-border-w) solid var(--lm-line);
+  --lm-fav-size: 37px;
+  --lm-fav-bg: var(--lm-bg);
+  --lm-fav-fg: var(--lm-ink);
+  --lm-fav-line: var(--lm-line);
+  --lm-fav-active-bg: var(--lm-accent);
+  --lm-fav-active-fg: var(--lm-accent-2);
+  --lm-card-title-size: 18px;
+  --lm-card-title-weight: 700;
+  --lm-card-title-tracking: -0.035em;
+  --lm-instructor-fg: #a72914;
+  --lm-instructor-size: 11px;
+  --lm-instructor-decoration: underline;
+  --lm-card-copy-size: 12px;
+  --lm-meta-fg: var(--lm-ink);
+  --lm-meta-size: 8px;
+  --lm-meta-tracking: normal;
+  --lm-progress-height: 9px;
+  --lm-progress-track-bg: var(--lm-bg);
+  --lm-progress-line: var(--lm-border-w) solid var(--lm-line);
+  --lm-progress-radius: 0;
+  --lm-progress-fill: var(--lm-success);
+  --lm-progress-edge: var(--lm-border-w) solid var(--lm-line);
+  --lm-action-bg: var(--lm-accent);
+  --lm-action-fg: var(--lm-ink);
+  --lm-action-line: var(--lm-line);
+  --lm-action-hover-bg: var(--lm-accent);
+  --lm-action-hover-fg: var(--lm-ink);
+  --lm-action-hover-line: var(--lm-line);
+  --lm-action-size: 10px;
+  --lm-action-transform: uppercase;
 }

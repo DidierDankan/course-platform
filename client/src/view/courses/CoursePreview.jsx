@@ -5,21 +5,9 @@ import Spinner from "@components/ui/Spinner";
 import CourseCTA from "@components/ui/CourseCTA";
 import { useGetPublicCourseQuery } from "@api/modules/courseApi";
 import FavoriteButton from "@components/ui/FavoriteButton";
+import { formatDuration } from "@utils/duration";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
-
-const formatDuration = (seconds) => {
-  const s = Number(seconds);
-  if (!s || Number.isNaN(s)) return "0s";
-
-  const hrs = Math.floor(s / 3600);
-  const mins = Math.floor((s % 3600) / 60);
-  const secs = Math.floor(s % 60);
-
-  if (hrs > 0) return `${hrs}h ${mins}m`;
-  if (mins > 0) return `${mins}m ${secs}s`;
-  return `${secs}s`;
-};
 
 const CourseNotFound = () => (
   <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
