@@ -123,4 +123,16 @@
   --lm-nav-hover-fg: var(--lm-ink);
   --lm-nav-underline-height: 2px;
   --lm-nav-underline-offset: -7px;
+
+  /* footer */
+  --lm-footer-bg: #0b0c0e;
+  --lm-footer-fg: var(--lm-ink);
+  --lm-footer-muted: #646870;
+  --lm-footer-link: #aaaeb5;
+  --lm-footer-link-size: 11px;
+  --lm-footer-heading: #545860;
+  --lm-footer-hover: var(--lm-accent);
+  --lm-footer-faint: #4f535a;
+  --lm-footer-rule: #25272c;
+  --lm-footer-tracking: 0.12em;
 }

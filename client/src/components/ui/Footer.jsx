@@ -1,24 +1,46 @@
+import { Link } from "react-router-dom";
 import { APP_NAME } from "@utils/brand";
+import Logo from "@components/ui/Logo";
 
-const Footer = ()=> {
-    return (
-        <footer className="border-t border-[#e5e7eb] bg-[#ffffff]">
-            <div className="max-w-[1100px] mx-auto px-[16px] py-[16px] flex flex-col sm:flex-row items-center justify-between gap-[10px]">
-                <p className="text-[13px] text-[#475569]">© {new Date().getFullYear()} {APP_NAME}</p>
-                <div className="flex items-center gap-[12px]">
-                <a href="https://github.com/" target="_blank" rel="noreferrer" className="hover:opacity-80">
-                    <img alt="GitHub" className="w-[20px] h-[20px]" src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/github.svg" />
-                </a>
-                <a href="https://www.linkedin.com/" target="_blank" rel="noreferrer" className="hover:opacity-80">
-                    <img alt="LinkedIn" className="w-[20px] h-[20px]" src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/linkedin.svg" />
-                </a>
-                <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" className="hover:opacity-80">
-                    <img alt="Instagram" className="w-[20px] h-[20px]" src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/instagram.svg" />
-                </a>
-                </div>
-            </div>
-        </footer>
-    )
-}   
+// Only links to pages that exist. Add a link here when its page ships, not before.
+const FOOTER_GROUPS = [
+  { title: "Explore", links: [{ to: "/courses", label: "All courses" }] },
+  {
+    title: APP_NAME,
+    links: [
+      { to: "/auth/register", label: "Teach with us" },
+      { to: "/styleguide", label: "Style guide" },
+    ],
+  },
+];
+
+const Footer = () => (
+  <footer className="site-footer">
+    <div className="footer-top">
+      <div>
+        <Logo className="logo-light" />
+        <p>Remarkable teachers. Unforgettable lessons.</p>
+      </div>
+      <nav className="footer-links" aria-label="Footer">
+        {FOOTER_GROUPS.map((group) => (
+          <div key={group.title}>
+            <span>{group.title}</span>
+            {group.links.map((link) => (
+              <Link key={link.to} to={link.to}>
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        ))}
+      </nav>
+    </div>
+    <div className="footer-bottom">
+      <span>
+        © {new Date().getFullYear()} {APP_NAME}
+      </span>
+      <span>Independent learning, worldwide</span>
+    </div>
+  </footer>
+);
 
 export default Footer;

@@ -7,7 +7,8 @@ import ProfileGate from "@view/layout/ProfileGate";
 
 import HomePage from "@view/HomePage";
 import Auth from "@view/auth";
-import Header from "@components/ui/Header"; // always visible
+import Header from "@components/ui/Header";
+import Footer from "@components/ui/Footer";
 
 export default function App() {
   return (
@@ -47,6 +48,7 @@ export default function App() {
             );
           })}
         </Routes>
+        <Footer />
       </AuthGate>
     </Router>
   );

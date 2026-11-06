@@ -4,8 +4,8 @@ import { useState } from "react";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { useLogoutMutation } from "@api/modules/authApi";
 import { logout as logoutAction } from "@store/slices/authSlice";
-import { APP_NAME } from "@utils/brand";
 import { useTheme } from "@hooks/useTheme";
+import Logo from "@components/ui/Logo";
 
 // Role -> header links. Server-side checks protect the pages; this only decides what to show.
 const ROLE_LINKS = {
@@ -23,15 +23,6 @@ const ROLE_LINKS = {
 ROLE_LINKS.admin = ROLE_LINKS.seller;
 
 const THEME_LABELS = { brutal: "Brutal", cinematic: "Cinematic" };
-
-export function Logo({ className = "" }) {
-  return (
-    <Link to="/" className={`logo ${className}`} aria-label={`${APP_NAME} home`}>
-      {APP_NAME}
-      <span aria-hidden="true">.</span>
-    </Link>
-  );
-}
 
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();

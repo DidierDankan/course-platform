@@ -13,6 +13,7 @@ import BrowseCourses from '@view/courses/BrowseCourses';
 import MyCourses from '@view/user/MyCourses';
 import SellerPublic from '@view/public/SellerPublic';
 import FavoritesPage from '@view/user/Favorites';
+import StyleGuide from '@view/public/StyleGuide';
 
 export const routes = [
   {
@@ -40,6 +41,11 @@ export const routes = [
   {
     path: "/courses",
     element: <BrowseCourses />,
+    roles: ["all"],
+  },
+  {
+    path: "/styleguide",
+    element: <StyleGuide />,
     roles: ["all"],
   },
   {

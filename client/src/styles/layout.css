@@ -1,5 +1,5 @@
 /*
- * Site chrome shared by every page: logo, header, mobile menu, theme toggle (footer in step 3).
+ * Site chrome shared by every page: logo, header, mobile menu, theme toggle, footer.
  * Markup and class names from the reference designs (design/brutal and design/cinematic,
  * src/App.tsx). Every value comes from a --lm-* variable; theme files hold the numbers.
  */
@@ -143,6 +143,90 @@
     .header-nav > a:not(.button),
     .nav-link {
       align-self: flex-start;
+    }
+  }
+
+  /* ---------- Footer ---------- */
+  .site-footer {
+    padding: 66px max(42px, calc((100vw - 1356px) / 2)) 25px;
+    color: var(--lm-footer-fg);
+    background: var(--lm-footer-bg);
+    border-top: var(--lm-border-w-dense) solid var(--lm-line);
+  }
+  .logo-light {
+    color: var(--lm-footer-fg);
+  }
+  .footer-top {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 90px;
+    padding-bottom: 58px;
+  }
+  .footer-top > div:first-child p {
+    margin: 15px 0 0;
+    color: var(--lm-footer-muted);
+    font-size: 13px;
+  }
+  .footer-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 40px;
+  }
+  .footer-links > div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 11px;
+    color: var(--lm-footer-link);
+    font-size: var(--lm-footer-link-size);
+  }
+  .footer-links span {
+    margin-bottom: 5px;
+    color: var(--lm-footer-heading);
+    font-family: var(--lm-font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: var(--lm-footer-tracking);
+    text-transform: uppercase;
+  }
+  .footer-links a {
+    transition: color var(--lm-speed);
+  }
+  .footer-links a:hover,
+  .footer-links a:focus-visible {
+    color: var(--lm-footer-hover);
+  }
+  .footer-links a:focus-visible {
+    outline: 2px solid var(--lm-footer-hover);
+    outline-offset: 3px;
+  }
+  .footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 22px;
+    color: var(--lm-footer-faint);
+    border-top: var(--lm-border-w) solid var(--lm-footer-rule);
+    font-family: var(--lm-font-mono);
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: var(--lm-footer-tracking);
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 700px) {
+    .site-footer {
+      padding: 54px 20px 23px;
+    }
+    .footer-top {
+      grid-template-columns: 1fr;
+      gap: 44px;
+    }
+    .footer-links {
+      gap: 18px;
+    }
+    .footer-bottom {
+      flex-direction: column;
+      gap: 8px;
     }
   }
 }

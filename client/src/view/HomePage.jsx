@@ -1,6 +1,5 @@
 import { useInfiniteCourses } from "@hooks/useInfiniteCourses";
 import Spinner from "@components/ui/Spinner";
-import Footer from "@components/ui/Footer";
 import { BookOpen } from "lucide-react";
 import CourseCard from "@components/ui/CourseCard";
 import { Link } from "react-router-dom";
@@ -65,7 +64,6 @@ export default function HomePage() {
         )}
       </section>
 
-      <Footer />
     </div>
   );
 }

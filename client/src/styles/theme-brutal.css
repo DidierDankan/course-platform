@@ -126,4 +126,16 @@
   --lm-nav-hover-fg: var(--lm-ink);
   --lm-nav-underline-height: 3px;
   --lm-nav-underline-offset: -5px;
+
+  /* footer (inverted: black block, cream text) */
+  --lm-footer-bg: var(--lm-inverse-bg);
+  --lm-footer-fg: var(--lm-inverse-fg);
+  --lm-footer-muted: #bbb4a7;
+  --lm-footer-link: var(--lm-inverse-fg);
+  --lm-footer-link-size: 12px;
+  --lm-footer-heading: var(--lm-accent);
+  --lm-footer-hover: var(--lm-success);
+  --lm-footer-faint: #9d978c;
+  --lm-footer-rule: #4b4944;
+  --lm-footer-tracking: normal;
 }
