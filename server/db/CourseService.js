@@ -4,6 +4,19 @@ import path from "path";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 
+// Whitelist: ?sort= value -> fixed ORDER BY. The request value never reaches the SQL.
+// c.id DESC breaks ties so paging never repeats or skips a course.
+// "popular" counts enrollments in a correlated subquery (indexed by the course_id FK);
+// a LEFT JOIN would multiply the course_media rows and inflate total_duration.
+const SORT_ORDER = Object.freeze({
+  newest: "c.created_at DESC, c.id DESC",
+  price_asc: "c.price ASC, c.created_at DESC, c.id DESC",
+  price_desc: "c.price DESC, c.created_at DESC, c.id DESC",
+  duration_desc: "total_duration DESC, c.created_at DESC, c.id DESC",
+  popular:
+    "(SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) DESC, c.created_at DESC, c.id DESC",
+});
+
 class CourseService {
 
   // server/db/CourseService.js
@@ -72,11 +85,8 @@ class CourseService {
       havingParams.push(Number(maxDuration));
     }
 
-    // Sorting
-    let orderBy = `c.created_at DESC`;
-    if (sort === "price_asc") orderBy = `c.price ASC, c.created_at DESC`;
-    if (sort === "price_desc") orderBy = `c.price DESC, c.created_at DESC`;
-    if (sort === "duration_desc") orderBy = `total_duration DESC, c.created_at DESC`;
+    // Sorting: the request only picks a key; the SQL comes from this fixed map.
+    const orderBy = SORT_ORDER[sort] ?? SORT_ORDER.newest;
 
     const sql = `
       SELECT 

@@ -12,6 +12,7 @@ const DURATIONS = [
 
 const SORTS = [
   { label: "Newest", value: "newest" },
+  { label: "Most popular", value: "popular" },
   { label: "Price: low → high", value: "price_asc" },
   { label: "Price: high → low", value: "price_desc" },
   { label: "Duration: longest first", value: "duration_desc" },
