@@ -1,0 +1,113 @@
+/*
+ * Theme "brutal" (default): neo-brutalist. Cream paper, black 2-3px outlines, hard offset
+ * shadows, yellow / red / mint, hover "press" (moves into its shadow), slight sticker tilts.
+ * Values from design/brutal/src/index.css. Also applied to :root so the app has values
+ * even before data-theme is set.
+ * Only variables here: no element or page styles (pages adopt them in Phase 2).
+ */
+:root,
+[data-theme="brutal"] {
+  --lm-bg: #fff8e7;
+  --lm-surface: #fff8e7;
+  --lm-surface-2: #ffffff;
+  --lm-ink: #111111;
+  --lm-muted: #57534c;
+  --lm-line: #111111;
+  --lm-line-strong: #111111;
+  --lm-accent: #ffd23f;
+  --lm-accent-hover: #ffda5d;
+  --lm-on-accent: #111111;
+  --lm-accent-2: #ff5a36;
+  --lm-success: #3ddc97;
+  --lm-danger: #d92b12;
+  --lm-focus: #111111; /* not in the reference: keyboard focus ring, uses the theme's ink */
+  --lm-placeholder: #777168;
+  --lm-inverse-bg: #111111;
+  --lm-inverse-fg: #fff8e7;
+  --lm-color-scheme: light;
+
+  --lm-disabled-bg: #ded8c9;
+  --lm-disabled-fg: #827e73;
+  --lm-disabled-line: #aaa394;
+  --lm-loading-bg: #d9d3c5;
+  --lm-loading-fg: #6d685e;
+  --lm-loading-line: #6d685e;
+
+  --lm-font-display: "Space Grotesk Variable", "Space Grotesk", sans-serif;
+  --lm-font-body: "Space Grotesk Variable", "Space Grotesk", sans-serif;
+  --lm-font-mono: "JetBrains Mono Variable", "JetBrains Mono", monospace;
+
+  --lm-radius-card: 7px;
+  --lm-radius-button: 7px;
+  --lm-radius-input: 4px;
+  --lm-radius-pill: 20px;
+  --lm-radius-label: 2px;
+  --lm-radius-toast: 4px;
+  --lm-border-w: 2px;
+  --lm-border-w-dense: 3px;
+
+  --lm-shadow-card: 6px 6px 0 var(--lm-line);
+  --lm-shadow-card-hover: 9px 9px 0 var(--lm-line);
+  --lm-shadow-control: 4px 4px 0 var(--lm-line);
+  --lm-shadow-press: 1px 1px 0 var(--lm-line);
+  --lm-shadow-label: 3px 3px 0 var(--lm-line);
+  --lm-shadow-field: 3px 3px 0 var(--lm-line);
+  --lm-shadow-field-focus: 5px 5px 0 var(--lm-line);
+  --lm-shadow-field-error: 3px 3px 0 var(--lm-danger);
+  --lm-shadow-toast: 5px 5px 0 var(--lm-line);
+  --lm-shadow-inverse: 4px 4px 0 #ffffff;
+  --lm-shadow-inverse-press: 1px 1px 0 #ffffff;
+  --lm-shadow-disabled: 4px 4px 0 var(--lm-disabled-line);
+  --lm-shadow-loading: 3px 3px 0 var(--lm-loading-line);
+
+  /* signature: hover "press" into the shadow, stickers slightly rotated */
+  --lm-press-transform: translate(3px, 3px);
+  --lm-ghost-hover-transform: none;
+  --lm-card-hover-transform: translate(-2px, -2px);
+  --lm-speed: 0.12s;
+  --lm-speed-card: 0.15s;
+  --lm-tilt-label: -3deg;
+  --lm-tilt-toast: -0.5deg;
+
+  /* component tokens */
+  --lm-button-bg: var(--lm-surface);
+  --lm-button-fg: var(--lm-ink);
+  --lm-button-line: var(--lm-line);
+  --lm-button-font-size: 14px;
+  --lm-button-small-height: 42px;
+  --lm-secondary-bg: var(--lm-surface-2);
+  --lm-secondary-fg: var(--lm-ink);
+  --lm-secondary-line: var(--lm-line);
+  --lm-secondary-hover-bg: var(--lm-success);
+  --lm-secondary-hover-line: var(--lm-line);
+  --lm-ghost-hover-bg: var(--lm-accent);
+
+  --lm-card-overflow: visible;
+  --lm-card-hover-line: var(--lm-line);
+  --lm-card-visual-bg: var(--lm-accent);
+  --lm-card-visual-border: var(--lm-border-w-dense) solid var(--lm-line);
+  --lm-card-padding: 17px;
+
+  --lm-label-bg: var(--lm-accent);
+  --lm-label-fg: var(--lm-ink);
+  --lm-label-line: var(--lm-line);
+  --lm-label-blur: none;
+  --lm-label-weight: 700;
+  --lm-label-tracking: normal;
+
+  --lm-field-bg: var(--lm-surface-2);
+  --lm-field-focus-bg: #fff6c9;
+  --lm-field-line: var(--lm-line);
+  --lm-field-gap: 10px;
+
+  --lm-index-fg: var(--lm-ink);
+  --lm-index-size: 11px;
+  --lm-index-tracking: 0.08em;
+
+  --lm-toast-bg: var(--lm-success);
+  --lm-toast-line: var(--lm-line);
+  --lm-toast-icon-bg: var(--lm-accent);
+  --lm-toast-icon-fg: var(--lm-ink);
+  --lm-toast-icon-line: var(--lm-border-w) solid var(--lm-line);
+  --lm-toast-muted: var(--lm-ink);
+}

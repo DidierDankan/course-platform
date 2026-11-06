@@ -2,6 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Apply the saved theme before anything renders (no flash of the wrong theme).
+         Keep the key, names and default in sync with src/hooks/useTheme.js. -->
+    <script>
+      (function () {
+        var theme = "brutal";
+        try {
+          var saved = localStorage.getItem("lumen-theme");
+          if (saved === "brutal" || saved === "cinematic") theme = saved;
+        } catch (e) {}
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- keep in sync with APP_NAME in src/utils/brand/index.js -->

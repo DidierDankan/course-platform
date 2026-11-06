@@ -1,0 +1,50 @@
+/*
+ * Design tokens: the names every theme must define.
+ * Values live in theme-brutal.css and theme-cinematic.css (under [data-theme="..."]).
+ * Components (components.css) and Tailwind utilities only ever read these variables.
+ *
+ * Prefix --lm- ("Lumen") so the new set can't collide with the legacy --color-* variables
+ * in index.css, which current pages still use until they are migrated.
+ *
+ * Core:        --lm-bg, --lm-surface, --lm-surface-2, --lm-ink, --lm-muted, --lm-line, --lm-line-strong,
+ *              --lm-accent, --lm-accent-hover, --lm-on-accent, --lm-accent-2, --lm-success, --lm-danger,
+ *              --lm-focus, --lm-placeholder, --lm-inverse-bg, --lm-inverse-fg, --lm-color-scheme
+ * States:      --lm-disabled-bg/-fg/-line, --lm-loading-bg/-fg/-line
+ * Type:        --lm-font-display, --lm-font-body, --lm-font-mono
+ * Shape:       --lm-radius-card, --lm-radius-button, --lm-radius-input, --lm-radius-pill,
+ *              --lm-radius-label, --lm-radius-toast, --lm-border-w, --lm-border-w-dense
+ * Depth:       --lm-shadow-card, --lm-shadow-card-hover, --lm-shadow-control, --lm-shadow-press,
+ *              --lm-shadow-label, --lm-shadow-field, --lm-shadow-field-focus, --lm-shadow-field-error,
+ *              --lm-shadow-toast, --lm-shadow-inverse, --lm-shadow-inverse-press,
+ *              --lm-shadow-disabled, --lm-shadow-loading
+ * Motion:      --lm-press-transform, --lm-ghost-hover-transform, --lm-card-hover-transform,
+ *              --lm-speed, --lm-speed-card, --lm-tilt-label, --lm-tilt-toast
+ * Components:  see the "component tokens" block at the end of each theme file.
+ */
+
+/* Expose the core tokens to Tailwind as utilities (bg-lm-surface, text-lm-muted, rounded-lm-card,
+   shadow-lm-card, font-lm-display...). "inline" makes utilities read the variable at runtime,
+   so they follow the active theme. */
+@theme inline {
+  --color-lm-bg: var(--lm-bg);
+  --color-lm-surface: var(--lm-surface);
+  --color-lm-surface-2: var(--lm-surface-2);
+  --color-lm-ink: var(--lm-ink);
+  --color-lm-muted: var(--lm-muted);
+  --color-lm-line: var(--lm-line);
+  --color-lm-accent: var(--lm-accent);
+  --color-lm-on-accent: var(--lm-on-accent);
+  --color-lm-accent-2: var(--lm-accent-2);
+  --color-lm-success: var(--lm-success);
+  --color-lm-danger: var(--lm-danger);
+
+  --font-lm-display: var(--lm-font-display);
+  --font-lm-body: var(--lm-font-body);
+  --font-lm-mono: var(--lm-font-mono);
+
+  --radius-lm-card: var(--lm-radius-card);
+  --radius-lm-pill: var(--lm-radius-pill);
+
+  --shadow-lm-card: var(--lm-shadow-card);
+  --shadow-lm-press: var(--lm-shadow-press);
+}

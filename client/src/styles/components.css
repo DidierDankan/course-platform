@@ -1,0 +1,290 @@
+/*
+ * Shared components for both themes. Class names match the reference designs
+ * (design/brutal and design/cinematic, src/index.css), so their markup can be reused as-is in Phase 2.
+ * Every value comes from a --lm-* variable: no colors here, only in the theme files.
+ * In @layer components, so Tailwind utilities on the same element still win.
+ */
+@layer components {
+  /* ---------- Button ---------- */
+  .button {
+    min-height: 48px;
+    padding: 0 21px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--lm-button-fg);
+    background: var(--lm-button-bg);
+    border: var(--lm-border-w) solid var(--lm-button-line);
+    border-radius: var(--lm-radius-button);
+    box-shadow: var(--lm-shadow-control);
+    font-family: var(--lm-font-body);
+    font-size: var(--lm-button-font-size);
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      transform var(--lm-speed),
+      box-shadow var(--lm-speed),
+      background var(--lm-speed),
+      border-color var(--lm-speed);
+  }
+  .button:hover {
+    transform: var(--lm-press-transform);
+    box-shadow: var(--lm-shadow-press);
+  }
+  .button:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 3px;
+  }
+
+  .button-primary {
+    color: var(--lm-on-accent);
+    background: var(--lm-accent);
+  }
+  .button-primary:hover {
+    background: var(--lm-accent-hover);
+  }
+
+  .button-secondary {
+    color: var(--lm-secondary-fg);
+    background: var(--lm-secondary-bg);
+    border-color: var(--lm-secondary-line);
+  }
+  .button-secondary:hover {
+    background: var(--lm-secondary-hover-bg);
+    border-color: var(--lm-secondary-hover-line);
+  }
+
+  .button-ghost {
+    background: transparent;
+    box-shadow: none;
+  }
+  .button-ghost:hover {
+    transform: var(--lm-ghost-hover-transform);
+    box-shadow: none;
+    background: var(--lm-ghost-hover-bg);
+  }
+
+  .button-ink {
+    color: var(--lm-inverse-fg);
+    background: var(--lm-inverse-bg);
+    box-shadow: var(--lm-shadow-inverse);
+  }
+  .button-ink:hover {
+    box-shadow: var(--lm-shadow-inverse-press);
+  }
+
+  .button-small {
+    min-height: var(--lm-button-small-height);
+    padding: 0 17px;
+  }
+
+  .button:disabled,
+  .button[aria-disabled="true"] {
+    color: var(--lm-disabled-fg);
+    background: var(--lm-disabled-bg);
+    border-color: var(--lm-disabled-line);
+    box-shadow: var(--lm-shadow-disabled);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* add aria-busy="true" too, so screen readers know it is working */
+  .button.is-loading {
+    gap: 8px;
+    color: var(--lm-loading-fg);
+    background: var(--lm-loading-bg);
+    border-color: var(--lm-loading-line);
+    box-shadow: var(--lm-shadow-loading);
+    cursor: wait;
+    transform: none;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: var(--lm-border-w) solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: lm-spin 0.8s linear infinite;
+  }
+
+  /* ---------- Course card ---------- */
+  .course-card {
+    min-width: 0;
+    overflow: var(--lm-card-overflow);
+    color: var(--lm-ink);
+    background: var(--lm-surface);
+    border: var(--lm-border-w-dense) solid var(--lm-line);
+    border-radius: var(--lm-radius-card);
+    box-shadow: var(--lm-shadow-card);
+    transition:
+      transform var(--lm-speed-card),
+      box-shadow var(--lm-speed-card),
+      border-color var(--lm-speed-card);
+  }
+  .course-card:hover {
+    transform: var(--lm-card-hover-transform);
+    box-shadow: var(--lm-shadow-card-hover);
+    border-color: var(--lm-card-hover-line);
+  }
+  .card-visual {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--lm-card-visual-bg);
+    border-bottom: var(--lm-card-visual-border);
+  }
+  .card-body {
+    padding: var(--lm-card-padding);
+  }
+
+  /* ---------- Badge / label ---------- */
+  .card-label {
+    display: inline-block;
+    padding: 7px 9px;
+    color: var(--lm-label-fg);
+    background: var(--lm-label-bg);
+    border: var(--lm-border-w) solid var(--lm-label-line);
+    border-radius: var(--lm-radius-label);
+    box-shadow: var(--lm-shadow-label);
+    backdrop-filter: var(--lm-label-blur);
+    font-family: var(--lm-font-mono);
+    font-size: 8px;
+    font-weight: var(--lm-label-weight);
+    letter-spacing: var(--lm-label-tracking);
+    text-transform: uppercase;
+    transform: rotate(var(--lm-tilt-label));
+  }
+
+  /* ---------- Form field ---------- */
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--lm-field-gap);
+  }
+  .field > span {
+    color: var(--lm-muted);
+    font-family: var(--lm-font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .field input,
+  .field select,
+  .field textarea {
+    width: 100%;
+    min-height: 50px;
+    padding: 0 15px;
+    outline: none;
+    color: var(--lm-ink);
+    background: var(--lm-field-bg);
+    border: var(--lm-border-w) solid var(--lm-field-line);
+    border-radius: var(--lm-radius-input);
+    box-shadow: var(--lm-shadow-field);
+    color-scheme: var(--lm-color-scheme);
+    font: inherit;
+  }
+  .field textarea {
+    padding: 12px 15px;
+  }
+  .field input::placeholder,
+  .field textarea::placeholder {
+    color: var(--lm-placeholder);
+  }
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    border-color: var(--lm-focus);
+    background: var(--lm-field-focus-bg);
+    box-shadow: var(--lm-shadow-field-focus);
+  }
+  .field.has-error input,
+  .field.has-error select,
+  .field.has-error textarea {
+    border-color: var(--lm-danger);
+    box-shadow: var(--lm-shadow-field-error);
+  }
+  .field small {
+    font-family: var(--lm-font-mono);
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .field.has-error small {
+    color: var(--lm-danger);
+  }
+
+  /* ---------- Section index ("01 / COURSES") ---------- */
+  .section-index {
+    color: var(--lm-index-fg);
+    font-family: var(--lm-font-mono);
+    font-size: var(--lm-index-size);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: var(--lm-index-tracking);
+    text-transform: uppercase;
+  }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    max-width: 520px;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 14px;
+    color: var(--lm-ink);
+    background: var(--lm-toast-bg);
+    border: var(--lm-border-w) solid var(--lm-toast-line);
+    border-radius: var(--lm-radius-toast);
+    box-shadow: var(--lm-shadow-toast);
+    transform: rotate(var(--lm-tilt-toast));
+  }
+  .toast > span {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    color: var(--lm-toast-icon-fg);
+    background: var(--lm-toast-icon-bg);
+    border: var(--lm-toast-icon-line);
+    border-radius: 50%;
+  }
+  .toast > div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .toast strong {
+    font-size: 13px;
+  }
+  .toast small {
+    color: var(--lm-toast-muted);
+    font-family: var(--lm-font-mono);
+    font-size: 10px;
+  }
+  .toast button {
+    color: var(--lm-toast-muted);
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .button,
+    .course-card {
+      transition: none;
+    }
+    .spinner {
+      animation-duration: 2s;
+    }
+  }
+}
+
+@keyframes lm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

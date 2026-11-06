@@ -1,0 +1,110 @@
+/*
+ * Theme "cinematic": dark, lime accent, thin 1px borders, soft lifts instead of hard shadows.
+ * Values from design/cinematic/src/index.css.
+ * Only variables here: no element or page styles (pages adopt them in Phase 2).
+ */
+[data-theme="cinematic"] {
+  --lm-bg: #0e0f12;
+  --lm-surface: #17191e;
+  --lm-surface-2: #1d2026;
+  --lm-ink: #ededed;
+  --lm-muted: #8a8f98;
+  --lm-line: #2b2e35;
+  --lm-line-strong: #3a3e46;
+  --lm-accent: #c6f432;
+  --lm-accent-hover: #d6ff4e;
+  --lm-on-accent: #101207;
+  --lm-accent-2: #c6f432; /* the reference has a single accent */
+  --lm-success: #c6f432;
+  --lm-danger: #ff6961;
+  --lm-focus: #c6f432; /* not in the reference: keyboard focus ring, uses the accent */
+  --lm-placeholder: #71757d;
+  --lm-inverse-bg: #c6f432;
+  --lm-inverse-fg: #101207;
+  --lm-color-scheme: dark;
+
+  --lm-disabled-bg: #24262c;
+  --lm-disabled-fg: #5f636b;
+  --lm-disabled-line: #24262c;
+  --lm-loading-bg: #202228;
+  --lm-loading-fg: #71757d;
+  --lm-loading-line: #292c32;
+
+  --lm-font-display: "Manrope Variable", "Manrope", sans-serif;
+  --lm-font-body: "Manrope Variable", "Manrope", sans-serif;
+  --lm-font-mono: "Manrope Variable", "Manrope", sans-serif; /* the reference uses no mono font */
+
+  --lm-radius-card: 14px;
+  --lm-radius-button: 9px;
+  --lm-radius-input: 8px;
+  --lm-radius-pill: 20px;
+  --lm-radius-label: 6px;
+  --lm-radius-toast: 10px;
+  --lm-border-w: 1px;
+  --lm-border-w-dense: 1px;
+
+  --lm-shadow-card: none;
+  --lm-shadow-card-hover: none;
+  --lm-shadow-control: none;
+  --lm-shadow-press: none;
+  --lm-shadow-label: none;
+  --lm-shadow-field: none;
+  --lm-shadow-field-focus: 0 0 0 1px var(--lm-accent);
+  --lm-shadow-field-error: none;
+  --lm-shadow-toast: none;
+  --lm-shadow-inverse: none;
+  --lm-shadow-inverse-press: none;
+  --lm-shadow-disabled: none;
+  --lm-shadow-loading: none;
+
+  /* signature: gentle lift on hover, nothing rotated */
+  --lm-press-transform: translateY(-1px);
+  --lm-ghost-hover-transform: translateY(-1px);
+  --lm-card-hover-transform: translateY(-2px);
+  --lm-speed: 0.2s;
+  --lm-speed-card: 0.25s;
+  --lm-tilt-label: 0deg;
+  --lm-tilt-toast: 0deg;
+
+  /* component tokens */
+  --lm-button-bg: transparent;
+  --lm-button-fg: var(--lm-ink);
+  --lm-button-line: transparent;
+  --lm-button-font-size: 13px;
+  --lm-button-small-height: 40px;
+  --lm-secondary-bg: var(--lm-surface);
+  --lm-secondary-fg: var(--lm-ink);
+  --lm-secondary-line: var(--lm-line-strong);
+  --lm-secondary-hover-bg: var(--lm-surface-2);
+  --lm-secondary-hover-line: #686e78;
+  --lm-ghost-hover-bg: var(--lm-surface-2);
+
+  --lm-card-overflow: hidden;
+  --lm-card-hover-line: #444850;
+  --lm-card-visual-bg: #23252b;
+  --lm-card-visual-border: 0 none;
+  --lm-card-padding: 18px;
+
+  --lm-label-bg: rgba(14, 15, 18, 0.78);
+  --lm-label-fg: var(--lm-ink);
+  --lm-label-line: rgba(255, 255, 255, 0.14);
+  --lm-label-blur: blur(7px);
+  --lm-label-weight: 400;
+  --lm-label-tracking: 0.11em;
+
+  --lm-field-bg: var(--lm-surface);
+  --lm-field-focus-bg: var(--lm-surface);
+  --lm-field-line: #3b3e45;
+  --lm-field-gap: 9px;
+
+  --lm-index-fg: var(--lm-accent);
+  --lm-index-size: 10px;
+  --lm-index-tracking: 0.14em;
+
+  --lm-toast-bg: var(--lm-surface-2);
+  --lm-toast-line: #3a3d44;
+  --lm-toast-icon-bg: var(--lm-accent);
+  --lm-toast-icon-fg: var(--lm-on-accent);
+  --lm-toast-icon-line: 0 none;
+  --lm-toast-muted: var(--lm-muted);
+}

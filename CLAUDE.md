@@ -105,8 +105,13 @@ Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list i
 ## Design system (in progress)
 
 - Brand: **Lumen**. The name comes from `APP_NAME` in `client/src/utils/brand/index.js` (plus the `<title>` in `client/index.html`) and, on the server, `server/lib/brand.js`, which `PaymentController` sends to Stripe Checkout as `branding_settings.display_name`. Keep the two constants in sync; never hardcode the name. The Stripe dashboard's Company name only affects receipts and emails. Two switchable themes from Figma Make: **`brutal`** (neo-brutalist: cream, black 2px outlines, hard offset shadows, yellow/red/mint) and **`cinematic`** (dark, lime `#C6F432` accent, 16:9 thumbnails, 1px borders).
-- Approach: **one token set**, values switched by `<html data-theme="…">`. Theme stored in localStorage and applied by an inline script in `index.html` before React mounts (no flash of the wrong theme).
-- Rule: components use **semantic tokens only** (`bg-surface`, `text-muted`, `bg-accent`, `border-line`, `rounded-card`, `shadow-card`, `font-display`). **No new arbitrary hex/radius/shadow values.** Theme-specific behaviour (rotated stickers, horizontal rows) goes in a few explicit `[data-theme=…]` rules, not in duplicate components.
+- Approach: **one token set**, values switched by `<html data-theme="brutal|cinematic">` (default `brutal`). Saved in localStorage key `lumen-theme` and applied by an inline script in `client/index.html` before React mounts (no flash); `client/src/hooks/useTheme.js` reads/writes it and powers the header toggle. Both validate the value and fall back to `brutal`.
+- Files (`client/src/styles/`): `tokens.css` (the `--lm-*` names + Tailwind mapping), `theme-brutal.css` / `theme-cinematic.css` (values only, taken from `design/*/src/index.css`), `components.css` (`@layer components`).
+- Reference designs: `design/brutal` and `design/cinematic` share identical markup and class names; only values differ. Port markup as-is.
+- **Component classes** use the reference names: `.button` (+ `-primary/-secondary/-ghost/-ink/-small`, `:disabled`, `.is-loading` + `.spinner`), `.course-card` / `.card-visual` / `.card-body`, `.card-label`, `.field` (+ `.has-error`), `.section-index`, `.toast`. They read `--lm-*` variables only: **no hex in `components.css`**.
+- **Tailwind** stays for layout and spacing. One-off styling uses the token utilities `bg-lm-surface`, `text-lm-muted`, `border-lm-line`, `rounded-lm-card`, `shadow-lm-card`, `font-lm-display` (mapped with `@theme inline`, so they follow the theme). **No new arbitrary hex/radius/shadow values.**
+- Theme differences live in theme variables (e.g. `--lm-press-transform`, `--lm-tilt-label`), not in duplicate components or `[data-theme]` selectors inside components.
+- Legacy: the old `--color-*` variables and `.input` in `index.css` stay until the last page is migrated (Phase 2), then get deleted. The `--lm-` prefix exists so the two sets can't collide.
 
 ---
 

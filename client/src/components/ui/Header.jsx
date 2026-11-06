@@ -4,12 +4,14 @@ import { useLogoutMutation } from "@api/modules/authApi";
 import { logout as logoutAction } from "@store/slices/authSlice";
 import { useEffect, useState } from "react";
 import { APP_NAME } from "@utils/brand";
+import { useTheme } from "@hooks/useTheme";
 
 const Header = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [logoutApi] = useLogoutMutation();
   const { isAuthenticated, user } = useSelector((s) => s.auth);
+  const { theme, toggleTheme } = useTheme();
 
   const [scrolled, setScrolled] = useState(false);
 
@@ -145,6 +147,22 @@ const Header = () => {
               </button>
             </>
           )}
+
+          {/* Theme toggle: a toggle button for the cinematic theme (pressed = cinematic on).
+              Styled like the other header links; the header redesign comes in Phase 2. */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-pressed={theme === "cinematic"}
+            title={theme === "cinematic" ? "Switch to the brutal theme" : "Switch to the cinematic theme"}
+            className={`transition ${
+              scrolled
+                ? "text-[#0f172a] hover:text-indigo-600"
+                : "text-white hover:text-[var(--color-text-grayshblue)]"
+            }`}
+          >
+            Cinematic
+          </button>
         </div>
       </nav>
     </header>
