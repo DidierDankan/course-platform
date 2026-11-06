@@ -9,14 +9,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const clampPct = (n) => Math.max(0, Math.min(100, Number(n) || 0));
 
-const formatDuration = (seconds) => {
-  const s = Number(seconds) || 0;
-  const mins = Math.floor(s / 60);
-  const hrs = Math.floor(mins / 60);
-  if (hrs > 0) return `${hrs}h ${mins % 60}m`;
-  return `${mins}m`;
-};
-
 function MyCourseCard({ item }) {
   const pct = clampPct(item.progress);
 

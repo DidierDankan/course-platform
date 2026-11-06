@@ -1,5 +1,5 @@
 // src/components/ui/CourseFilters.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { CURRENCY } from "@utils/currency";
 

@@ -14,11 +14,12 @@ export const useInfiniteCourses = (limit = 6, filters = {}) => {
 
   const { data, isLoading, isError, error } = useGetAllCoursesQuery(queryArgs);
 
-  // reset when filters change
+  // reset when filters change (compared by value: callers may pass a new object each render)
+  const filtersKey = JSON.stringify(filters);
   useEffect(() => {
     setPage(1);
     setAll([]);
-  }, [JSON.stringify(filters)]);
+  }, [filtersKey]);
 
   useEffect(() => {
     if (Array.isArray(data)) {

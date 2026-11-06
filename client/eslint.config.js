@@ -23,7 +23,10 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // Capitalized names are React components. Core ESLint doesn't count JSX usage
+      // (<Icon />), so they would be reported as unused: also for parameters like
+      // ({ icon: Icon }) and ({ as: As }), not just variables.
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^[A-Z_]' }],
     },
   },
 ])

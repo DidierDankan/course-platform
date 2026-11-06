@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { Clock } from "lucide-react";
-import { useSelector } from "react-redux";
 import CourseCTA from "@components/ui/CourseCTA";
 import { Link } from "react-router-dom";
 import FavoriteButton from "./FavoriteButton";
@@ -17,8 +16,6 @@ const formatDuration = (seconds) => {
 };
 
 const CourseCard = ({ course }) => {
-  const { user } = useSelector((s) => s.auth || {});
-
   const totalSeconds = useMemo(
     () => Number(course?.total_duration) || 0,
     [course?.total_duration]

@@ -6,7 +6,7 @@ import { PlayCircle, ListVideo } from "lucide-react";
 
 const API_ORIGIN = import.meta.env.VITE_API_URL;
 
-export const toAbsoluteUrl = (url) => {
+const toAbsoluteUrl = (url) => {
   if (!url) return "";
   if (/^https?:\/\//i.test(url)) return url;     // already absolute
   if (url.startsWith("/")) return `${API_ORIGIN}${url}`; // "/uploads/.."
@@ -24,7 +24,8 @@ export default function WatchCourse() {
   const [updateProgress] = useUpdateProgressMutation();
 
   const course = data?.course;
-  const lessons = Array.isArray(data?.lessons) ? data.lessons : [];
+  // Memoized so the [] fallback is the same array every render (stable useMemo deps below).
+  const lessons = useMemo(() => (Array.isArray(data?.lessons) ? data.lessons : []), [data?.lessons]);
   const enrollment = data?.enrollment;
 
   console.log("COURSE", course)
@@ -86,8 +87,6 @@ export default function WatchCourse() {
   };
 
   const handleEnded = async () => {
-    const el = videoRef.current;
-
     if (enrollment) {
       await updateProgress({
         courseId,

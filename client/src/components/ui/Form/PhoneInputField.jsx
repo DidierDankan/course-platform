@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useFormikContext } from "formik";
-import Select, { components } from "react-select";
+// Capitalized alias: core ESLint doesn't see JSX usage, and capitalized names are exempt (eslint.config.js).
+import Select, { components as SelectComponents } from "react-select";
 import { prefixes } from "@utils/prefix";
 
 const getFlagEmoji = (iso) =>
@@ -17,18 +18,18 @@ const phoneOptions = prefixes.map(({ country, code, iso }) => ({
 }));
 
 const CustomOption = (props) => (
-  <components.Option {...props}>
+  <SelectComponents.Option {...props}>
     <span className="mr-2">{props.data.flag}</span>
     <span className="font-medium">{props.data.iso}</span>
     <span className="text-gray-500 ml-2">{props.data.value}</span>
-  </components.Option>
+  </SelectComponents.Option>
 );
 
 const CustomSingleValue = (props) => (
-  <components.SingleValue {...props}>
+  <SelectComponents.SingleValue {...props}>
     <span className="mr-2">{props.data.flag}</span>
     <span className="font-medium">{props.data.iso}</span>
-  </components.SingleValue>
+  </SelectComponents.SingleValue>
 );
 
 const selectStyles = {
