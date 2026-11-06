@@ -105,13 +105,20 @@ Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list i
 ## Design system (in progress)
 
 - Brand: **Lumen**. The name comes from `APP_NAME` in `client/src/utils/brand/index.js` (plus the `<title>` in `client/index.html`) and, on the server, `server/lib/brand.js`, which `PaymentController` sends to Stripe Checkout as `branding_settings.display_name`. Keep the two constants in sync; never hardcode the name. The Stripe dashboard's Company name only affects receipts and emails. Two switchable themes from Figma Make: **`brutal`** (neo-brutalist: cream, black 2px outlines, hard offset shadows, yellow/red/mint) and **`cinematic`** (dark, lime `#C6F432` accent, 16:9 thumbnails, 1px borders).
-- Approach: **one token set**, values switched by `<html data-theme="brutal|cinematic">` (default `brutal`). Saved in localStorage key `lumen-theme` and applied by an inline script in `client/index.html` before React mounts (no flash); `client/src/hooks/useTheme.js` reads/writes it and powers the header toggle. Both validate the value and fall back to `brutal`.
+- Approach: **one token set**, values switched by `<html data-theme="brutal|cinematic">` (default `brutal`). Saved in localStorage key `lumen-theme` and applied by an inline script in `client/index.html` before React mounts (no flash). `client/src/hooks/useTheme.js` treats the `data-theme` attribute as the single store (`useSyncExternalStore` + one `MutationObserver`), so every component using it stays in sync; change the theme only through it (`setTheme` / `toggleTheme` / `applyTheme`). Both validate the value and fall back to `brutal`.
 - Files (`client/src/styles/`): `tokens.css` (the `--lm-*` names + Tailwind mapping), `theme-brutal.css` / `theme-cinematic.css` (values only, taken from `design/*/src/index.css`), `components.css` (`@layer components`).
 - Reference designs: `design/brutal` and `design/cinematic` share identical markup and class names; only values differ. Port markup as-is.
 - **Component classes** use the reference names: `.button` (+ `-primary/-secondary/-ghost/-ink/-small`, `:disabled`, `.is-loading` + `.spinner`), `.course-card` / `.card-visual` / `.card-body`, `.card-label`, `.field` (+ `.has-error`), `.section-index`, `.toast`. They read `--lm-*` variables only: **no hex in `components.css`**.
 - **Tailwind** stays for layout and spacing. One-off styling uses the token utilities `bg-lm-surface`, `text-lm-muted`, `border-lm-line`, `rounded-lm-card`, `shadow-lm-card`, `font-lm-display` (mapped with `@theme inline`, so they follow the theme). **No new arbitrary hex/radius/shadow values.**
 - Theme differences live in theme variables (e.g. `--lm-press-transform`, `--lm-tilt-label`), not in duplicate components or `[data-theme]` selectors inside components.
 - Legacy: the old `--color-*` variables and `.input` in `index.css` stay until the last page is migrated (Phase 2), then get deleted. The `--lm-` prefix exists so the two sets can't collide.
+
+### Phase 2 decisions (approved)
+
+- **Course list layout:** brutal = grid, cinematic = horizontal scroll row with scroll-snap. Same markup in both, switched by **one** `[data-theme="cinematic"]` rule. This is the **only approved structural exception** to "theme differences live in variables".
+- **Class names:** keep the reference names (`.button`, `.course-card`, `.field`, `.card-label`…). Don't rename them.
+- **Home page:** a fixed set of **8 courses** (no infinite scroll) plus a "View all courses" link to `/courses`.
+- **`/courses`:** keeps infinite scroll, rebuilt in Phase 2 with **RTK Query `infiniteQuery`**, with the filters stored in the URL (`useSearchParams`) so a filtered list can be shared, bookmarked and survives a reload.
 
 ---
 
