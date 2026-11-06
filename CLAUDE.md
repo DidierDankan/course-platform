@@ -6,7 +6,7 @@
 
 **Goal:** a deployed, production-quality **portfolio project** that shows senior-level engineering judgement. It is not a startup. Every piece of work should either make the live demo better or show a skill a hiring manager cares about: architecture, security, correctness, testing, UX polish. Anything that does neither is out of scope. See "Scope triage".
 
-The owner is a developer who wants to **level up**, not just get code shipped. Explain the *why* behind decisions so they can defend the code in an interview.
+Every change comes with its reasoning: the trade-offs considered and why this option won.
 
 ---
 
@@ -100,6 +100,7 @@ Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list i
 7. **Hardcoded styling:** ~370 Tailwind arbitrary hex classes across 26 files block theming. *(TODO: CLIENT "rename + design system")*
 8. **Logging:** per-request `console.log` in `index.js`; debug logs in `WhatchCourse.jsx:30,106` and `Favorites.jsx:11`. *(TODO)*
 9. **No tests and no CI.** *(TODO: TESTS & CI)*
+10. **Enrollment depends only on the webhook.** On Render's free plan the server sleeps, so the webhook can arrive late and the buyer returns to `/payment/success` without access. Fix: the server retrieves the session from Stripe by `session_id` on return and enrolls through the same idempotent code as the webhook. This doesn't trust the redirect, because the server asks Stripe. *(TODO: PRIORITY "check the payment when the buyer returns")*
 
 ## Design system (in progress)
 
