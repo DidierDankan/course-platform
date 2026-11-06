@@ -103,7 +103,7 @@ Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list i
 
 ## Design system (in progress)
 
-- Brand: **Lumen**. The name comes from `APP_NAME` in `client/src/utils/brand/index.js` (plus the `<title>` in `client/index.html`); never hardcode it. Only the Stripe account's public name is left to rename (TODO). Two switchable themes from Figma Make: **`brutal`** (neo-brutalist: cream, black 2px outlines, hard offset shadows, yellow/red/mint) and **`cinematic`** (dark, lime `#C6F432` accent, 16:9 thumbnails, 1px borders).
+- Brand: **Lumen**. The name comes from `APP_NAME` in `client/src/utils/brand/index.js` (plus the `<title>` in `client/index.html`) and, on the server, `server/lib/brand.js`, which `PaymentController` sends to Stripe Checkout as `branding_settings.display_name`. Keep the two constants in sync; never hardcode the name. The Stripe dashboard's Company name only affects receipts and emails. Two switchable themes from Figma Make: **`brutal`** (neo-brutalist: cream, black 2px outlines, hard offset shadows, yellow/red/mint) and **`cinematic`** (dark, lime `#C6F432` accent, 16:9 thumbnails, 1px borders).
 - Approach: **one token set**, values switched by `<html data-theme="…">`. Theme stored in localStorage and applied by an inline script in `index.html` before React mounts (no flash of the wrong theme).
 - Rule: components use **semantic tokens only** (`bg-surface`, `text-muted`, `bg-accent`, `border-line`, `rounded-card`, `shadow-card`, `font-display`). **No new arbitrary hex/radius/shadow values.** Theme-specific behaviour (rotated stickers, horizontal rows) goes in a few explicit `[data-theme=…]` rules, not in duplicate components.
 

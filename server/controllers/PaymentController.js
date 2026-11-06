@@ -1,6 +1,7 @@
 import PaymentService from "../db/PaymentService.js";
 import { stripe } from "../lib/stripe.js";
 import { CURRENCY } from "../lib/currency.js";
+import { APP_NAME } from "../lib/brand.js";
 
 const CLIENT_URL = process.env.CLIENT_URL;
 
@@ -27,6 +28,8 @@ class PaymentController {
 
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
+        // Name shown on the Checkout page; overrides the Dashboard "Company name" for this session only.
+        branding_settings: { display_name: APP_NAME },
         payment_method_types: ["card"],
         customer: customerId, // if you created one, optional
         line_items: [
