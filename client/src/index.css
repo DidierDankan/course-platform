@@ -6,6 +6,7 @@
 @import "./styles/theme-brutal.css";
 @import "./styles/theme-cinematic.css";
 @import "./styles/components.css";
+@import "./styles/layout.css";
 
 :root {
   height: 100%;
@@ -27,7 +28,6 @@
   --color-muted: #475569;
 
   /* ⚙️ Layout tokens */
-  --header-height: 72px;
   --radius: 12px;
   --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.08);
   --shadow-strong: 0 10px 30px rgba(0, 0, 0, 0.15);

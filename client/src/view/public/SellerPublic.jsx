@@ -95,7 +95,7 @@ const SellerPublic = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pt-[72px]">
+    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
       <main className="max-w-[1100px] mx-auto px-[16px] py-[28px]">
         {/* Badge + heading */}
         <div className="text-center mb-[22px]">

@@ -22,7 +22,7 @@ const formatDuration = (seconds) => {
 };
 
 const CourseNotFound = () => (
-  <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pt-[72px]">
+  <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
     <main className="max-w-[900px] mx-auto px-[20px] py-[28px]">
       <div className="bg-white border border-[#e2e8f0] rounded-[16px] p-[18px] shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
         <div className="text-[18px] font-bold text-[#1e293b]">Course not found</div>
@@ -61,7 +61,7 @@ export default function CoursePreview() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] pt-[72px]">
+      <div className="min-h-screen bg-[#f8fafc]">
         <div className="max-w-[900px] mx-auto px-[20px] py-[28px]">
           <Spinner />
         </div>
@@ -74,7 +74,7 @@ export default function CoursePreview() {
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pt-[72px]">
+      <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
         <main className="max-w-[900px] mx-auto px-[20px] py-[28px]">
           <div className="bg-white border border-[#e2e8f0] rounded-[16px] p-[18px] shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
             <div className="text-[18px] font-bold text-[#1e293b]">
@@ -102,7 +102,7 @@ export default function CoursePreview() {
     : "https://images.unsplash.com/photo-1522199710521-72d69614c702?q=80&w=1600&auto=format&fit=crop";
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pt-[72px]">
+    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
       <main className="max-w-[900px] mx-auto px-[20px] py-[28px]">
         {/* Badge + Heading */}
         <div className="text-center mb-[20px]">

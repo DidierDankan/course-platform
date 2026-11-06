@@ -110,4 +110,20 @@
   --lm-toast-icon-fg: var(--lm-ink);
   --lm-toast-icon-line: var(--lm-border-w) solid var(--lm-line);
   --lm-toast-muted: var(--lm-ink);
+
+  /* header */
+  --lm-header-bg: var(--lm-bg);
+  --lm-header-height: 82px;
+  --lm-header-height-mobile: 70px;
+  --lm-menu-bg: var(--lm-bg);
+  --lm-menu-line: var(--lm-line);
+  --lm-logo-size: 30px;
+  --lm-logo-weight: 700;
+  --lm-logo-transform: uppercase;
+  --lm-nav-font-size: 14px;
+  --lm-nav-weight: 700;
+  --lm-nav-fg: var(--lm-ink);
+  --lm-nav-hover-fg: var(--lm-ink);
+  --lm-nav-underline-height: 3px;
+  --lm-nav-underline-offset: -5px;
 }

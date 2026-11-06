@@ -1,0 +1,148 @@
+/*
+ * Site chrome shared by every page: logo, header, mobile menu, theme toggle (footer in step 3).
+ * Markup and class names from the reference designs (design/brutal and design/cinematic,
+ * src/App.tsx). Every value comes from a --lm-* variable; theme files hold the numbers.
+ */
+@layer components {
+  /* ---------- Logo ---------- */
+  .logo {
+    font-family: var(--lm-font-display);
+    font-size: var(--lm-logo-size);
+    font-weight: var(--lm-logo-weight);
+    line-height: 1;
+    letter-spacing: -0.08em;
+    text-transform: var(--lm-logo-transform);
+  }
+  .logo span {
+    color: var(--lm-accent-2);
+  }
+
+  /* ---------- Header ---------- */
+  .site-header {
+    position: relative;
+    z-index: 20;
+    background: var(--lm-header-bg);
+    border-bottom: var(--lm-border-w-dense) solid var(--lm-line);
+  }
+  .header-inner {
+    max-width: 1440px;
+    height: var(--lm-header-height);
+    margin: auto;
+    padding: 0 42px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-nav {
+    display: flex;
+    align-items: center;
+    gap: 31px;
+    font-size: var(--lm-nav-font-size);
+    font-weight: var(--lm-nav-weight);
+  }
+  .header-nav > a:not(.button),
+  .nav-link {
+    position: relative;
+    color: var(--lm-nav-fg);
+    transition: color var(--lm-speed);
+  }
+  .header-nav > a:not(.button):hover,
+  .nav-link:hover {
+    color: var(--lm-nav-hover-fg);
+  }
+  /* underline grows on hover and stays for the current page (NavLink sets aria-current) */
+  .header-nav > a:not(.button)::after,
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 100%;
+    bottom: var(--lm-nav-underline-offset);
+    height: var(--lm-nav-underline-height);
+    background: var(--lm-accent-2);
+    transition: right var(--lm-speed);
+  }
+  .header-nav > a:not(.button):hover::after,
+  .nav-link:hover::after,
+  .header-nav > a[aria-current="page"]::after {
+    right: 0;
+  }
+  .header-nav > a[aria-current="page"] {
+    color: var(--lm-nav-hover-fg);
+  }
+  .nav-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+  }
+  .nav-link:focus-visible,
+  .header-nav > a:focus-visible,
+  .menu-button:focus-visible,
+  .logo:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 4px;
+  }
+  .menu-button {
+    display: none;
+    padding: 5px;
+    border: 0;
+    background: transparent;
+    color: var(--lm-ink);
+    cursor: pointer;
+  }
+
+  /* ---------- Theme toggle (a header control, styled like the nav links) ---------- */
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .theme-toggle small {
+    padding: 4px 7px;
+    color: var(--lm-label-fg);
+    background: var(--lm-label-bg);
+    border: var(--lm-border-w) solid var(--lm-label-line);
+    border-radius: var(--lm-radius-label);
+    font-family: var(--lm-font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: var(--lm-label-tracking);
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 700px) {
+    .header-inner {
+      height: var(--lm-header-height-mobile);
+      padding: 0 18px;
+    }
+    .menu-button {
+      display: block;
+    }
+    .header-nav {
+      display: none;
+      position: absolute;
+      z-index: 10;
+      left: 0;
+      right: 0;
+      top: var(--lm-header-height-mobile);
+      padding: 25px 20px 29px;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 20px;
+      background: var(--lm-menu-bg);
+      border-bottom: var(--lm-border-w-dense) solid var(--lm-menu-line);
+    }
+    .header-nav.is-open {
+      display: flex;
+    }
+    .header-nav .button {
+      width: 100%;
+    }
+    .header-nav > a:not(.button),
+    .nav-link {
+      align-self: flex-start;
+    }
+  }
+}

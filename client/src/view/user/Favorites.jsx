@@ -10,7 +10,7 @@ export default function FavoritesPage() {
 
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pt-[72px]">
+    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
       <main className="max-w-[1100px] mx-auto px-[16px] py-[20px]">
         <div className="text-center mb-[18px]">
           <div className="inline-flex items-center gap-[8px] text-[12px] uppercase tracking-[0.08em] text-[#475569] bg-[#e2e8f0] rounded-[999px] px-[10px] py-[4px] mb-[10px]">

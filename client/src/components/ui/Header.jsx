@@ -1,170 +1,119 @@
-import { Link, useNavigate, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { useState } from "react";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { useLogoutMutation } from "@api/modules/authApi";
 import { logout as logoutAction } from "@store/slices/authSlice";
-import { useEffect, useState } from "react";
 import { APP_NAME } from "@utils/brand";
 import { useTheme } from "@hooks/useTheme";
+
+// Role -> header links. Server-side checks protect the pages; this only decides what to show.
+const ROLE_LINKS = {
+  user: [
+    { to: "/user/dashboard", label: "Dashboard" },
+    { to: "/user/courses", label: "My courses" },
+    { to: "/user/favorites", label: "Favorites" },
+  ],
+  seller: [
+    { to: "/profile/dashboard", label: "Dashboard" },
+    { to: "/profile/edit", label: "Edit profile" },
+    { to: "/profile/portfolio", label: "Portfolio" },
+  ],
+};
+ROLE_LINKS.admin = ROLE_LINKS.seller;
+
+const THEME_LABELS = { brutal: "Brutal", cinematic: "Cinematic" };
+
+export function Logo({ className = "" }) {
+  return (
+    <Link to="/" className={`logo ${className}`} aria-label={`${APP_NAME} home`}>
+      {APP_NAME}
+      <span aria-hidden="true">.</span>
+    </Link>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
+  const next = theme === "brutal" ? "cinematic" : "brutal";
+
+  return (
+    <button
+      type="button"
+      className="nav-link theme-toggle"
+      onClick={toggleTheme}
+      aria-label={`Theme: ${THEME_LABELS[theme]}. Switch to ${THEME_LABELS[next]}`}
+    >
+      Theme <small>{THEME_LABELS[theme]}</small>
+    </button>
+  );
+}
 
 const Header = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [logoutApi] = useLogoutMutation();
   const { isAuthenticated, user } = useSelector((s) => s.auth);
-  const { theme, toggleTheme } = useTheme();
+  const [open, setOpen] = useState(false);
 
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  const close = () => setOpen(false);
+  const roleLinks = (isAuthenticated && ROLE_LINKS[user?.role]) || [];
 
   const handleLogout = async () => {
+    close();
     try {
       await logoutApi().unwrap();
-    } catch (err) {
-      console.error("Logout failed:", err);
+    } catch {
+      // The server session may already be gone; the local logout below still has to happen.
     } finally {
       dispatch(logoutAction());
       navigate("/");
     }
   };
 
-  const navClass = ({ isActive }) => {
-    const base = "transition-colors";
-    const active = "text-indigo-500 font-semibold";
-    const idle = scrolled
-      ? "text-[#0f172a] hover:text-indigo-600"
-      : "text-white hover:text-[var(--color-text-grayshblue)]";
-
-    return `${base} ${isActive ? active : idle}`;
-  };
-
   return (
-    <header
-      className={`fixed top-0 left-0 w-full h-[var(--header-height)] z-50 transition-all duration-200
-      ${
-        scrolled
-          ? "bg-white/70 backdrop-blur-md border-b border-white/30 shadow-[0_8px_24px_rgba(0,0,0,0.10)]"
-          : "bg-gradient-to-r from-[var(--color-primary)] via-[#6d28d9] to-[var(--color-primary-light)] shadow-lg"
-      }`}
-    >
-      <nav className="max-w-6xl mx-auto h-full px-6 flex justify-between items-center">
+    <header className="site-header">
+      <div className="header-inner">
+        <Logo />
+        <nav id="main-nav" className={`header-nav ${open ? "is-open" : ""}`} aria-label="Main navigation">
+          <NavLink to="/courses" end onClick={close}>
+            Browse
+          </NavLink>
 
-        {/* Logo */}
-        <Link
-          to="/"
-          className={`text-2xl font-extrabold tracking-tight transition ${
-            scrolled ? "text-[#0f172a]" : "text-white"
-          }`}
+          {roleLinks.map(({ to, label }) => (
+            <NavLink key={to} to={to} onClick={close}>
+              {label}
+            </NavLink>
+          ))}
+
+          <ThemeToggle />
+
+          {isAuthenticated ? (
+            <button type="button" className="nav-link" onClick={handleLogout}>
+              Log out
+            </button>
+          ) : (
+            <>
+              <NavLink to="/auth/login" onClick={close}>
+                Sign in
+              </NavLink>
+              <Link to="/auth/register" className="button button-primary button-small" onClick={close}>
+                Join now <ArrowRight size={15} aria-hidden="true" />
+              </Link>
+            </>
+          )}
+        </nav>
+        <button
+          type="button"
+          className="menu-button"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? "Close navigation" : "Open navigation"}
+          aria-expanded={open}
+          aria-controls="main-nav"
         >
-          {APP_NAME}
-        </Link>
-
-        {/* Navigation */}
-        <div className="flex items-center gap-[22px] text-sm sm:text-base font-medium">
-        <NavLink to="/courses" className={navClass}>
-          Browse
-        </NavLink>
-
-          {!isAuthenticated && (
-            <>
-              <Link
-                to="/auth/login"
-                className={`transition-colors ${
-                  scrolled
-                    ? "text-[#0f172a] hover:text-indigo-600"
-                    : "text-white hover:text-[var(--color-text-grayshblue)]"
-                }`}
-              >
-                Sign In
-              </Link>
-
-              <Link
-                to="/auth/register"
-                className="bg-white hover:bg-[var(--color-text-grayshblue)] px-[14px] py-[6px] rounded-[8px] font-semibold transition"
-              >
-                Join Now
-              </Link>
-            </>
-          )}
-
-          {isAuthenticated && user?.role === "user" && (
-            <>
-              <NavLink to="/user/dashboard" className={navClass}>
-                Dashboard
-              </NavLink>
-
-              <NavLink to="/user/courses" className={navClass}>
-                My Courses
-              </NavLink>
-
-              <NavLink to="/user/favorites" className={navClass}>
-                Favorites
-              </NavLink>
-
-              <button
-                onClick={handleLogout}
-                className={`transition ${
-                  scrolled
-                    ? "text-[#0f172a] hover:text-red-600"
-                    : "text-white hover:text-red-200"
-                }`}
-              >
-                Logout
-              </button>
-            </>
-          )}
-
-          {isAuthenticated && (user?.role === "seller" || user?.role === "admin") && (
-            <>
-              <NavLink to="/profile/dashboard" className={navClass}>
-                Dashboard
-              </NavLink>
-
-              <NavLink to="/profile/edit" className={navClass}>
-                Edit Profile
-              </NavLink>
-
-              <NavLink to="/profile/portfolio" className={navClass}>
-                Portfolio
-              </NavLink>
-
-              <button
-                onClick={handleLogout}
-                className={`transition ${
-                  scrolled
-                    ? "text-[#0f172a] hover:text-red-600"
-                    : "text-white hover:text-red-200"
-                }`}
-              >
-                Logout
-              </button>
-            </>
-          )}
-
-          {/* Theme toggle: a toggle button for the cinematic theme (pressed = cinematic on).
-              Styled like the other header links; the header redesign comes in Phase 2. */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-pressed={theme === "cinematic"}
-            title={theme === "cinematic" ? "Switch to the brutal theme" : "Switch to the cinematic theme"}
-            className={`transition ${
-              scrolled
-                ? "text-[#0f172a] hover:text-indigo-600"
-                : "text-white hover:text-[var(--color-text-grayshblue)]"
-            }`}
-          >
-            Cinematic
-          </button>
-        </div>
-      </nav>
+          {open ? <X size={22} aria-hidden="true" /> : <Menu size={23} aria-hidden="true" />}
+        </button>
+      </div>
     </header>
   );
 };

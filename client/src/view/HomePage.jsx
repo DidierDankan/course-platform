@@ -10,7 +10,7 @@ export default function HomePage() {
   const { courses, isLoading, isError, hasMore, loadMoreRef } = useInfiniteCourses(6);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pt-[72px]">
+    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
       {/* Hero */}
       <section className="max-w-[1100px] mx-auto px-[16px] mt-[18px]">
         <div className="text-center">

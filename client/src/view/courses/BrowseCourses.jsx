@@ -20,7 +20,7 @@ export default function BrowseCourses() {
   const { courses, isLoading, isError, hasMore, loadMoreRef } = useInfiniteCourses(12, filters);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pt-[72px]">
+    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
       <main className="max-w-[1100px] mx-auto px-[16px] py-[20px]">
         {/* Header */}
         <div className="text-center mb-[18px]">
