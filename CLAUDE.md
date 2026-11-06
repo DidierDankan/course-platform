@@ -76,6 +76,9 @@ There are **no tests yet** (`server` test script is a stub).
 - **`TODO.txt`** is the source of truth for what's done and what's open, with step-by-step plans. Read it before proposing work, and update it (move items to DONE, add new findings) as part of finishing a task.
 - **`DEPLOY.txt`** is the chosen deploy plan: **Vercel** (client, with `/api` and `/uploads` rewrites so it's one site and cookies work) → **Render** (Express) → **Aiven** (MySQL, SSL, non-3306 port) → **Supabase Storage** (media; videos via short-lived signed URLs behind the `protectVideos` checks). Stripe stays in **test mode**. Its section 2.0 lists the TODO items that must be done before deploying.
 - One home per fact: steps live in TODO.txt, deploy-only code changes live in DEPLOY.txt section 2 (TODO points there), and this file keeps only rules and a short status. When something changes, update all three in the same task. If TODO and DEPLOY disagree, **DEPLOY.txt wins** and TODO gets fixed.
+- **Session handoff = the `NOW` block at the top of TODO.txt.** Read it first in every session. At the end of every session (or before stopping mid-task) **rewrite** it, never append: date, branch, last commit, what's in progress, anything half-done or broken, the next step. Max ~12 lines. History doesn't go there; it goes in git. Plans don't go there; they stay in the TODO items it points to.
+- **History = git.** Every commit has a body: why the change was made, how it was verified, and what's next if the work isn't finished. `git log` is the change log; never keep a hand-written list of changes in a file.
+- Plans written in chat (e.g. a brief for the next phase) go into TODO.txt as steps before work starts. A plan that only exists in a chat is lost when the session ends.
 
 ## Already done (don't redo, don't re-flag)
 
@@ -151,3 +154,4 @@ Before starting any task, place it in one of these buckets and say which one.
 3. Errors are handled with the right status codes (400 validation, 401 unauthenticated, 403 forbidden, 404, 409 conflict) and nothing internal leaks to the client.
 4. `npm run lint` and `npm run build` pass in `client`, the server boots, and the relevant tests pass (once tests exist).
 5. A short explanation of what changed, why, and how to verify it, plus any trade-off I should know about.
+6. Tracking is updated: the TODO item is ticked or moved to DONE, the commit body says why + what's next, and the `NOW` block in TODO.txt is rewritten before the session ends.
