@@ -1,0 +1,646 @@
+/*
+ * Home page sections: hero, search dock, popular courses, teach-on-Lumen.
+ * Markup and class names from design/brutal and design/cinematic (src/App.tsx, identical markup).
+ * Every theme difference is a --lm-* variable in the theme files. The one approved structural
+ * exception (CLAUDE.md "Phase 2 decisions") is the [data-theme="cinematic"] .course-grid rule.
+ */
+@layer components {
+  /* ---------- Hero ---------- */
+  .hero {
+    max-width: 1440px;
+    margin: auto;
+    padding: var(--lm-hero-padding);
+  }
+  .hero-media {
+    position: relative;
+    min-height: var(--lm-hero-min-height);
+    overflow: var(--lm-hero-overflow);
+    background: var(--lm-hero-bg);
+    border: var(--lm-border-w-dense) solid var(--lm-hero-line);
+    border-radius: var(--lm-hero-radius);
+    box-shadow: var(--lm-hero-shadow);
+  }
+  .hero-media > .course-image {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: var(--lm-hero-image-width);
+    height: 100%;
+    border-left: var(--lm-hero-image-divider);
+    border-radius: var(--lm-hero-image-radius);
+  }
+  .course-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  /* no featured course (or no thumbnail): the theme's own still */
+  .course-image-fallback {
+    background: var(--lm-hero-image) center / cover no-repeat;
+  }
+  .hero-shade {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--lm-hero-image-radius);
+    background: var(--lm-hero-shade);
+    pointer-events: none;
+  }
+  .hero-content {
+    position: absolute;
+    z-index: 2;
+    left: var(--lm-hero-content-left);
+    top: var(--lm-hero-content-top);
+    bottom: var(--lm-hero-content-bottom);
+    width: var(--lm-hero-content-width);
+    transform: var(--lm-hero-content-transform);
+  }
+  .hero-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: var(--lm-kicker-gap);
+    padding: var(--lm-kicker-padding);
+    color: var(--lm-index-fg);
+    background: var(--lm-kicker-bg);
+    border: var(--lm-kicker-line);
+    box-shadow: var(--lm-kicker-shadow);
+    font-family: var(--lm-font-mono);
+    font-size: var(--lm-index-size);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: var(--lm-index-tracking);
+    text-transform: uppercase;
+    transform: rotate(var(--lm-kicker-tilt));
+  }
+  .live-dot {
+    width: var(--lm-live-dot-size);
+    height: var(--lm-live-dot-size);
+    border: var(--lm-live-dot-line);
+    border-radius: 50%;
+    background: var(--lm-accent-2);
+    box-shadow: var(--lm-live-dot-glow);
+  }
+  .hero h1 {
+    max-width: 750px;
+    margin: 0;
+    font-family: var(--lm-font-display);
+    font-size: var(--lm-hero-title-size);
+    font-weight: 700;
+    line-height: var(--lm-hero-title-leading);
+    letter-spacing: var(--lm-hero-title-tracking);
+    text-transform: var(--lm-hero-title-transform);
+  }
+  .hero h1 em {
+    color: var(--lm-accent-2);
+    font-style: normal;
+    -webkit-text-stroke: var(--lm-hero-em-stroke);
+    paint-order: stroke fill;
+  }
+  .hero-content > p {
+    max-width: 560px;
+    margin: var(--lm-hero-copy-margin);
+    color: var(--lm-hero-copy-fg);
+    font-size: var(--lm-hero-copy-size);
+    font-weight: var(--lm-hero-copy-weight);
+    line-height: 1.6;
+  }
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .trailer-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0;
+    color: var(--lm-trailer-fg);
+    background: transparent;
+    border: 0;
+    font-family: var(--lm-font-mono);
+    font-size: var(--lm-trailer-size);
+    font-weight: 700;
+    text-transform: var(--lm-trailer-transform);
+    cursor: pointer;
+  }
+  .trailer-button span {
+    width: 39px;
+    height: 39px;
+    display: grid;
+    place-items: center;
+    background: var(--lm-trailer-icon-bg);
+    border: var(--lm-border-w) solid var(--lm-trailer-icon-line);
+    border-radius: 50%;
+    box-shadow: var(--lm-shadow-label);
+    transition:
+      transform var(--lm-speed),
+      box-shadow var(--lm-speed),
+      background var(--lm-speed),
+      color var(--lm-speed);
+  }
+  .trailer-button:hover span {
+    color: var(--lm-trailer-icon-hover-fg);
+    background: var(--lm-trailer-icon-hover-bg);
+    border-color: var(--lm-trailer-icon-hover-line);
+    box-shadow: var(--lm-shadow-press);
+    transform: var(--lm-trailer-icon-hover-transform);
+  }
+  .trailer-button:focus-visible,
+  .hero-side-note:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 4px;
+  }
+  .hero-side-note {
+    position: absolute;
+    z-index: 3;
+    top: var(--lm-note-top);
+    right: var(--lm-note-right);
+    bottom: var(--lm-note-bottom);
+    width: var(--lm-note-width);
+    min-height: var(--lm-note-min-height);
+    padding: var(--lm-note-padding);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: var(--lm-note-align);
+    gap: 3px;
+    text-align: var(--lm-note-text-align);
+    background: var(--lm-note-bg);
+    border: var(--lm-note-line);
+    box-shadow: var(--lm-note-shadow);
+    transform: rotate(var(--lm-note-tilt));
+  }
+  .hero-side-note span {
+    color: var(--lm-note-kicker-fg);
+    font-family: var(--lm-font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: var(--lm-index-tracking);
+    text-transform: uppercase;
+  }
+  .hero-side-note strong {
+    max-width: 100%;
+    margin: 3px 0 0;
+    overflow-wrap: anywhere;
+    font-size: var(--lm-note-title-size);
+    line-height: 1.1;
+    text-transform: var(--lm-note-title-transform);
+  }
+  .hero-side-note small {
+    color: var(--lm-note-muted);
+    font-family: var(--lm-font-mono);
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  /* ---------- Search dock ---------- */
+  .search-dock {
+    position: relative;
+    z-index: 3;
+    max-width: 990px;
+    margin: var(--lm-search-margin);
+  }
+  .search-bar {
+    min-height: 67px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    background: var(--lm-search-bg);
+    border: var(--lm-border-w-dense) solid var(--lm-search-line);
+    border-radius: var(--lm-search-radius);
+    box-shadow: var(--lm-search-shadow);
+  }
+  .search-bar:focus-within {
+    border-color: var(--lm-focus);
+  }
+  .search-bar > svg {
+    margin-left: 21px;
+    color: var(--lm-search-icon);
+  }
+  .search-bar input {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    padding: 0 17px;
+    color: var(--lm-ink);
+    background: transparent;
+    border: 0;
+    outline: 0;
+    font-size: 15px;
+    font-weight: var(--lm-search-input-weight);
+  }
+  .search-bar input::placeholder {
+    color: var(--lm-placeholder);
+  }
+  .search-bar button {
+    height: 47px;
+    margin-right: 8px;
+    padding: 0 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: var(--lm-search-button-fg);
+    background: var(--lm-search-button-bg);
+    border: var(--lm-search-button-line);
+    border-radius: var(--lm-radius-input);
+    font-size: var(--lm-search-button-size);
+    font-weight: 700;
+    cursor: pointer;
+    transition: background var(--lm-speed);
+  }
+  .search-bar button:hover {
+    background: var(--lm-search-button-hover-bg);
+  }
+  .search-bar button:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Popular courses ---------- */
+  .courses-section {
+    position: relative;
+    overflow: hidden;
+    padding: var(--lm-courses-padding);
+    background: var(--lm-courses-bg);
+    border-top: var(--lm-courses-line);
+    border-bottom: var(--lm-courses-line);
+  }
+  /* big background numeral ("01") in brutal; the theme sets content: none to drop it */
+  .courses-section::after {
+    content: var(--lm-courses-mark);
+    position: absolute;
+    right: 2.5%;
+    top: 12px;
+    color: var(--lm-mark-fg);
+    font-size: 170px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.08em;
+    pointer-events: none;
+  }
+  .section-heading {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 36px;
+  }
+  .section-heading h2,
+  .teach-section h2 {
+    margin: 13px 0 0;
+    font-family: var(--lm-font-display);
+    font-size: var(--lm-section-title-size);
+    font-weight: var(--lm-section-title-weight);
+    line-height: 1;
+    letter-spacing: var(--lm-section-title-tracking);
+    text-transform: var(--lm-hero-title-transform);
+  }
+  .text-link {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 10px;
+    padding: var(--lm-text-link-padding);
+    color: var(--lm-text-link-fg);
+    background: var(--lm-text-link-bg);
+    border: var(--lm-text-link-line);
+    box-shadow: var(--lm-shadow-label);
+    font-family: var(--lm-font-mono);
+    font-size: var(--lm-text-link-size);
+    font-weight: 700;
+    text-transform: var(--lm-text-link-transform);
+    transition:
+      transform var(--lm-speed),
+      box-shadow var(--lm-speed),
+      color var(--lm-speed);
+  }
+  .text-link:hover {
+    color: var(--lm-text-link-hover-fg);
+    box-shadow: var(--lm-shadow-press);
+    transform: var(--lm-text-link-hover-transform);
+  }
+  .text-link:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 3px;
+  }
+
+  .course-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+  }
+  /* last tile of the row; only the cinematic scroll row shows it (the brutal grid has the heading link) */
+  .view-all-card {
+    display: var(--lm-view-all-display);
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 24px;
+    color: var(--lm-ink);
+    background: var(--lm-surface);
+    border: var(--lm-border-w-dense) solid var(--lm-line);
+    border-radius: var(--lm-radius-card);
+    transition: border-color var(--lm-speed-card);
+  }
+  .view-all-card:hover {
+    border-color: var(--lm-accent);
+  }
+  .view-all-card strong {
+    font-size: 22px;
+    letter-spacing: -0.03em;
+  }
+  .view-all-card:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 3px;
+  }
+
+  /* loading placeholder with the card's frame, so the row doesn't jump when data arrives */
+  .course-card-placeholder .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .course-card-placeholder .card-body span {
+    height: 12px;
+    border-radius: 2px;
+    background: var(--lm-line);
+    opacity: 0.18;
+    animation: lm-pulse 1.2s ease-in-out infinite alternate;
+  }
+  .course-card-placeholder .card-body span:first-child {
+    width: 80%;
+    height: 18px;
+  }
+  .course-card-placeholder .card-body span:last-child {
+    width: 45%;
+  }
+
+  /* ---------- Empty / error states ---------- */
+  .empty-state {
+    position: relative;
+    z-index: 1;
+    padding: 66px 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background: var(--lm-empty-bg);
+    border: var(--lm-border-w-dense) solid var(--lm-line);
+    border-radius: var(--lm-radius-card);
+    box-shadow: var(--lm-shadow-card);
+  }
+  .empty-state h3 {
+    margin: 0 0 9px;
+    font-weight: 700;
+    font-size: 27px;
+    letter-spacing: -0.045em;
+    text-transform: var(--lm-hero-title-transform);
+  }
+  .empty-state p {
+    max-width: 390px;
+    margin: 0 0 25px;
+    color: var(--lm-muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* ---------- Teach on Lumen ---------- */
+  .teach-section {
+    position: relative;
+    max-width: 1356px;
+    min-height: 380px;
+    margin: var(--lm-teach-margin);
+    padding: 58px;
+    display: grid;
+    grid-template-columns: 100px 1.2fr 0.8fr;
+    align-items: center;
+    gap: 32px;
+    overflow: hidden;
+    background: var(--lm-teach-bg);
+    border: var(--lm-border-w-dense) solid var(--lm-teach-line);
+    border-radius: var(--lm-teach-radius);
+    box-shadow: var(--lm-teach-shadow);
+  }
+  .teach-section::after {
+    content: var(--lm-teach-mark);
+    position: absolute;
+    right: -20px;
+    bottom: -60px;
+    color: var(--lm-teach-mark-fg);
+    font-size: 200px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.08em;
+    pointer-events: none;
+  }
+  .teach-number {
+    position: relative;
+    z-index: 1;
+    width: var(--lm-teach-number-size);
+    height: var(--lm-teach-number-size);
+    display: grid;
+    place-items: center;
+    color: var(--lm-on-accent);
+    background: var(--lm-accent);
+    border: var(--lm-teach-number-line);
+    border-radius: 50%;
+    box-shadow: var(--lm-teach-number-shadow);
+  }
+  .teach-section h2 {
+    position: relative;
+    z-index: 1;
+    font-size: var(--lm-teach-title-size);
+  }
+  .teach-copy {
+    position: relative;
+    z-index: 1;
+    padding-left: 32px;
+    border-left: var(--lm-border-w-dense) solid var(--lm-teach-rule);
+  }
+  .teach-copy p {
+    margin: 0 0 25px;
+    color: var(--lm-teach-copy-fg);
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.65;
+  }
+
+  @media (max-width: 1100px) {
+    .hero-media {
+      min-height: 560px;
+    }
+    .course-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 35px;
+    }
+    .teach-section {
+      margin-left: 42px;
+      margin-right: 42px;
+      padding: 45px;
+      grid-template-columns: 80px 1fr;
+    }
+    .teach-copy {
+      grid-column: 2;
+      padding: 22px 0 0;
+      border-top: var(--lm-border-w-dense) solid var(--lm-teach-rule);
+      border-left: 0;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .hero {
+      padding: 18px 14px 55px;
+    }
+    .hero-media {
+      min-height: var(--lm-hero-m-min-height);
+      overflow: hidden;
+    }
+    .hero-media > .course-image {
+      bottom: auto;
+      width: 100%;
+      height: var(--lm-hero-m-image-height);
+      border-left: 0;
+      border-bottom: var(--lm-hero-image-divider);
+    }
+    .hero-content {
+      left: 21px;
+      right: 21px;
+      top: auto;
+      bottom: 26px;
+      width: auto;
+      transform: none;
+    }
+    .hero-kicker {
+      margin-bottom: 18px;
+      font-size: 8px;
+    }
+    .hero h1 {
+      font-size: clamp(45px, 13.5vw, 61px);
+    }
+    .hero-content > p {
+      margin: 18px 0 24px;
+      font-size: 14px;
+    }
+    .hero-actions {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 17px;
+    }
+    .hero-actions .button {
+      width: 100%;
+    }
+    .hero-side-note {
+      display: var(--lm-note-m-display);
+      top: 17px;
+      right: 9px;
+      bottom: auto;
+      width: 126px;
+      min-height: 90px;
+    }
+    .search-dock {
+      margin-top: var(--lm-search-m-margin-top);
+    }
+    .search-bar {
+      min-height: 59px;
+      grid-template-columns: auto 1fr 46px;
+      border-radius: var(--lm-search-m-radius);
+    }
+    .search-bar > svg {
+      margin-left: 15px;
+    }
+    .search-bar input {
+      padding: 0 10px;
+      font-size: 13px;
+    }
+    .search-bar button {
+      width: 39px;
+      height: 39px;
+      padding: 0;
+      justify-content: center;
+    }
+    .search-bar button .search-label,
+    .text-link .text-link-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+    .courses-section {
+      padding: var(--lm-courses-m-padding);
+    }
+    .courses-section::after {
+      font-size: 110px;
+    }
+    .section-heading {
+      align-items: flex-start;
+      padding-right: var(--lm-courses-m-heading-pad);
+    }
+    .section-heading h2 {
+      max-width: 285px;
+      font-size: var(--lm-section-m-title-size);
+    }
+    .section-heading .text-link {
+      margin-top: 22px;
+    }
+    .course-grid {
+      grid-template-columns: 1fr;
+      gap: 35px;
+    }
+    .teach-section {
+      min-height: 0;
+      margin: var(--lm-teach-m-margin);
+      padding: 38px 25px;
+      display: block;
+    }
+    .teach-number {
+      margin-bottom: 31px;
+    }
+    .teach-section h2 {
+      margin-bottom: 29px;
+      font-size: 42px;
+    }
+  }
+}
+
+@keyframes lm-pulse {
+  to {
+    opacity: 0.35;
+  }
+}
+
+/* The one approved structural difference (CLAUDE.md "Phase 2 decisions"):
+   brutal = grid, cinematic = horizontal scroll row with scroll-snap. Same markup in both. */
+[data-theme="cinematic"] .course-grid {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  padding: 1px 42px 15px 1px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: var(--lm-line-strong) transparent;
+
+  & > * {
+    flex: 0 0 min(365px, 82vw);
+    min-width: min(365px, 82vw);
+    scroll-snap-align: start;
+  }
+
+  @media (max-width: 700px) {
+    gap: 13px;
+    padding-right: 18px;
+
+    & > * {
+      flex-basis: 85vw;
+      min-width: 85vw;
+    }
+  }
+}

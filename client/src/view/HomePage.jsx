@@ -1,69 +1,212 @@
-import { useInfiniteCourses } from "@hooks/useInfiniteCourses";
-import Spinner from "@components/ui/Spinner";
-import { BookOpen } from "lucide-react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { ArrowRight, Play, Search } from "lucide-react";
+import { useGetAllCoursesQuery } from "@api/modules/courseApi";
 import CourseCard from "@components/ui/CourseCard";
-import { Link } from "react-router-dom";
 import { APP_NAME } from "@utils/brand";
 
-export default function HomePage() {
-  const { courses, isLoading, isError, hasMore, loadMoreRef } = useInfiniteCourses(6);
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+// Home shows a fixed set (CLAUDE.md "Phase 2 decisions"); the full, filterable list is /courses.
+const POPULAR_LIMIT = 8;
+const PLACEHOLDER_CARDS = 4;
+
+// The featured course is simply the most popular one, so one request feeds both the hero
+// and the row: no second limit=1 call for the same data.
+function Hero({ featured }) {
+  const thumb = featured?.thumbnail_url ? `${API_BASE_URL}${featured.thumbnail_url}` : null;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
-      {/* Hero */}
-      <section className="max-w-[1100px] mx-auto px-[16px] mt-[18px]">
-        <div className="text-center">
-          <div className="inline-flex items-center gap-[8px] text-[12px] uppercase tracking-[0.08em] text-[#475569] bg-[#e2e8f0] rounded-[999px] px-[10px] py-[4px] mb-[10px]">
-            <BookOpen size={14} />
-            <span>Welcome to {APP_NAME}</span>
-          </div>
-
-          <h1 className="text-[28px] sm:text-[36px] font-extrabold leading-[1.15]">
-            Learn new skills with curated, practical courses.
-          </h1>
-          <p className="mt-[10px] text-[14px] sm:text-[16px] text-[#475569]">
-            Bite-sized lessons, real projects, and instructors who deliver.
-          </p>
+    <div className="hero-media">
+      {thumb ? (
+        <img className="course-image" src={thumb} alt="" fetchPriority="high" />
+      ) : (
+        <div className="course-image course-image-fallback" aria-hidden="true" />
+      )}
+      <div className="hero-shade" />
+      <div className="hero-content">
+        <div className="hero-kicker">
+          <span className="live-dot" aria-hidden="true" /> Big skills. Zero boring.
         </div>
-
-        <div className="mt-[18px]">
-          <img
-            className="w-full h-[260px] sm:h-[340px] object-cover rounded-[14px] border border-[#e5e7eb] shadow-[0_10px_30px_rgba(0,0,0,0.10)]"
-            alt="People learning online"
-            src="https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?q=80&w=2000&auto=format&fit=crop"
-          />
+        <h1>
+          Learn from people who <em>live</em> the craft.
+        </h1>
+        <p>Brilliant video courses from independent makers. Buy once, learn your way, keep forever.</p>
+        <div className="hero-actions">
+          <Link className="button button-primary" to="/courses">
+            <Play size={15} aria-hidden="true" /> Explore courses
+          </Link>
+          {featured && (
+            <Link className="trailer-button" to={`/courses/${featured.id}`}>
+              <span>
+                <Play size={14} aria-hidden="true" />
+              </span>
+              Preview the featured course
+            </Link>
+          )}
         </div>
-      </section>
-
-      {/* Courses */}
-      <section className="max-w-[1100px] mx-auto px-[16px] mt-[22px] pb-[40px]">
-        <div className="flex items-center align-center justify-between">
-
-          <h2 className="text-[18px] sm:text-[20px] font-bold mb-[12px]">Popular Courses</h2>
-          <span className="text-[18px] sm:text-[20px] font-bold mb-[12px]"><Link to="/courses">See all</Link></span>
-        </div>
-
-        {isLoading ? (
-          <Spinner />
-        ) : isError ? (
-          <p className="text-[#b91c1c] text-[14px]">Failed to load courses.</p>
-        ) : courses.length === 0 ? (
-          <p className="text-[#475569] text-[14px]">No courses yet. Check back soon!</p>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]">
-              {courses.map((course) => (
-                <CourseCard key={course.id} course={course} />
-              ))}
-            </div>
-
-            {hasMore && (
-              <div ref={loadMoreRef} className="mt-[16px] h-[1px] bg-transparent" />
-            )}
-          </>
-        )}
-      </section>
-
+      </div>
+      {featured && (
+        <Link className="hero-side-note" to={`/courses/${featured.id}`}>
+          <span>Featured</span>
+          <strong>{featured.title}</strong>
+          {featured.tutor_name && <small>with {featured.tutor_name}</small>}
+        </Link>
+      )}
     </div>
+  );
+}
+
+function SearchDock() {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+
+  const onSubmit = (event) => {
+    event.preventDefault();
+    const q = query.trim();
+    navigate(q ? `/courses?${new URLSearchParams({ q })}` : "/courses");
+  };
+
+  return (
+    <div className="search-dock">
+      <form className="search-bar" role="search" onSubmit={onSubmit}>
+        <Search size={20} aria-hidden="true" />
+        <label className="sr-only" htmlFor="course-search">
+          Search courses, skills, or instructors
+        </label>
+        <input
+          id="course-search"
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search courses, skills, or instructors"
+          maxLength={100}
+        />
+        <button type="submit">
+          <span className="search-label">Search</span> <ArrowRight size={16} aria-hidden="true" />
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function PopularCourses({ courses, isLoading, isError, refetch }) {
+  let content;
+  if (isLoading) {
+    content = (
+      <div className="course-grid" aria-busy="true" aria-label="Loading courses">
+        {Array.from({ length: PLACEHOLDER_CARDS }, (_, i) => (
+          <div key={i} className="course-card course-card-placeholder" aria-hidden="true">
+            <div className="card-visual" />
+            <div className="card-body">
+              <span />
+              <span />
+              <span />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  } else if (isError) {
+    content = (
+      <div className="empty-state" role="alert">
+        <h3>Courses didn&apos;t load</h3>
+        <p>Something went wrong on our side. Try again in a moment.</p>
+        <button type="button" className="button button-secondary" onClick={refetch}>
+          Try again
+        </button>
+      </div>
+    );
+  } else if (courses.length === 0) {
+    content = (
+      <div className="empty-state">
+        <h3>No courses yet</h3>
+        <p>The first instructors are setting up. Want to be one of them?</p>
+        <Link className="button button-secondary" to="/auth/register">
+          Teach on {APP_NAME} <ArrowRight size={16} aria-hidden="true" />
+        </Link>
+      </div>
+    );
+  } else {
+    content = (
+      <div className="course-grid">
+        {courses.map((course) => (
+          <CourseCard key={course.id} course={course} />
+        ))}
+        <Link className="view-all-card" to="/courses">
+          <span className="section-index">All courses</span>
+          <strong>View all courses</strong>
+          <ArrowRight size={20} aria-hidden="true" />
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <section className="courses-section" id="popular" aria-labelledby="popular-title">
+      <div className="section-heading">
+        <div>
+          <span className="section-index">01 / Popular courses</span>
+          <h2 id="popular-title">Find your next obsession.</h2>
+        </div>
+        <Link className="text-link" to="/courses">
+          <span className="text-link-label">View all courses</span> <ArrowRight size={18} aria-hidden="true" />
+        </Link>
+      </div>
+      {content}
+    </section>
+  );
+}
+
+function TeachSection() {
+  const { user } = useSelector((s) => s.auth);
+  const isInstructor = user?.role === "seller" || user?.role === "admin";
+
+  return (
+    <section className="teach-section" aria-labelledby="teach-title">
+      <div className="teach-number" aria-hidden="true">
+        <Play size={20} />
+      </div>
+      <div>
+        <span className="section-index">Teach on {APP_NAME}</span>
+        <h2 id="teach-title">
+          Your knowledge.
+          <br />
+          Your rules.
+        </h2>
+      </div>
+      <div className="teach-copy">
+        <p>
+          Build a course on your terms. We give independent instructors the tools and support to turn deep
+          expertise into courses people want to finish.
+        </p>
+        {isInstructor ? (
+          <Link className="button button-ink" to="/profile/portfolio">
+            Go to your courses <ArrowRight size={17} aria-hidden="true" />
+          </Link>
+        ) : (
+          <Link className="button button-ink" to="/auth/register">
+            Become an instructor <ArrowRight size={17} aria-hidden="true" />
+          </Link>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export default function HomePage() {
+  const { data, isLoading, isError, refetch } = useGetAllCoursesQuery({ limit: POPULAR_LIMIT, sort: "popular" });
+  const courses = Array.isArray(data) ? data : [];
+
+  return (
+    <main>
+      <section className="hero">
+        <Hero featured={courses[0]} />
+        <SearchDock />
+      </section>
+      <PopularCourses courses={courses} isLoading={isLoading} isError={isError} refetch={refetch} />
+      <TeachSection />
+    </main>
   );
 }

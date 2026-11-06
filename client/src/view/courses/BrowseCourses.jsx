@@ -1,5 +1,6 @@
 // src/view/courses/BrowseCourses.jsx
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { BookOpen } from "lucide-react";
 import CourseFilters from "@components/ui/CourseFilters";
 import CourseCard from "@components/ui/CourseCard";
@@ -7,15 +8,18 @@ import Spinner from "@components/ui/Spinner";
 import { useInfiniteCourses } from "@hooks/useInfiniteCourses";
 
 export default function BrowseCourses() {
-  const [filters, setFilters] = useState({
-    q: "",
+  // Only the initial search term comes from the URL (Home search bar -> /courses?q=...).
+  // Phase 2b moves every filter into the URL with useSearchParams.
+  const [searchParams] = useSearchParams();
+  const [filters, setFilters] = useState(() => ({
+    q: searchParams.get("q") ?? "",
     sort: "newest",
     minPrice: "",
     maxPrice: "",
     free: "",
     subscriptionOnly: "",
     durationBucket: "",
-  });
+  }));
 
   const { courses, isLoading, isError, hasMore, loadMoreRef } = useInfiniteCourses(12, filters);
 
