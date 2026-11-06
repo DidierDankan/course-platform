@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { BookOpen, Lock, Play, Clock } from "lucide-react";
 import Spinner from "@components/ui/Spinner";

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useWatchCourseQuery } from "@api/modules/courseApi";
 import { useUpdateProgressMutation } from "@api/modules/enrollmentApi";
@@ -28,7 +28,6 @@ export default function WatchCourse() {
   const lessons = useMemo(() => (Array.isArray(data?.lessons) ? data.lessons : []), [data?.lessons]);
   const enrollment = data?.enrollment;
 
-  console.log("COURSE", course)
 
   const initialLessonId = useMemo(() => {
     if (!lessons.length) return null;
@@ -102,7 +101,6 @@ export default function WatchCourse() {
     if (next) setActiveLessonId(next.id);
   };
 
-  console.log("ACTIVE LESSON", activeLesson)
 
   if (isLoading) {
     return (

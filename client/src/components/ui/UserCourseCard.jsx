@@ -1,4 +1,3 @@
-import React from "react";
 import { BookOpen, PlayCircle } from "lucide-react";
 import ProgressBar from "@components/ui/ProgressBar";
 

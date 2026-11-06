@@ -8,7 +8,6 @@ export default function FavoritesPage() {
 
   const favorites = data?.favorites || [];
 
-  console.log("FAVORITES", favorites)
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pt-[72px]">

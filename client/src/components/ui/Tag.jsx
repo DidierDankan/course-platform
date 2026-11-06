@@ -1,5 +1,4 @@
 // @components/ui/Tag.jsx
-import React from "react";
 
 const PALETTES = {
   blue: "bg-[#E6F2FF] text-[#0B63C4] border-[#CDE3FF] dark:bg-[#163B5E] dark:text-[#D4E7FF] dark:border-[#1F4E7C]",

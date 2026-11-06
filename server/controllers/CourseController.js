@@ -1,5 +1,6 @@
 import CourseService from "../db/CourseService.js";
 import EnrollmentService from "../db/EnrollmentService.js";
+import { parsePagination } from "../lib/pagination.js";
 
 class CourseController {
 
@@ -10,9 +11,7 @@ class CourseController {
   // server/controllers/CourseController.js
   async getAllCourses(req, res) {
     try {
-      const limit = parseInt(req.query.limit) || 6;
-      const page = parseInt(req.query.page) || 1;
-      const offset = (page - 1) * limit;
+      const { limit, offset } = parsePagination(req.query);
 
       const filters = {
         q: req.query.q || "",

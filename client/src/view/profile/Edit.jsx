@@ -1,4 +1,3 @@
-import React from "react";
 import { Formik, Form } from "formik";
 import { useNavigate } from "react-router-dom";
 import { ProfileSchema } from "@utils/form/profile/editValidation";

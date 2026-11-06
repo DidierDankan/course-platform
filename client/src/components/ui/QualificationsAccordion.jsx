@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Award, GraduationCap, FileText, ScrollText, Link2, ChevronDown } from "lucide-react";
 
 const ICONS = [Award, GraduationCap, FileText, ScrollText];

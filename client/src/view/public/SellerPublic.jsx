@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { BookOpen, ExternalLink, Lock } from "lucide-react";
 import { useGetSellerPublicQuery } from "@api/modules/publicApi";
