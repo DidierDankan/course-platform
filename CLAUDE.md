@@ -143,7 +143,7 @@ Before starting any task, place it in one of these buckets and say which one.
 - Confirmation email on register: only with a real provider (Resend) and a queued/async send.
 
 **Skip or defer (low signal, high cost):**
-- Stripe subscriptions: complex billing state machine (proration, dunning, `past_due`). Not worth it unless it becomes the centrepiece. Hide the "subscription only" UI until it exists (`CourseFilters.jsx:138-143`, in TODO).
+- Stripe subscriptions: complex billing state machine (proration, dunning, `past_due`). Not worth it unless it becomes the centrepiece. The "Subscription only" filter gets removed, client and server, in Phase 2b (TODO); the `is_subscription_only` column and the enrollment guard stay.
 - n8n integration and badges/gamification: no engineering signal for the effort.
 - Microservices, GraphQL, Kubernetes, or switching to TypeScript/an ORM mid-project "because it's senior". Senior means choosing the boring tool deliberately and explaining why. (Migrating to TypeScript *is* worth discussing as a dedicated, planned step, not as a side effect of another task.)
 
