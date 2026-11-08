@@ -370,6 +370,12 @@
     box-shadow: var(--lm-shadow-press);
     transform: var(--lm-small-press-transform);
   }
+  .card-action-error {
+    margin: 8px 0 0;
+    color: var(--lm-danger);
+    font-size: 12px;
+    font-weight: 600;
+  }
   .card-action.is-loading,
   .card-action.is-loading:hover {
     justify-content: center;

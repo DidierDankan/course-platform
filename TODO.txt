@@ -333,7 +333,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
             [x] 5. BrowseCourses, both themes: the no-flicker behaviour above (dim on isFetching && !isFetchingNextPage, aria-busy,
                    .spinner), min-height one card row, placeholder cards on first load, real empty state, error + retry,
                    failed next page shows retry at the end of the list without losing the loaded cards
-            [ ] 6. free courses in CourseCTA: price 0, not enrolled -> "Enroll for free" (logged out: "Login to enroll")
+            [x] 6. free courses in CourseCTA: price 0, not enrolled -> "Enroll for free" (logged out: "Login to enroll")
                    using useEnrollInCourseMutation, then the card moves to "Continue learning"; replace alert() with an inline
                    error for both buy and enroll
                    threat: the button is UX; POST /api/enrollments already refuses paid and subscription courses on the
@@ -356,7 +356,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
         each phase gets its own detailed brief here (like 2a) before it starts, written after the previous one is reviewed
     4. add loading, empty and error states where they're missing (done page by page inside 2a-2e)
 
-[ ] free courses: the card CTA still starts Stripe Checkout (Stripe rejects $0) -> Phase 2b step 6
+[x] free courses: the card CTA no longer goes to Stripe -> done in Phase 2b step 6
 
 --- FEATURES: maybe (only if cheap or it shows a skill) ---
 
