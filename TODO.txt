@@ -312,7 +312,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                    body = why, how verified, what's next; don't touch 2c-2e pages. Only reference for forms is the
                    style guide part of design/*/src/App.tsx (.field, .toggle, .empty-state): Browse itself has no
                    reference page, so it uses Home's section heading + those classes
-            [ ] 0. server list filters, own commit. CourseController.getAllCourses / CourseService.fetchAllCourses:
+            [x] 0. server list filters, own commit. CourseController.getAllCourses / CourseService.fetchAllCourses:
                    delete subscriptionOnly; minPrice/maxPrice must be finite and >= 0, anything else is treated as not
                    sent (helper in server/lib, same idea as parsePagination)
                    threat: ?minPrice=abc or -5 comes straight from the URL; parameterized already, this stops NaN

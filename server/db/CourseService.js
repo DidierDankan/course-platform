@@ -26,7 +26,6 @@ class CourseService {
       minPrice,
       maxPrice,
       free,
-      subscriptionOnly,
       minDuration,
       maxDuration,
       tutor,      // name search
@@ -47,19 +46,14 @@ class CourseService {
     if (free === "1" || free === 1 || free === true) {
       where.push(`c.price = 0`);
     } else {
-      if (minPrice !== undefined && minPrice !== null && minPrice !== "") {
+      if (minPrice !== undefined) {
         where.push(`c.price >= ?`);
-        params.push(Number(minPrice));
+        params.push(minPrice);
       }
-      if (maxPrice !== undefined && maxPrice !== null && maxPrice !== "") {
+      if (maxPrice !== undefined) {
         where.push(`c.price <= ?`);
-        params.push(Number(maxPrice));
+        params.push(maxPrice);
       }
-    }
-
-    // Subscription only
-    if (subscriptionOnly === "1" || subscriptionOnly === 1 || subscriptionOnly === true) {
-      where.push(`c.is_subscription_only = 1`);
     }
 
     // Tutor

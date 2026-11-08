@@ -1,6 +1,7 @@
 import CourseService from "../db/CourseService.js";
 import EnrollmentService from "../db/EnrollmentService.js";
 import { parsePagination } from "../lib/pagination.js";
+import { nonNegativeOrUndefined } from "../lib/queryNumbers.js";
 
 class CourseController {
 
@@ -15,10 +16,9 @@ class CourseController {
 
       const filters = {
         q: req.query.q || "",
-        minPrice: req.query.minPrice,
-        maxPrice: req.query.maxPrice,
+        minPrice: nonNegativeOrUndefined(req.query.minPrice),
+        maxPrice: nonNegativeOrUndefined(req.query.maxPrice),
         free: req.query.free,
-        subscriptionOnly: req.query.subscriptionOnly,
         minDuration: req.query.minDuration,
         maxDuration: req.query.maxDuration,
         tutor: req.query.tutor,
