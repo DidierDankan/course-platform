@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { useWatchCourseQuery } from "@api/modules/courseApi";
 import { useUpdateProgressMutation } from "@api/modules/enrollmentApi";
-import { PlayCircle, ListVideo } from "lucide-react";
+import { ListVideo } from "lucide-react";
+import { formatDuration } from "@utils/duration";
 
 const API_ORIGIN = import.meta.env.VITE_API_URL;
 
@@ -20,6 +22,12 @@ export default function WatchCourse() {
   const videoRef = useRef(null);
   const saveTimer = useRef(null);
 
+  const role = useSelector((s) => s.auth.user?.role);
+  // Sellers watch their own courses here, but /user/courses is a student-only route.
+  const backLink = role === "seller"
+    ? { to: "/profile/portfolio", label: "My portfolio" }
+    : { to: "/user/courses", label: "My courses" };
+
   const { data, isLoading, isError, error } = useWatchCourseQuery(courseId);
   const [updateProgress] = useUpdateProgressMutation();
 
@@ -27,7 +35,6 @@ export default function WatchCourse() {
   // Memoized so the [] fallback is the same array every render (stable useMemo deps below).
   const lessons = useMemo(() => (Array.isArray(data?.lessons) ? data.lessons : []), [data?.lessons]);
   const enrollment = data?.enrollment;
-
 
   const initialLessonId = useMemo(() => {
     if (!lessons.length) return null;
@@ -45,10 +52,11 @@ export default function WatchCourse() {
     [lessons, activeLessonId]
   );
 
-  // Seek to last saved position when metadata loads
+  // Seek to the saved position when metadata loads, but only in the lesson that position belongs to.
   useEffect(() => {
     const el = videoRef.current;
     if (!el || !enrollment || !activeLesson) return;
+    if (activeLesson.id !== enrollment.last_watched_media_id) return;
 
     const onLoaded = () => {
       const seconds = Number(enrollment.last_position_seconds || 0);
@@ -79,9 +87,9 @@ export default function WatchCourse() {
 
     debouncedSave({
       courseId,
-      completed: lessonPct >= 98,           // ✅ only mark completed near the end
-      lastWatchedMediaId: activeLessonId,   // ✅ current lesson
-      lastPositionSeconds: current,         // ✅ resume point
+      completed: lessonPct >= 98,           // only mark completed near the end
+      lastWatchedMediaId: activeLessonId,   // current lesson
+      lastPositionSeconds: current,         // resume point
     });
   };
 
@@ -89,9 +97,9 @@ export default function WatchCourse() {
     if (enrollment) {
       await updateProgress({
         courseId,
-        completed: true,                      // ✅ ended = completed
+        completed: true,                      // ended = completed
         lastWatchedMediaId: activeLessonId,
-        lastPositionSeconds: 0,               // ✅ reset on completion
+        lastPositionSeconds: 0,               // reset on completion
       });
     }
 
@@ -101,144 +109,105 @@ export default function WatchCourse() {
     if (next) setActiveLessonId(next.id);
   };
 
-
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc]">
-        <div className="animate-pulse space-y-4 mt-8 max-w-[1100px] mx-auto px-[20px] py-[28px]">
-          <div className="h-8 bg-gray-200 rounded w-1/3" />
-          <div className="h-[320px] bg-gray-200 rounded-[16px]" />
-          <div className="h-[220px] bg-gray-200 rounded-[16px]" />
+      <main className="page-main">
+        <div className="page-inline-loader" role="status" aria-label="Loading course">
+          <span className="spinner" aria-hidden="true" />
         </div>
-      </div>
+      </main>
     );
   }
 
   if (isError) {
+    const notEnrolled = error?.status === 403;
     return (
-      <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
-        <main className="max-w-[900px] mx-auto px-[20px] py-[28px]">
-          <div className="bg-white border border-[#e2e8f0] rounded-[16px] p-[18px] shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
-            <div className="text-[18px] font-bold text-[#1e293b]">
-              Can’t open this course
-            </div>
-            <div className="mt-[6px] text-[14px] text-[#475569]">
-              {error?.data?.message || error?.error || "Unknown error"}
-            </div>
-            <div className="mt-[12px]">
-              <Link to="/user/dashboard" className="text-[14px] text-[#4f46e5] font-medium hover:underline">
-                Back to dashboard
-              </Link>
-            </div>
-          </div>
-        </main>
-      </div>
+      <main className="page-main page-main-narrow">
+        <div className="empty-state" role="alert">
+          <h3>Can&apos;t open this course</h3>
+          <p>
+            {notEnrolled
+              ? "You need to enroll in this course before you can watch it."
+              : "It may not exist any more, or something went wrong on our side."}
+          </p>
+          <Link to={notEnrolled ? `/courses/${courseId}` : "/courses"} className="button button-secondary">
+            {notEnrolled ? "View the course" : "Browse courses"}
+          </Link>
+        </div>
+      </main>
     );
   }
 
   if (!course || !activeLesson) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
-        <main className="max-w-[900px] mx-auto px-[20px] py-[28px]">
-          <div className="bg-white border border-[#e2e8f0] rounded-[16px] p-[18px]">
-            No lessons found for this course.
-          </div>
-        </main>
-      </div>
+      <main className="page-main page-main-narrow">
+        <div className="empty-state">
+          <h3>No lessons yet</h3>
+          <p>This course doesn&apos;t have any lessons to watch yet.</p>
+          <Link to={backLink.to} className="button button-secondary">
+            {backLink.label}
+          </Link>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
-      <main className="max-w-[1100px] mx-auto px-[20px] py-[28px] grid grid-cols-1 lg:grid-cols-[1fr,360px] gap-[16px]">
-        {/* Player */}
-        <section className="bg-white border border-[#e2e8f0] rounded-[16px] p-[18px] shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
-          <div className="flex items-start justify-between gap-[10px]">
-            <div>
-              <div className="inline-flex items-center gap-[8px] text-[12px] uppercase tracking-[0.08em] text-[#475569] bg-[#e2e8f0] rounded-[999px] px-[10px] py-[4px] mb-[10px]">
-                <PlayCircle size={14} />
-                <span>Now watching</span>
-              </div>
+    <main className="page-main watch-layout">
+      <section className="panel" aria-label="Video player">
+        <div className="watch-head">
+          <header className="page-heading">
+            <span className="section-index">Now watching</span>
+            <h1>{course.title}</h1>
+            <p>{activeLesson.title}</p>
+          </header>
+          <Link to={backLink.to} className="text-link">
+            {backLink.label}
+          </Link>
+        </div>
 
-              <h1 className="text-[20px] sm:text-[24px] font-extrabold text-[#1e293b] leading-[1.2]">
-                {course.title}
-              </h1>
+        <video
+          ref={videoRef}
+          src={toAbsoluteUrl(activeLesson?.url)}
+          controls
+          className="watch-video"
+          onPause={handleTimeUpdate}
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={handleEnded}
+        />
 
-              <p className="mt-[6px] text-[#475569] text-[14px]">
-                {activeLesson.title}
-              </p>
-            </div>
+        {activeLesson.description && <p className="watch-description">{activeLesson.description}</p>}
+      </section>
 
-            <Link
-              to="/user/courses"
-              className="text-[14px] text-[#4f46e5] font-medium hover:underline"
-            >
-              My courses
-            </Link>
+      <aside className="panel" aria-label="Lessons">
+        <div className="watch-lessons-title">
+          <div className="stat-icon" aria-hidden="true">
+            <ListVideo size={18} />
           </div>
-
-          <div className="mt-[14px]">
-            <video
-              ref={videoRef}
-              src={toAbsoluteUrl(activeLesson?.url)}
-              controls
-              className="w-full rounded-[12px] bg-black"
-              onPause={handleTimeUpdate}
-              onTimeUpdate={handleTimeUpdate}
-              onEnded={handleEnded}
-            />
+          <div>
+            <div className="stat-label">Lessons</div>
+            <strong>
+              {lessons.length} {lessons.length === 1 ? "lesson" : "lessons"}
+            </strong>
           </div>
+        </div>
 
-          {activeLesson.description && (
-            <div className="mt-[12px] text-[14px] text-[#475569] leading-relaxed">
-              {activeLesson.description}
-            </div>
-          )}
-        </section>
-
-        {/* Lessons */}
-        <aside className="bg-white border border-[#e2e8f0] rounded-[16px] p-[18px] shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
-          <div className="flex items-center gap-[8px] mb-[12px]">
-            <div className="h-[34px] w-[34px] rounded-[12px] bg-[#eef2ff] text-[#4f46e5] flex items-center justify-center">
-              <ListVideo size={18} />
-            </div>
-            <div>
-              <div className="text-[12px] uppercase tracking-[0.08em] text-[#64748b]">
-                Lessons
-              </div>
-              <div className="text-[14px] font-bold text-[#0f172a]">
-                {lessons.length} items
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-[10px]">
-            {lessons.map((l) => {
-              const active = l.id === activeLessonId;
-              return (
-                <button
-                  key={l.id}
-                  onClick={() => setActiveLessonId(l.id)}
-                  className={`w-full text-left rounded-[12px] border px-[12px] py-[10px] transition ${
-                    active
-                      ? "border-[#4f46e5] bg-[#eef2ff]"
-                      : "border-[#e2e8f0] bg-white hover:bg-[#f8fafc]"
-                  }`}
-                >
-                  <div className="text-[14px] font-semibold text-[#0f172a] truncate">
-                    {l.title || `Lesson ${l.order_index + 1}`}
-                  </div>
-                  {l.duration != null && (
-                    <div className="text-[12px] text-[#64748b] mt-[2px]">
-                      {l.duration} min
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </aside>
-      </main>
-    </div>
+        <ul className="watch-lessons">
+          {lessons.map((l, index) => (
+            <li key={l.id}>
+              <button
+                type="button"
+                className="watch-lesson"
+                aria-current={l.id === activeLessonId}
+                onClick={() => setActiveLessonId(l.id)}
+              >
+                <strong>{l.title || `Lesson ${index + 1}`}</strong>
+                {l.duration != null && <small>{formatDuration(l.duration)}</small>}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </aside>
+    </main>
   );
 }

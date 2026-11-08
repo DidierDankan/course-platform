@@ -9,15 +9,15 @@ How these files fit together:
 (handoff for the next session: REWRITE this block at the end of every session, never append; max ~12 lines)
 
 updated:      2026-11-08
-branch:       multi-design
+branch:       multi-design (commits may reach GitHub on their own: never rewrite history here)
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
-done:         Phase 2a, 2b, 2c, Home carousel and error boundary complete and verified
-in progress:  Phase 2d (plan under design system -> 3 -> Phase 2d)
+done:         Phase 2a, 2b, 2c, 2d, Home carousel and error boundary complete and verified
+in progress:  nothing
 waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in server/scripts/seed-assets/
               3) npm run seed:demo (until then the demo accounts have a throwaway password)
 open finds:   local DB is MyISAM + drifted from schema.sql (PRIORITY "schema.sql")
-next step:    finish Phase 2d, then the Phase 2e brief (seller pages)
-roadmap:      2a, 2b, 2c done -> 2d -> 2e, then security -> schema + migrations -> tests + CI -> deploy
+next step:    write the Phase 2e brief (seller: dashboard, Portfolio, Edit, course editor, then delete legacy styles)
+roadmap:      2a-2d done -> 2e, then security -> schema + migrations -> tests + CI -> deploy
 GATE:         nothing goes online before the security items are done
 
 =========================== DONE ===========================
@@ -378,14 +378,14 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                     and wrong password, return to the page you came from; register validation, duplicate email and a
                     real new account (e2e-*@example.test, removed by cleanup); clicking a label focuses its input; /auth
                     and a wrong-role URL land somewhere real; success page as student and seller. Then stop and report
-        [ ] Phase 2d: student. Dashboard, MyCourses, Favorites, WatchCourse, ProgressBar, StatCard, UserCourseCard
+        [x] Phase 2d: student. Dashboard, MyCourses, Favorites, WatchCourse, ProgressBar, StatCard, UserCourseCard
             rules: same as 2b/2c (only --lm-* or reference classes; one commit per numbered step; don't touch 2e pages)
-            [ ] 0. ProgressBar and StatCard on tokens; styles/student.css
-            [ ] 1. UserCourseCard + student dashboard in both themes; loading, empty and error states
-            [ ] 2. MyCourses in both themes: Unsplash image -> theme still; shared ProgressBar instead of a copy;
+            [x] 0. ProgressBar and StatCard on tokens; styles/student.css
+            [x] 1. UserCourseCard + student dashboard in both themes; loading, empty and error states
+            [x] 2. MyCourses in both themes: Unsplash image -> theme still; shared ProgressBar instead of a copy;
                    a search with no matches says so instead of "You don't have any courses yet"
-            [ ] 3. Favorites in both themes on .course-list, with loading, empty and error (+ retry) states
-            [ ] 4. WatchCourse in both themes, playback logic unchanged except these bugs:
+            [x] 3. Favorites in both themes on .course-list, with loading, empty and error (+ retry) states
+            [x] 4. WatchCourse in both themes, playback logic unchanged except these bugs:
                    - lesson duration is seconds but labelled "min": use formatDuration
                    - the saved position was applied to any lesson: only resume the lesson it belongs to
                    - owners were sent to the student-only /user/courses: back link by role
