@@ -2,6 +2,8 @@ import { useField } from "formik";
 
 // A Formik text field in the design system's .field markup. The <label> wraps the input, so clicking
 // the label focuses it and screen readers announce the name. An error replaces the hint once touched.
+// The message line is always rendered: its reserved height stops the form from jumping when an error
+// appears, which would move the submit button out from under a click.
 export default function FormField({ label, hint, name, type = "text", ...inputProps }) {
   const [field, meta] = useField({ name, type });
   const error = meta.touched ? meta.error : undefined;
@@ -18,7 +20,7 @@ export default function FormField({ label, hint, name, type = "text", ...inputPr
         aria-invalid={!!error}
         aria-describedby={message ? messageId : undefined}
       />
-      {message && <small id={messageId}>{message}</small>}
+      <small id={messageId}>{message}</small>
     </label>
   );
 }

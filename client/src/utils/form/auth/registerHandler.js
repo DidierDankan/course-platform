@@ -12,19 +12,20 @@ export const handleRegisterSubmit = (registerUser, navigate) => {
   };
 };
 
-export const handleLoginSubmit = (LoginUser, navigate, dispatch, from="/") => {
-  return async (values, { setSubmitting, setErrors }) => {
+export const handleLoginSubmit = (loginUser, navigate, dispatch, from = "/") => {
+  return async (values, { setSubmitting, setStatus }) => {
+    setStatus(undefined);
     try {
-      const response = await LoginUser(values).unwrap();
+      const response = await loginUser(values).unwrap();
 
-      // ✅ Save user info in Redux
       dispatch(setCredentials({
         user: response.user,
       }));
 
       navigate(from, { replace: true });
     } catch (err) {
-      setErrors({ email: err?.data?.message || 'Login failed' });
+      // One message for the whole form: pinning it to the email field would hint that the email was the problem.
+      setStatus(err?.data?.message || 'Login failed. Please try again.');
     }
     setSubmitting(false);
   };

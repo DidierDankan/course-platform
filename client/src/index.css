@@ -10,6 +10,7 @@
 @import "./styles/home.css";
 @import "./styles/browse.css";
 @import "./styles/course-pages.css";
+@import "./styles/auth.css";
 
 :root {
   height: 100%;

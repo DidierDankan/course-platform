@@ -1,0 +1,46 @@
+/*
+ * Login and Register. Every value comes from a --lm-* variable.
+ */
+@layer components {
+  .page-main-form {
+    max-width: 560px;
+  }
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .auth-form .field small {
+    min-height: 15px;
+  }
+  .auth-form .button {
+    width: 100%;
+  }
+  .form-alert {
+    margin: 0;
+    padding: 12px 14px;
+    color: var(--lm-danger);
+    background: var(--lm-field-bg);
+    border: var(--lm-border-w) solid var(--lm-danger);
+    border-radius: var(--lm-radius-input);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .auth-hint {
+    margin: 22px 0 0;
+    color: var(--lm-muted);
+    font-size: 14px;
+    text-align: center;
+  }
+  .auth-hint a {
+    color: var(--lm-instructor-fg);
+    font-weight: 700;
+  }
+  .auth-hint a:hover {
+    text-decoration: underline;
+  }
+  .auth-hint a:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 2px;
+  }
+}

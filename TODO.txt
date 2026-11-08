@@ -358,7 +358,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
             [x] 0. components/ui/Form/FormField.jsx on Formik useField + .field / .has-error: label tied to the input
                    (today's htmlFor points at nothing, so clicking a label does nothing and screen readers get no
                    name). Leave FormikInput alone: Edit and CourseModal use it, and 2e moves them over and deletes it
-            [ ] 1. Login in both themes: FormField; submit = .button-primary with .is-loading + spinner; a wrong password
+            [x] 1. Login in both themes: FormField; submit = .button-primary with .is-loading + spinner; a wrong password
                    shows one form-level alert instead of an error under the email field (setStatus in
                    handleLoginSubmit); "Back to Home" = a plain link styled .button-ghost (today a button inside a link)
                    keep: redirect back to location.state.from; the server's single "Invalid credentials" message
