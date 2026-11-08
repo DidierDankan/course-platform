@@ -402,7 +402,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
             [x] 0. file names: git tracks view/profile/welcome.jsx, routeConfig imports "Welcome" and "edit" (file is
                    Edit.jsx). Works on Windows, fails the Linux build on Vercel. Rename in git, fix the import
                    check: every import matches the case git tracks
-            [ ] 1. shared parts on tokens, no page changes yet:
+            [x] 1. shared parts on tokens, no page changes yet:
                    - Modal: centered (today it sits in the left half and is 50% wide on phones), scrolls when tall,
                      new --lm-scrim in both themes, Esc closes only the top one, focus moves in and comes back
                    - FormField also renders a textarea

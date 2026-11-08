@@ -19,6 +19,7 @@
   --lm-danger: #ff6961;
   --lm-focus: #c6f432; /* not in the reference: keyboard focus ring, uses the accent */
   --lm-placeholder: #71757d;
+  --lm-scrim: rgba(0, 0, 0, 0.7); /* not in the reference: dims the page behind a popup */
   --lm-inverse-bg: #c6f432;
   --lm-inverse-fg: #101207;
   --lm-color-scheme: dark;

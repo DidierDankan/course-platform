@@ -3,6 +3,7 @@ import { useFormikContext } from "formik";
 // Capitalized alias: core ESLint doesn't see JSX usage, and capitalized names are exempt (eslint.config.js).
 import Select, { components as SelectComponents } from "react-select";
 import { prefixes } from "@utils/prefix";
+import { themedSelectStyles } from "./selectStyles";
 
 const getFlagEmoji = (iso) =>
   iso
@@ -33,26 +34,12 @@ const CustomSingleValue = (props) => (
 );
 
 const selectStyles = {
-  control: (base, state) => ({
-    ...base,
-    backgroundColor: "white",
-    borderColor: state.isFocused ? "#999" : "#ccc",
-    boxShadow: state.isFocused ? "0 0 0 1px #999" : "none",
-    "&:hover": { borderColor: "#999" },
-  }),
-  menu: (base) => ({
-    ...base,
-    backgroundColor: "white",
-    zIndex: 50,
-  }),
+  ...themedSelectStyles,
   option: (base, state) => ({
-    ...base,
+    ...themedSelectStyles.option(base, state),
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    color: "black",
-    backgroundColor: state.isFocused ? "#f0f0f0" : "white",
-    cursor: "pointer",
     fontSize: "0.9rem",
   }),
 };

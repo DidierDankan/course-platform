@@ -1,0 +1,101 @@
+/*
+ * Instructor area and the shared popup. Every value comes from a --lm-* variable.
+ */
+@layer components {
+  /* ---------- Popup ---------- */
+  .modal {
+    width: calc(100% - 32px);
+    max-height: calc(100dvh - 32px);
+    margin: auto;
+    padding: 0;
+    color: var(--lm-ink);
+    background: var(--lm-surface);
+    border: var(--lm-border-w-dense) solid var(--lm-line);
+    border-radius: var(--lm-radius-card);
+    box-shadow: var(--lm-shadow-card);
+  }
+  .modal::backdrop {
+    background: var(--lm-scrim);
+  }
+  .modal-md {
+    max-width: 520px;
+  }
+  .modal-lg {
+    max-width: 820px;
+  }
+  .modal-inner {
+    max-height: calc(100dvh - 40px);
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-header {
+    flex-shrink: 0;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: var(--lm-border-w) solid var(--lm-line);
+  }
+  .modal-header h2 {
+    margin: 0;
+    font-family: var(--lm-font-display);
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .modal-close {
+    display: grid;
+    place-items: center;
+    padding: 4px;
+    color: var(--lm-muted);
+    background: none;
+    border: 0;
+    border-radius: var(--lm-radius-input);
+    cursor: pointer;
+  }
+  .modal-close:hover {
+    color: var(--lm-ink);
+  }
+  .modal-close:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 2px;
+  }
+  .modal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .modal-footer {
+    flex-shrink: 0;
+    padding: 14px 20px;
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    border-top: var(--lm-border-w) solid var(--lm-line);
+  }
+
+  /* ---------- Tags ---------- */
+  .tag-list {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+  }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    color: var(--lm-ink);
+    background: var(--lm-surface-2);
+    border: var(--lm-border-w) solid var(--lm-line-strong);
+    border-radius: var(--lm-radius-label);
+    font-family: var(--lm-font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+}

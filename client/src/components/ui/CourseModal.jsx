@@ -65,7 +65,7 @@ const CourseModal = ({ open, onClose, course }) => {
 
 
     return (
-        <Modal open={open} onClose={onClose} title="Add Course" size="xl">
+        <Modal open={open} onClose={onClose} title="Add Course" size="lg">
             <Formik
                 enableReinitialize
                 initialValues={{

@@ -1,16 +1,15 @@
-// @components/profile/SkillsTags.jsx
 import Tag from "@components/ui/Tag";
 
 const SkillTags = ({ skills = [] }) => {
   if (!skills?.length) {
-    return <p className="text-gray-500 text-sm">No skills added yet.</p>;
+    return <p className="panel-note">No skills added yet.</p>;
   }
 
   return (
-    <ul className="flex flex-wrap gap-[10px] list-none pl-[0px]">
-      {skills.map((s, i) => (
-        <li className="" key={`${s}-${i}`}>
-          <Tag tone="blue">{s}</Tag>
+    <ul className="tag-list">
+      {skills.map((skill, index) => (
+        <li key={`${skill}-${index}`}>
+          <Tag>{skill}</Tag>
         </li>
       ))}
     </ul>

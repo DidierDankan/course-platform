@@ -12,6 +12,7 @@
 @import "./styles/course-pages.css";
 @import "./styles/auth.css";
 @import "./styles/student.css";
+@import "./styles/seller.css";
 
 :root {
   height: 100%;

@@ -22,6 +22,7 @@
   --lm-danger: #d92b12;
   --lm-focus: #111111; /* not in the reference: keyboard focus ring, uses the theme's ink */
   --lm-placeholder: #777168;
+  --lm-scrim: rgba(17, 17, 17, 0.55); /* not in the reference: dims the page behind a popup */
   --lm-inverse-bg: #111111;
   --lm-inverse-fg: #fff8e7;
   --lm-color-scheme: light;
