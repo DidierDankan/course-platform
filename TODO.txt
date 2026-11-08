@@ -355,7 +355,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
             rules: same as 2b (only --lm-* or reference classes; one commit per numbered step, body = why, how
                    verified, what's next; don't touch 2d-2e pages). No reference page exists for these: use
                    .page-heading, .panel, .field, .button, .empty-state
-            [ ] 0. components/ui/Form/FormField.jsx on Formik useField + .field / .has-error: label tied to the input
+            [x] 0. components/ui/Form/FormField.jsx on Formik useField + .field / .has-error: label tied to the input
                    (today's htmlFor points at nothing, so clicking a label does nothing and screen readers get no
                    name). Leave FormikInput alone: Edit and CourseModal use it, and 2e moves them over and deletes it
             [ ] 1. Login in both themes: FormField; submit = .button-primary with .is-loading + spinner; a wrong password
