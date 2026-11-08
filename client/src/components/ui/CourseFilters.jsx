@@ -1,116 +1,152 @@
 // src/components/ui/CourseFilters.jsx
-import { useEffect, useState } from "react";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { SlidersHorizontal } from "lucide-react";
 import { CURRENCY } from "@utils/currency";
-import { DURATION_OPTIONS, EMPTY_FILTERS, SORT_OPTIONS } from "@utils/courseFilters";
+import {
+  DURATION_OPTIONS,
+  EMPTY_FILTERS,
+  SORT_OPTIONS,
+  isPriceRangeInverted,
+  serializeFilters,
+} from "@utils/courseFilters";
 
+const DEBOUNCE_MS = 350;
+const urlOf = (filters) => serializeFilters(filters).toString();
+const draftOf = ({ q, minPrice, maxPrice }) => ({ q, minPrice, maxPrice });
+// A number input also accepts these while typing; none of them can be part of a price here.
+const BLOCKED_PRICE_KEYS = new Set(["-", "+", "e", "E"]);
+
+// `value` is what the URL says. The text and price boxes keep their own draft, so typing
+// doesn't send a request per keystroke; the draft reaches the URL after a short pause.
 export default function CourseFilters({ value, onChange }) {
-  const [q, setQ] = useState(value.q || "");
+  const [draft, setDraft] = useState(() => draftOf(value));
+  const valueRef = useRef(value);
+  const lastUrl = useRef(urlOf(value));
 
-  // debounce search
+  const rangeInverted = isPriceRangeInverted(draft.minPrice, draft.maxPrice);
+
+  const commit = (next, options) => {
+    lastUrl.current = urlOf(next);
+    onChange(next, options);
+  };
+
+  // The URL changed from outside this form (Back, a link): show what it says now.
   useEffect(() => {
-    const t = setTimeout(() => {
-      onChange({ ...value, q }, { replace: true });
-    }, 350);
-    return () => clearTimeout(t);
+    valueRef.current = value;
+    const url = urlOf(value);
+    if (url === lastUrl.current) return;
+    lastUrl.current = url;
+    setDraft(draftOf(value));
+  }, [value]);
+
+  // Reads the latest URL state when it fires, so a sort change during the pause isn't undone.
+  useEffect(() => {
+    if (isPriceRangeInverted(draft.minPrice, draft.maxPrice)) return undefined;
+    const timer = setTimeout(() => {
+      const next = { ...valueRef.current, ...draft };
+      if (urlOf(next) !== urlOf(valueRef.current)) commit(next, { replace: true });
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+    // commit only touches a ref and the parent's stable callback
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q]);
+  }, [draft]);
+
+  // Selects and checkboxes apply at once, together with anything still being typed.
+  const applyNow = (patch) => {
+    const typed = rangeInverted ? { q: draft.q } : draft;
+    commit({ ...value, ...typed, ...patch });
+  };
+
+  const setPrice = (field) => (event) => {
+    const next = event.target.value;
+    if (Number(next) < 0) return; // pasted or stepped below zero
+    setDraft((d) => ({ ...d, [field]: next }));
+  };
+  const blockNonPriceKeys = (event) => {
+    if (BLOCKED_PRICE_KEYS.has(event.key)) event.preventDefault();
+  };
+
+  const reset = () => {
+    setDraft(draftOf(EMPTY_FILTERS));
+    commit(EMPTY_FILTERS);
+  };
+
+  const priceProps = {
+    type: "number",
+    min: 0,
+    step: 0.01,
+    inputMode: "decimal",
+    disabled: value.free, // the server ignores price limits for free-only
+    onKeyDown: blockNonPriceKeys,
+  };
 
   return (
-    <div className="bg-white border border-[#e2e8f0] rounded-[16px] p-[16px] shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
-      <div className="flex items-center gap-[8px] mb-[12px] text-[#1e293b] font-semibold">
-        <SlidersHorizontal size={16} />
+    <section className="panel filter-panel" aria-label="Filter courses">
+      <div className="filter-title">
+        <SlidersHorizontal size={16} aria-hidden="true" />
         <span>Filters</span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-[12px]">
-        {/* Search */}
-        <div className="md:col-span-2">
-          <label className="text-[13px] text-[#475569]">Search</label>
-          <div className="mt-[6px] flex items-center gap-[8px] border border-[#cbd5e1] rounded-[12px] px-[12px] py-[10px]">
-            <Search size={16} className="text-[#64748b]" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search courses, tutor, keywords…"
-              className="w-full outline-none text-[14px]"
-            />
-          </div>
-        </div>
+      <div className="filter-grid">
+        <label className="field filter-search">
+          <span>Search</span>
+          <input
+            type="search"
+            value={draft.q}
+            onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))}
+            placeholder="Search courses, tutor, keywords…"
+            maxLength={100}
+          />
+        </label>
 
-        {/* Sort */}
-        <div>
-          <label className="text-[13px] text-[#475569]">Sort</label>
-          <select
-            value={value.sort || "newest"}
-            onChange={(e) => onChange({ ...value, sort: e.target.value })}
-            className="mt-[6px] w-full border border-[#cbd5e1] rounded-[12px] px-[12px] py-[10px] text-[14px] bg-white"
-          >
+        <label className="field">
+          <span>Sort</span>
+          <select value={value.sort} onChange={(e) => applyNow({ sort: e.target.value })}>
             {SORT_OPTIONS.map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}
               </option>
             ))}
           </select>
-        </div>
+        </label>
 
-        {/* Duration */}
-        <div>
-          <label className="text-[13px] text-[#475569]">Duration</label>
-          <select
-            value={value.duration}
-            onChange={(e) => onChange({ ...value, duration: e.target.value })}
-            className="mt-[6px] w-full border border-[#cbd5e1] rounded-[12px] px-[12px] py-[10px] text-[14px] bg-white"
-          >
+        <label className="field">
+          <span>Duration</span>
+          <select value={value.duration} onChange={(e) => applyNow({ duration: e.target.value })}>
             {DURATION_OPTIONS.map((d) => (
               <option key={d.value} value={d.value}>
                 {d.label}
               </option>
             ))}
           </select>
-        </div>
+        </label>
 
-        {/* Price */}
-        <div>
-          <label className="text-[13px] text-[#475569]">Min price ({CURRENCY.code})</label>
+        <label className="field">
+          <span>Min price ({CURRENCY.code})</span>
+          <input {...priceProps} value={draft.minPrice} onChange={setPrice("minPrice")} />
+        </label>
+
+        <label className={`field ${rangeInverted ? "has-error" : ""}`}>
+          <span>Max price ({CURRENCY.code})</span>
           <input
-            type="number"
-            value={value.minPrice || ""}
-            onChange={(e) => onChange({ ...value, minPrice: e.target.value }, { replace: true })}
-            className="mt-[6px] w-full border border-[#cbd5e1] rounded-[12px] px-[12px] py-[10px] text-[14px]"
+            {...priceProps}
+            value={draft.maxPrice}
+            onChange={setPrice("maxPrice")}
+            aria-invalid={rangeInverted}
           />
-        </div>
+          {rangeInverted && <small role="alert">Max can&apos;t be lower than min.</small>}
+        </label>
 
-        <div>
-          <label className="text-[13px] text-[#475569]">Max price ({CURRENCY.code})</label>
-          <input
-            type="number"
-            value={value.maxPrice || ""}
-            onChange={(e) => onChange({ ...value, maxPrice: e.target.value }, { replace: true })}
-            className="mt-[6px] w-full border border-[#cbd5e1] rounded-[12px] px-[12px] py-[10px] text-[14px]"
-          />
-        </div>
-
-        {/* Toggles */}
-        <div className="md:col-span-2 flex items-end gap-[14px]">
-          <label className="inline-flex items-center gap-[8px] text-[14px] text-[#334155]">
-            <input
-              type="checkbox"
-              checked={value.free}
-              onChange={(e) => onChange({ ...value, free: e.target.checked })}
-            />
+        <div className="filter-actions">
+          <label className="filter-check">
+            <input type="checkbox" checked={value.free} onChange={(e) => applyNow({ free: e.target.checked })} />
             Free only
           </label>
-
-          <button
-            type="button"
-            onClick={() => onChange(EMPTY_FILTERS)}
-            className="ml-auto text-[13px] font-medium text-[#4f46e5] hover:underline"
-          >
+          <button type="button" className="button button-ghost button-small" onClick={reset}>
             Reset
           </button>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

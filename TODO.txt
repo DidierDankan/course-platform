@@ -326,7 +326,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
             [x] 3. filters in the URL: useSearchParams + one parse/serialize util; default values left out of the URL;
                    invalid values ignored; typing replaces the history entry, a discrete change (select, checkbox) pushes
                    one, so Back works; replaces the temporary q-only read from Phase 2a
-            [ ] 4. CourseFilters on .field / .button, both themes: Subscription only gone; search and prices debounced
+            [x] 4. CourseFilters on .field / .button, both themes: Subscription only gone; search and prices debounced
                    350 ms; min="0" and step="0.01" on both prices, negatives can't be applied; keep a typed 0; min > max =
                    .has-error message and no request; Free only disables the two price inputs (the server already
                    ignores them then); Reset clears the URL

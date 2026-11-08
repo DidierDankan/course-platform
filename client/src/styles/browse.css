@@ -1,0 +1,66 @@
+/*
+ * Browse page: filter panel and results area. Every value comes from a --lm-* variable.
+ */
+@layer components {
+  .filter-panel {
+    margin-bottom: 32px;
+  }
+  .filter-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+    font-family: var(--lm-font-display);
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .filter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: start;
+    gap: 18px;
+  }
+  .filter-search,
+  .filter-actions {
+    grid-column: span 2;
+  }
+  .filter-panel input:disabled {
+    color: var(--lm-disabled-fg);
+    background: var(--lm-disabled-bg);
+    border-color: var(--lm-disabled-line);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+  .filter-actions {
+    min-height: 50px;
+    align-self: end;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .filter-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .filter-check input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--lm-accent);
+    color-scheme: var(--lm-color-scheme);
+  }
+
+  @media (max-width: 700px) {
+    .filter-grid {
+      grid-template-columns: 1fr;
+    }
+    .filter-search,
+    .filter-actions {
+      grid-column: auto;
+    }
+  }
+}
