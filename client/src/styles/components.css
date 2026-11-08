@@ -401,8 +401,9 @@
 
   /* ---------- Page frame (every migrated page) ---------- */
   .page-main {
+    width: 100%;
     max-width: 1440px;
-    margin: auto;
+    margin: 0 auto;
     padding: 48px 42px 96px;
   }
   .page-main-narrow {
@@ -493,6 +494,11 @@
     border-radius: var(--lm-radius-card);
     box-shadow: var(--lm-shadow-card);
   }
+  .empty-state > .spinner {
+    margin-bottom: 18px;
+    color: var(--lm-index-fg);
+  }
+  .empty-state h1,
   .empty-state h3 {
     margin: 0 0 9px;
     font-weight: 700;
@@ -593,6 +599,7 @@
     box-shadow: var(--lm-shadow-field-error);
   }
   .field small {
+    color: var(--lm-muted);
     font-family: var(--lm-font-mono);
     font-size: 10px;
     font-weight: 600;

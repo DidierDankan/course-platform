@@ -45,7 +45,9 @@ body {
   min-height: 100%;
 }
 
-#root { height: 100%; position: relative }
+/* Column layout so the footer stays at the bottom of short pages. */
+#root { min-height: 100vh; position: relative; display: flex; flex-direction: column; }
+.site-footer { margin-top: auto; }
 
 .input {
   padding: 0.5rem 0.75rem;
