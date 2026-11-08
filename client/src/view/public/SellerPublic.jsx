@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { BookOpen, ExternalLink, Lock } from "lucide-react";
+import { ArrowRight, ExternalLink, Lock } from "lucide-react";
 import { useGetSellerPublicQuery } from "@api/modules/publicApi";
 import CourseCard from "@components/ui/CourseCard";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
+const FALLBACK_NAME = "Instructor";
 
 const normalizeMediaUrl = (p) => {
   if (!p) return "";
@@ -23,6 +24,78 @@ const ensureHttp = (url) => {
   return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 };
 
+const initialsOf = (name) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join("");
+
+// Falls back to initials when there's no photo or the file can't be loaded.
+function InstructorAvatar({ src, name }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
+    return (
+      <div className="instructor-avatar instructor-initials" aria-hidden="true">
+        {initialsOf(name)}
+      </div>
+    );
+  }
+  return <img className="instructor-avatar" src={src} alt="" loading="lazy" onError={() => setFailed(true)} />;
+}
+
+function InstructorDetails({ seller, skills, qualifications }) {
+  return (
+    <>
+      {seller.bio && (
+        <div className="instructor-block">
+          <h3>About</h3>
+          <p>{seller.bio}</p>
+        </div>
+      )}
+
+      {seller.website && (
+        <a className="instructor-link" href={ensureHttp(seller.website)} target="_blank" rel="noreferrer">
+          <ExternalLink size={15} aria-hidden="true" />
+          {seller.website}
+        </a>
+      )}
+
+      {skills.length > 0 && (
+        <div className="instructor-block">
+          <h3>Skills</h3>
+          <ul className="skill-list">
+            {skills.map((skill) => (
+              <li key={skill}>{skill}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {qualifications.length > 0 && (
+        <div className="instructor-block">
+          <h3>Qualifications</h3>
+          <div className="qualification-list">
+            {qualifications.map((q, idx) => (
+              <div key={idx} className="qualification">
+                <strong>{q.title}</strong>
+                {q.institution && <span>{q.institution}</span>}
+                {q.description && <p>{q.description}</p>}
+                {q.certificate_url && (
+                  <a href={ensureHttp(q.certificate_url)} target="_blank" rel="noreferrer">
+                    View certificate
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 const SellerPublic = () => {
   const { sellerId } = useParams();
   const { data, isLoading, isError, error, refetch } = useGetSellerPublicQuery(sellerId, {
@@ -32,9 +105,6 @@ const SellerPublic = () => {
   const seller = data?.seller || null;
   const courses = Array.isArray(data?.courses) ? data.courses : [];
   const isAuthed = !!data?.isAuthenticated;
-
-  const avatar = normalizeMediaUrl(seller?.profile_image) ||
-  "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=800&auto=format&fit=crop";
 
   const skills = useMemo(() => {
     const s = seller?.skills;
@@ -48,223 +118,96 @@ const SellerPublic = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc]">
-        <div className="animate-pulse space-y-4 mt-8 max-w-[1100px] mx-auto px-[16px] py-[28px]">
-          <div className="h-8 bg-gray-200 rounded w-1/3" />
-          <div className="h-4 bg-gray-200 rounded w-1/2" />
-          <div className="h-[160px] bg-gray-200 rounded-[16px]" />
-          <div className="h-[260px] bg-gray-200 rounded-[16px]" />
+      <main className="page-main">
+        <div className="page-inline-loader" role="status" aria-label="Loading instructor">
+          <span className="spinner" aria-hidden="true" />
         </div>
-      </div>
+      </main>
     );
   }
 
-  if (isError || !data?.ok) {
+  // The server answered "no such instructor": nothing to retry.
+  const notFound = error?.status === 404 || (!isError && data?.ok && !seller);
+
+  if (!notFound && (isError || !data?.ok)) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
-        <main className="max-w-[1100px] mx-auto px-[16px] py-[28px]">
-          <div className="bg-white border border-[#e2e8f0] rounded-[16px] p-[18px] shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
-            <div className="text-[18px] font-bold text-[#1e293b]">
-              Couldn’t load instructor
-            </div>
-            <div className="mt-[6px] text-[14px] text-[#475569]">
-              {error?.data?.message || error?.error || "Unknown error"}
-            </div>
-            <button
-              onClick={refetch}
-              className="mt-[14px] inline-flex rounded-[12px] bg-[#4f46e5] px-[14px] py-[10px] text-[13px] font-semibold text-white hover:opacity-95"
-            >
-              Retry
-            </button>
-          </div>
-        </main>
-      </div>
+      <main className="page-main page-main-narrow">
+        <div className="empty-state" role="alert">
+          <h3>Couldn&apos;t load this instructor</h3>
+          <p>Something went wrong on our side. Try again in a moment.</p>
+          <button type="button" className="button button-secondary" onClick={refetch}>
+            Try again
+          </button>
+        </div>
+      </main>
     );
   }
 
-  if (!seller) {
+  if (notFound) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
-        <main className="max-w-[1100px] mx-auto px-[16px] py-[28px]">
-          <div className="bg-white border border-[#e2e8f0] rounded-[16px] p-[18px] shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
-            Seller not found.
-          </div>
-        </main>
-      </div>
+      <main className="page-main page-main-narrow">
+        <div className="empty-state">
+          <h3>Instructor not found</h3>
+          <p>This instructor doesn&apos;t exist or is no longer available.</p>
+          <Link to="/courses" className="button button-secondary">
+            Browse courses
+          </Link>
+        </div>
+      </main>
     );
   }
+
+  const name = seller.full_name || FALLBACK_NAME;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
-      <main className="max-w-[1100px] mx-auto px-[16px] py-[28px]">
-        {/* Badge + heading */}
-        <div className="text-center mb-[22px]">
-          <div className="inline-flex items-center gap-[8px] text-[12px] uppercase tracking-[0.08em] text-[#475569] bg-[#e2e8f0] rounded-[999px] px-[10px] py-[4px] mb-[10px]">
-            <BookOpen size={14} />
-            <span>Instructor</span>
-          </div>
+    <main className="page-main">
+      <header className="page-heading">
+        <span className="section-index">Instructor</span>
+        <h1>{name}</h1>
+        <p>Browse courses and learn from this instructor.</p>
+      </header>
 
-          <h1 className="text-[28px] sm:text-[34px] font-extrabold leading-[1.2] text-[#1e293b]">
-            {seller.full_name || "Instructor"}
-          </h1>
-
-          <p className="mt-[4px] text-[#475569] text-[15px]">
-            Browse courses and learn from this instructor.
-          </p>
-        </div>
-
-        {/* Profile card */}
-        <div className="bg-white border border-[#e2e8f0] shadow-[0_8px_24px_rgba(0,0,0,0.08)] rounded-[16px] p-[18px] sm:p-[22px] flex flex-col sm:flex-row gap-[16px] items-start">
-          <img
-            src={avatar}
-            alt="Instructor avatar"
-            className="w-[92px] h-[92px] rounded-[14px] object-cover border border-[#e2e8f0]"
-            loading="lazy"
-          />
-
-          <div className="flex-1 space-y-[10px]">
-            {/* Public-safe (always visible): name only basically */}
-            <div className="text-[14px] text-[#475569]">
-              Instructor ID: <span className="font-semibold text-[#0f172a]">#{seller.id}</span>
-            </div>
-
-            {/* Private-ish section */}
-            {!isAuthed ? (
-              <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[14px] p-[14px]">
-                <div className="flex items-center gap-[8px] text-[#0f172a] font-semibold">
-                  <Lock size={16} />
-                  Instructor details are visible after login
-                </div>
-                <div className="mt-[6px] text-[14px] text-[#475569]">
-                  Sign in to view bio, skills, qualifications and links.
-                </div>
-                <div className="mt-[10px]">
-                  <Link
-                    to="/auth/login"
-                    className="inline-flex rounded-[12px] bg-[#4f46e5] px-[14px] py-[10px] text-[13px] font-semibold text-white hover:opacity-95"
-                  >
-                    Sign in
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <>
-                {seller.bio ? (
-                  <div>
-                    <div className="text-[14px] font-semibold text-[#475569] mb-[4px]">
-                      About
-                    </div>
-                    <p className="text-[15px] text-[#0f172a] leading-relaxed">
-                      {seller.bio}
-                    </p>
-                  </div>
-                ) : null}
-
-                {seller.website ? (
-                  <div className="inline-flex items-center gap-[6px] text-[14px] text-[#1e40af]">
-                    <ExternalLink size={16} />
-                    <a
-                      href={ensureHttp(seller.website)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="underline underline-offset-2 break-all"
-                    >
-                      {seller.website}
-                    </a>
-                  </div>
-                ) : null}
-
-                {skills.length ? (
-                  <div>
-                    <div className="text-[14px] font-semibold text-[#475569] mb-[6px]">
-                      Skills
-                    </div>
-                    <div className="flex flex-wrap gap-[8px]">
-                      {skills.map((s) => (
-                        <span
-                          key={s}
-                          className="text-[12px] px-[10px] py-[4px] rounded-[999px] bg-[#eef2ff] text-[#3730a3] border border-[#e0e7ff]"
-                        >
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                {qualifications.length ? (
-                  <div>
-                    <div className="text-[14px] font-semibold text-[#475569] mb-[6px]">
-                      Qualifications
-                    </div>
-
-                    <div className="space-y-[10px]">
-                      {qualifications.map((q, idx) => (
-                        <div
-                          key={idx}
-                          className="border border-[#e2e8f0] rounded-[12px] p-[12px] bg-[#ffffff]"
-                        >
-                          <div className="font-semibold text-[#0f172a]">
-                            {q.title}
-                          </div>
-                          {q.institution ? (
-                            <div className="text-[13px] text-[#475569]">
-                              {q.institution}
-                            </div>
-                          ) : null}
-                          {q.description ? (
-                            <div className="text-[13px] text-[#475569] mt-[4px]">
-                              {q.description}
-                            </div>
-                          ) : null}
-                          {q.certificate_url ? (
-                            <a
-                              href={ensureHttp(q.certificate_url)}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-[13px] text-[#4f46e5] font-semibold hover:underline mt-[6px] inline-block"
-                            >
-                              View certificate
-                            </a>
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Courses */}
-        <section className="mt-[22px]">
-          <div className="flex items-center justify-between mb-[12px]">
-            <h2 className="text-[18px] sm:text-[20px] font-bold">
-              Courses by {seller.full_name || "this instructor"}
-            </h2>
-
-            <Link to="/courses" className="text-[14px] text-[#4f46e5] font-medium hover:underline">
-              Browse all
-            </Link>
-          </div>
-
-          {courses.length === 0 ? (
-            <div className="bg-white border border-[#e2e8f0] rounded-[16px] p-[18px] shadow-[0_6px_18px_rgba(0,0,0,0.06)] text-[14px] text-[#475569]">
-              No courses published yet.
-            </div>
+      <section className="panel instructor-profile" aria-label="Instructor profile">
+        <InstructorAvatar src={normalizeMediaUrl(seller.profile_image)} name={name} />
+        <div className="instructor-info">
+          {isAuthed ? (
+            <InstructorDetails seller={seller} skills={skills} qualifications={qualifications} />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]">
-              {courses.map((course) => (
-                <Link key={course.id} to={`/courses/${course.id}`} className="block">
-                  <CourseCard course={course} />
-                </Link>
-              ))}
+            <div className="instructor-locked">
+              <strong>
+                <Lock size={16} aria-hidden="true" /> Instructor details are visible after login
+              </strong>
+              <p>Sign in to view bio, skills, qualifications and links.</p>
+              <Link to="/auth/login" className="button button-secondary button-small">
+                Sign in
+              </Link>
             </div>
           )}
-        </section>
-      </main>
-    </div>
+        </div>
+      </section>
+
+      <section className="instructor-section" aria-labelledby="instructor-courses">
+        <div className="lesson-heading">
+          <h2 id="instructor-courses">Courses by {name}</h2>
+          <Link to="/courses" className="text-link">
+            <span className="text-link-label">Browse all</span> <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        </div>
+
+        {courses.length === 0 ? (
+          <div className="empty-state">
+            <h3>No courses yet</h3>
+            <p>This instructor hasn&apos;t published a course yet.</p>
+          </div>
+        ) : (
+          <div className="course-list">
+            {courses.map((course) => (
+              <CourseCard key={course.id} course={course} />
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
   );
 };
 

@@ -11,13 +11,13 @@ How these files fit together:
 updated:      2026-11-08
 branch:       multi-design
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
-done:         Phase 2a complete and verified; Phase 2b plan written (design system -> 3 -> Phase 2b, steps 0-8)
-in progress:  nothing; Phase 2b NOT started, waiting for approval of the plan
+done:         Phase 2a and 2b complete and verified (Browse, CoursePreview, SellerPublic in both themes)
+in progress:  nothing
 waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in server/scripts/seed-assets/
               3) npm run seed:demo (until then the demo accounts have a throwaway password)
-open finds:   local DB is MyISAM + drifted from schema.sql (PRIORITY "schema.sql")
-next step:    after approval, Phase 2b step 0 (server list filters), one commit per step
-roadmap:      2a done -> 2b -> 2c -> 2d -> 2e, then security -> schema + migrations -> tests + CI -> deploy
+open finds:   local DB is MyISAM + drifted from schema.sql (PRIORITY "schema.sql"); no error boundary (CLIENT)
+next step:    review 2b, then write the Phase 2c brief (Login, Register, PaymentSuccess, PaymentCancel)
+roadmap:      2a, 2b done -> 2c -> 2d -> 2e, then security -> schema + migrations -> tests + CI -> deploy
 GATE:         nothing goes online before the security items are done
 
 =========================== DONE ===========================
@@ -201,7 +201,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
     4. build again and compare; write the before/after numbers in the README "decisions & trade-offs"
     don't: raise chunkSizeWarningLimit (it only hides the warning)
 
-[ ] remove the "Subscription only" filter, client AND server (decided 2026-11-07; done inside Phase 2b)
+[x] remove the "Subscription only" filter, client AND server (done in Phase 2b, steps 0 and 3)
     problem: CourseFilters (checkbox, Reset) and BrowseCourses (filter state) offer a filter for a feature
              that doesn't exist (subscriptions are deferred)
     1. client: delete the checkbox, the subscriptionOnly value in the filter state and in Reset
@@ -216,6 +216,10 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
 
 [x] remove leftover console.log lines -> done in Phase 2a step 0 (0096e6f)
     view/user/WhatchCourse.jsx:31 ("COURSE") and :105 ("ACTIVE LESSON"), view/user/Favorites.jsx:11 ("FAVORITES")
+
+[ ] add a React error boundary (found 2026-11-08)
+    problem: any render crash blanks the whole page, header included (seen during 2b)
+    1. one boundary around the routes in App.jsx, showing .empty-state with a reload button, in both themes
 
 [ ] UI polish
     1. re-check first: index.css now uses @import "tailwindcss", which may already fix the popup and header spacing
@@ -284,7 +288,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                     in BOTH themes at 1440px and 375px; all CTA states shown; theme toggle works from the new header;
                     existing routes still render. Then stop and report with screenshots + commit hashes
 
-        [ ] Phase 2b: visitor path. BrowseCourses + CourseFilters (RTK Query infiniteQuery, filters in the URL
+        [x] Phase 2b: visitor path. BrowseCourses + CourseFilters (RTK Query infiniteQuery, filters in the URL
             with useSearchParams, "Most popular" sort), CoursePreview, SellerPublic        (~102 hex)
             decided for Browse (2026-11-07), part of the 2b brief:
             - no flicker when a filter changes. Cause today: useInfiniteCourses empties its list on every filter
@@ -340,7 +344,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                    server. check: POST on a paid course still refused
             [x] 7. CoursePreview, all states, both themes: hotlinked Unsplash image -> .course-image-fallback; "Preview one
                    lesson below" only when a preview exists; lessons list + Preview/Locked badges on tokens
-            [ ] 8. SellerPublic, all states, both themes: remove the <Link> around CourseCard (SellerPublic.jsx:259, links
+            [x] 8. SellerPublic, all states, both themes: remove the <Link> around CourseCard (SellerPublic.jsx:259, links
                    inside a link now that the card has its own); hotlinked Unsplash avatar -> initials on a token background;
                    courses on .course-list; skills + qualifications on tokens
             verify: lint 0, build; grep '\[#' = 0 in the 4 files + CourseCTA; Browse, Preview, SellerPublic in BOTH themes at
