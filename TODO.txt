@@ -1,0 +1,395 @@
+How these files fit together:
+  TODO.txt   = every task, with steps (this file)
+  DEPLOY.txt = the deploy procedure; deploy-only code changes live there, TODO points to them
+  CLAUDE.md  = working rules + short status of known issues
+  git log    = the history of every change (commit bodies say why + what's next)
+  If TODO and DEPLOY disagree, DEPLOY wins and TODO gets fixed.
+
+=========================== NOW ===========================
+(handoff for the next session: REWRITE this block at the end of every session, never append; max ~12 lines)
+
+updated:      2026-11-08
+branch:       multi-design
+last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
+done:         Phase 2a complete and verified; Phase 2b plan written (design system -> 3 -> Phase 2b, steps 0-8)
+in progress:  nothing; Phase 2b NOT started, waiting for approval of the plan
+waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in server/scripts/seed-assets/
+              3) npm run seed:demo (until then the demo accounts have a throwaway password)
+open finds:   local DB is MyISAM + drifted from schema.sql (PRIORITY "schema.sql")
+next step:    after approval, Phase 2b step 0 (server list filters), one commit per step
+roadmap:      2a done -> 2b -> 2c -> 2d -> 2e, then security -> schema + migrations -> tests + CI -> deploy
+GATE:         nothing goes online before the security items are done
+
+=========================== DONE ===========================
+
+--- features ---
+register, seller(teachers), user(students).
+profile login, edit, add course, dashboard, portfolio.
+user login, dashboard, watch course,
+preview courses public,
+buy button and stripe installed(include if not logged it goes to login first)
+buy new course and assigned it to user,
+browser infinit scroll courses with filters,
+list user my courses,
+profile single seller's courses,
+favorite courses feature,
+stripe payment working end to end (checkout -> webhook -> enrollment), USD everywhere,
+owner can watch their own course (no progress saved), View link in portfolio,
+
+--- fixes ---
+/courses/abc (invalid id) now shows "Course not found" instead of an empty page,
+API base comes from VITE_API_URL everywhere (no localhost fallbacks left in client/src),
+jsconfig.json: baseUrl removed, paths are ./src/... (editor navigation works again),
+renamed LearnHub -> Lumen: one APP_NAME in client/src/utils/brand/index.js, tab title, README heading,
+Stripe Checkout shows "Lumen": branding_settings.display_name from server/lib/brand.js (tested: session 200, page shows Lumen),
+
+--- security ---
+security: POST /api/enrollments only enrolls in free courses (paid ones need checkout),
+security: sellers can only edit/delete their own courses and videos,
+security: paid videos in /uploads only served to owner, admin, enrolled students (or preview lessons),
+security: uploads limited to images/videos, max 200 MB, extension set by server, nosniff header,
+
+
+=========================== TO DO ===========================
+
+--- PRIORITY (before going online) ---
+
+[ ] fix schema.sql: it fails on a fresh database
+    problem: server/db/schema.sql line 71 indexes course_media(course_id, position), but the column is order_index
+    1. change the index to (course_id, order_index)
+    2. test: run schema.sql on an empty local database (not course_platform!) and check every table is created
+    3. then: versioned migrations instead of one destructive file
+       - server/migrations/001_initial.sql (current schema), 002_..., etc.
+       - a small runner that records applied files in a schema_migrations table
+    why: DEPLOY.txt step 3 needs a schema that works, and every later change (is_preview, ...) needs a safe way onto the live DB
+    found 2026-11-07 (local DB, while testing the seed/cleanup scripts):
+    - every table is MyISAM (@@default_storage_engine=MyISAM): no foreign keys, no transactions, so no
+      ON DELETE CASCADE and BEGIN/ROLLBACK do nothing. Add ENGINE=InnoDB to every CREATE TABLE in 001_initial.sql
+      (Aiven defaults to InnoDB, but say it explicitly) and rebuild the local DB from it
+    - the live tables drifted from schema.sql: lesson_progress uses course_media_id (the code agrees, schema.sql
+      says media_id + course_id); enrollments has NO (user_id, course_id) unique key, so the webhook's
+      INSERT ... ON DUPLICATE KEY can't dedupe locally. 001_initial.sql must match the code, not the old file
+
+[ ] JWT secrets: one config, two secrets, no fallback
+    problem: helpers/tokens.js AND controllers/AuthController.js:8 sign with JWT_SECRET || 'your_jwt_secret',
+             but authMiddleware.js, authOptional.js and protectVideos.js verify with process.env.JWT_SECRET only.
+             /auth/refresh (AuthController.js:116-123) also signs its own access token instead of using helpers/tokens.js.
+    1. server/config.js: read and validate all env variables at startup, exit with a clear error if one is missing
+    2. JWT_ACCESS_SECRET and JWT_REFRESH_SECRET instead of one JWT_SECRET
+    3. add a type claim ("access" / "refresh") and check it when verifying, so a refresh token can't be used as an access token
+    4. AuthController.refresh: use generateAccessToken from helpers/tokens.js, delete the duplicate code
+    5. update server/.env (two new secrets) and DEPLOY.txt section 4 already lists them
+
+[ ] uploads: disk -> Supabase Storage
+    see DEPLOY.txt 2.2 (Render's free plan deletes local files on every deploy)
+
+[ ] database connection: DB_PORT ignored, no SSL
+    see DEPLOY.txt 2.1 (db/connection.js never passes the port; Aiven needs a non-3306 port and SSL)
+
+[ ] API address for the live build
+    see DEPLOY.txt 2.4 (client/.env.production with an empty VITE_API_URL; Vercel forwards /api and /uploads)
+
+[ ] server: CORS origin is hardcoded to http://localhost:5173
+    problem: server/index.js cors({ origin: 'http://localhost:5173' })
+    1. change it to origin: CLIENT_URL (from config.js)
+    2. live, the browser only talks to the Vercel domain (rewrites), so this mostly matters for local dev; keep it env-based anyway
+
+[ ] live Stripe webhook
+    see DEPLOY.txt section 6
+
+[ ] check the payment when the buyer returns (webhook stays as the backup)
+    problem: Render's free server sleeps; Stripe's webhook can time out and only succeeds on a retry,
+             so a buyer lands on /payment/success and doesn't see the course yet (looks broken in a demo)
+    note: success_url already includes ?session_id={CHECKOUT_SESSION_ID} (PaymentController.js:45)
+    1. server: POST /api/payments/confirm { session_id } (logged in)
+       - retrieve the session FROM STRIPE (stripe.checkout.sessions.retrieve), never trust the browser
+       - check it belongs to req.user (metadata.user_id) and payment_status === "paid"
+       - mark the payment paid + create the enrollment with the SAME idempotent code the webhook uses
+         (move it into one PaymentService function so both paths share it)
+    2. client: PaymentSuccess.jsx reads session_id from the URL, calls /confirm, then redirects;
+       show "Confirming your payment..." while waiting and a clear message if it fails
+    3. test: stop `stripe listen`, buy a course -> enrolled anyway; start it again -> the webhook doesn't duplicate anything
+    why: webhooks can be late or retried, so you reconcile in both places and make the operation idempotent
+
+[ ] replace "react ultimate 2" thumbnail (terminal screenshot shows internal IP and hostnames) and the sample videos
+    1. make or download a clean thumbnail (no screenshots of your own machines/servers)
+    2. edit the course in Portfolio and upload the new thumbnail + your own short videos (keep them under 50 MB for Supabase free)
+    3. check the old image is gone from server/uploads
+
+[ ] demo for portfolio visitors
+    1. create one demo student and one demo seller with a couple of good courses
+    2. on the login page, show the demo emails/passwords and the Stripe test card (4242 4242 4242 4242, any future date, any CVC)
+    3. keep Stripe in test mode so nobody is ever charged
+
+[ ] delete the test data
+    1. delete the e2e-...@example.test users and the "E2E Test Course" (check which tables cascade before deleting)
+    2. delete their uploaded files from server/uploads
+    3. clear old test payments in the Stripe dashboard (optional, test mode only)
+
+[ ] update README
+    1. fix the folder structure (server/db/ not services/, index.js not server.js)
+    2. add: architecture diagram (from DEPLOY.txt section 0), a "decisions & trade-offs" section,
+       env variables, how to run locally, stripe listen, demo accounts, live link
+
+--- SECURITY ---
+
+[ ] expired token returns 403, but the client only refreshes on 401
+    problem: authMiddleware.js:15 answers 403 "Invalid or expired token"; baseQueryWithReauth.js:16 only refreshes on 401,
+             so an expired session logs the user out instead of refreshing
+    1. authMiddleware.js (and protectVideos.js): 401 for missing, invalid or expired tokens
+    2. keep 403 only for "logged in but not allowed" (authorizeRoles, ownership checks)
+    3. test: wait 15 min (or set expiresIn to 10s locally), then click around: you stay logged in
+
+[ ] refresh tokens can't be revoked or rotated
+    problem: a stolen refresh cookie works for 7 days, and logout can't kill it
+    option A (cheap): users.token_version column; put it in the refresh token; bump it on logout / password change
+    option B (better story): store a hash of each refresh token, issue a new one on every /auth/refresh and
+                             delete the old one; reuse of an old token = theft -> revoke all of that user's tokens
+
+[ ] rate limiting on /auth/login and /auth/register
+    1. npm install express-rate-limit in server/
+    2. e.g. 10 attempts per 15 min per IP on login, fewer on register; answer 429 with a readable message
+    3. on Render, set app.set("trust proxy", 1) so the limiter sees the real visitor IP, not the proxy's
+
+[ ] webhook: check payment_status and remove debug logs
+    1. PaymentController webhook: only enroll when session.payment_status === "paid"
+    2. remove console.log("session.metadata"...) and console.log("session.payment_intent"...)
+
+[ ] add helmet for security headers on every response
+    1. npm install helmet in server/
+    2. app.use(helmet({ crossOriginResourcePolicy: { policy: "same-site" } }))
+       (the default "same-origin" blocks images/videos that localhost:5173 loads from localhost:3001)
+    3. after the Supabase move: allow the Supabase storage domain in the Content-Security-Policy img-src and media-src
+    4. test every page still loads images and videos
+
+--- SERVER ---
+
+[ ] long videos after 15 minutes
+    problem: <video> requests send the cookie but can't refresh it
+    1. first do "expired token returns 403" (SECURITY) so the normal API refresh works
+    2. then on the watch page, call /auth/refresh every ~10 min while it is open
+
+[ ] logging
+    1. remove the per-request console.log in index.js
+    2. optional: pino (+ a request id) for real logs on Render
+
+--- TESTS & CI ---
+
+[ ] a few meaningful tests (Vitest or Jest + Supertest, against a separate test database)
+    1. authorization: seller A can't edit/delete seller B's course or media (403); student can't load an unpaid video
+    2. money path: checkout session -> webhook (signed with a test secret) -> enrollment, and a repeated webhook doesn't duplicate it
+    3. free-only POST /api/enrollments: paid course -> 403
+    (the one-off checks we ran by hand are the test cases; turn them into tests)
+
+[ ] GitHub Actions: lint + build (client) and tests (server) on every push
+
+--- CLIENT ---
+
+[ ] lesson durations wrong
+    problem: WhatchCourse.jsx line 236 prints the seconds value with "min" after it (30 seconds -> "30 min")
+    problem: CourseCard.jsx and CourseModal.jsx round down to whole minutes (30 seconds -> "0m")
+    1. move the formatDuration from CoursePreview.jsx (it handles seconds correctly) into client/src/utils/duration/index.js
+    2. use it in WhatchCourse.jsx, CourseCard.jsx, CourseModal.jsx and CoursePreview.jsx
+    3. check: 30 -> "30s", 90 -> "1m 30s", 3700 -> "1h 1m"
+
+[ ] split the JavaScript bundle by route
+    problem: the build is ONE 582 kB file (181 kB gzipped) with no lazy imports, so every visitor
+             also downloads seller-only pages (course editor, react-select, phone prefixes, forms)
+    1. measure: note the current sizes from `npm run build`
+    2. routeConfig.jsx: load page components with React.lazy(() => import(...)), wrap <Routes> in <Suspense fallback={<Spinner />}>
+    3. optional: vite.config.js build.rollupOptions.output.manualChunks -> a vendor chunk (react, react-dom, react-router) that stays cached across deploys
+    4. build again and compare; write the before/after numbers in the README "decisions & trade-offs"
+    don't: raise chunkSizeWarningLimit (it only hides the warning)
+
+[ ] remove the "Subscription only" filter, client AND server (decided 2026-11-07; done inside Phase 2b)
+    problem: CourseFilters (checkbox, Reset) and BrowseCourses (filter state) offer a filter for a feature
+             that doesn't exist (subscriptions are deferred)
+    1. client: delete the checkbox, the subscriptionOnly value in the filter state and in Reset
+    2. server: delete subscriptionOnly from CourseController.getAllCourses and CourseService.fetchAllCourses
+    keep: the courses.is_subscription_only column and the EnrollmentService check that refuses free enrollment
+          into a subscription course (server-side guard, not UI)
+    why: dead code on both sides; it comes back with the feature if subscriptions ever get built
+
+[x] "Login to buy" text when logged out -> done in Phase 2a step 6 (966a81a)
+    1. in CourseCTA.jsx, when !user show "Login to buy" instead of "Buy for $..."
+    2. keep the same button and click handler (it already sends you to login)
+
+[x] remove leftover console.log lines -> done in Phase 2a step 0 (0096e6f)
+    view/user/WhatchCourse.jsx:31 ("COURSE") and :105 ("ACTIVE LESSON"), view/user/Favorites.jsx:11 ("FAVORITES")
+
+[ ] UI polish
+    1. re-check first: index.css now uses @import "tailwindcss", which may already fix the popup and header spacing
+    2. video upload popup: in CourseVideos.jsx, limit its width (max-w-3xl) and make the Delete/Done buttons type="button"
+    3. logo touching the edge: check the header padding (px-6 in Header.jsx) now that Tailwind classes work
+
+[ ] design system
+    1. [ ] optional: Stripe dashboard -> Settings -> Business details -> Company name = Lumen
+           (checkout already shows Lumen from the code; this only changes receipts and Stripe emails)
+    2. [x] Phase 1 (branch multi-design): --lm-* tokens, brutal + cinematic themes, components layer,
+           self-hosted fonts, theme toggle with no-flash script, Vite starter styles removed
+    3. [ ] Phase 2: move pages to the component classes / lm- utilities, replacing the ~370 arbitrary hex
+           classes (26 files); then delete the legacy --color-* variables and .input
+           (see CLAUDE.md "Design system"). Split by user journey into 2a-2e; each phase leaves its pages
+           finished in BOTH themes. Pages not migrated yet look broken in cinematic: expected, don't judge them.
+
+        [x] Phase 2a: layout, Home, CourseCard (branch multi-design, read CLAUDE.md first)
+            reference markup/CSS: design/brutal/src and design/cinematic/src (same markup, reference class names)
+            rules: no new hardcoded hex/radius/shadow in components (only --lm-* or reference classes);
+                   don't touch other pages yet; one commit per numbered step
+            [x] 0. quick fixes, own commit "Lint: count JSX usage; remove debug logs; cap list limit"
+                   - add eslint-plugin-react with ONLY react/jsx-uses-vars (+ settings.react.version "detect");
+                     remove the '^[A-Z_]' vars/args ignore patterns (client/eslint.config.js:29),
+                     keep '^_' for intentionally unused args; lint must pass with 0 problems
+                     why: the pattern hides every unused capitalized import forever; the real cause is that
+                     ESLint doesn't count JSX usage without the react plugin
+                   - remove the 3 debug console.log lines (WhatchCourse.jsx:31, :105, Favorites.jsx:11)
+                   - server CourseController.getAllCourses (line 13): clamp limit to 1..50, page to >= 1
+                     why: ?limit=1000000 currently loads the whole table
+            [x] 1. base layer: body uses --lm-bg / --lm-ink / --lm-font-body; port the reference global rules
+                   (.sr-only, reduced motion, link/button resets) into @layer base; replace the undefined btn-*
+                   buttons (Add Course popup Cancel/Save, Qualifications "+ Add") with .button variants
+            [x] 2. Header from the reference: logo, Browse, Sign in, Join now, role-based links as today,
+                   mobile menu, theme toggle styled as part of the header. Keep logout, role links, NavLink active
+            [x] 3. Footer from the reference with ONLY existing links: All courses, Teach with us -> /auth/register,
+                   Style guide -> /styleguide (placeholder route ok). No dead links
+            [x] 4. featured course without a new endpoint: add sort=popular to GET /api/courses/all
+                   (ORDER BY enrollment count DESC, created_at DESC) via subquery/LEFT JOIN on enrollments.
+                   Add "popular" to the existing whitelist in CourseService.js:77-79 (sort value -> fixed ORDER BY
+                   string); never put the request value into the SQL. Home uses limit=1 for the hero, static hero
+                   if empty. Same sort in the Browse dropdown ("Most popular")
+            [x] 5. Home: hero (featured course), search bar -> /courses?q=..., "Popular courses" = FIXED 8
+                   (useGetAllCoursesQuery limit 8 sort popular; remove useInfiniteCourses from HomePage),
+                   "View all courses" -> /courses, "Teach on Lumen" section, footer. brutal = grid,
+                   cinematic = scroll-snap row ending in a "View all" card (the one approved [data-theme] rule).
+                   One copy for both themes, use the reference lines
+            [x] 6. CourseCard + CourseCTA from the reference, all states: "Buy for $X", "Login to buy" (logged out),
+                   "Redirecting...", "Continue learning" (+ progress bar if enrolled), owner sees "View".
+                   Move formatDuration to client/src/utils/duration/index.js (30 -> "30s", 90 -> "1m 30s",
+                   3700 -> "1h 1m") and use it everywhere it's duplicated
+            [x] 7. demo data: server/scripts/seed-demo.js (npm run seed:demo): 1 demo seller + 1 demo student +
+                   4 courses with images cut from design/*/public/images/lumen-course-contact-sheet.png;
+                   server/scripts/cleanup-test-data.js deletes e2e-*@example.test users and their files.
+                   Both idempotent, both refuse NODE_ENV=production unless --force.
+                   Most important step for the demo: run seed:demo BEFORE the screenshot comparison
+                   addendum:
+                   - thumbnails: the cinematic contact sheet for all 4 seeded courses (one thumbnail per course,
+                     no per-theme thumbnails in the DB: a seller uploads one image)
+                   - the static hero fallback image is a theme variable (--lm-hero-image): brutal tile in brutal,
+                     cinematic tile in cinematic
+                   - Home must render correctly with fewer than 8 courses (4 after seeding)
+                   - each seeded course gets 2 lessons from server/scripts/seed-assets/*.mp4 (I provide them,
+                     royalty-free, < 50 MB each), the first one is_preview=1; if the folder is empty the script
+                     stops with a clear message and changes nothing
+            verify: lint 0, build passes; Home/Header/Footer/CourseCard side by side with the reference screenshots
+                    in BOTH themes at 1440px and 375px; all CTA states shown; theme toggle works from the new header;
+                    existing routes still render. Then stop and report with screenshots + commit hashes
+
+        [ ] Phase 2b: visitor path. BrowseCourses + CourseFilters (RTK Query infiniteQuery, filters in the URL
+            with useSearchParams, "Most popular" sort), CoursePreview, SellerPublic        (~102 hex)
+            decided for Browse (2026-11-07), part of the 2b brief:
+            - no flicker when a filter changes. Cause today: useInfiniteCourses empties its list on every filter
+              change and only checks isLoading (true on the FIRST load only), so the page briefly renders
+              "No courses match", collapses, then grows. Approved fix:
+              . keep the current results on screen while the new ones load (dimmed, aria-busy) with a small
+                theme spinner (.spinner), then swap them in place
+              . show the empty state only after a finished request returned 0 courses
+              . results area min-height = one card row, so a short result doesn't jump the footer
+              . first load: placeholder cards in the card frame (like Home)
+              . debounce min/max price like search (350 ms): typing "120" is one request, not three
+              (the infiniteQuery rebuild removes the cause; don't patch the old hook)
+            - prices can't go negative: min="0" + step on both inputs, negative/invalid values ignored, inline
+              error when min > max; keep a typed 0 (today `value.minPrice || ""` turns 0 into empty)
+            - server: minPrice/maxPrice must be finite numbers >= 0, otherwise ignored (a hand-edited or shared
+              URL like ?minPrice=-5 or ?minPrice=abc reaches it directly; today it's Number(...) unchecked)
+            - Subscription only removed, client + server (see the item in --- CLIENT ---)
+            - Browse is a grid in BOTH themes, infinite scroll (decided 2026-11-08). The cinematic scroll row is Home
+              only. Browse uses its own .course-list class, so the one approved [data-theme] rule stays as it is
+            - Home stays most popular, two full rows at most: 4 per row = max 8, 3 per row = max 6 (decided 2026-11-08).
+              Layout today is 4 per row, so 8 is already right. If a 3-per-row width is ever added: still fetch 8 and
+              hide the extras in CSS, the server can't know the column count
+            - free courses get a working button (decided 2026-11-08, step 6 below)
+            rules: no new hardcoded hex/radius/shadow (only --lm-* or reference classes); one commit per numbered step,
+                   body = why, how verified, what's next; don't touch 2c-2e pages. Only reference for forms is the
+                   style guide part of design/*/src/App.tsx (.field, .toggle, .empty-state): Browse itself has no
+                   reference page, so it uses Home's section heading + those classes
+            [ ] 0. server list filters, own commit. CourseController.getAllCourses / CourseService.fetchAllCourses:
+                   delete subscriptionOnly; minPrice/maxPrice must be finite and >= 0, anything else is treated as not
+                   sent (helper in server/lib, same idea as parsePagination)
+                   threat: ?minPrice=abc or -5 comes straight from the URL; parameterized already, this stops NaN
+                   and nonsense reaching the query. check: curl with -5, abc, 10, and subscriptionOnly=1 ignored
+            [ ] 1. shared page styles in styles/components.css, values in the theme files: page shell (theme background,
+                   no bg-[#f8fafc]), page heading, .panel, .course-list (grid in both themes, 4/2/1 per row, same
+                   breakpoints as Home). Move .empty-state and the placeholder card out of home.css (now shared).
+                   Spinner.jsx on theme tokens: AuthGate shows it on every hard reload as a white overlay today
+            [ ] 2. RTK Query infiniteQuery: getAllCoursesInfinite in courseApi (page size 12, initialPageParam 1, next page
+                   only if the last page was full); delete hooks/useInfiniteCourses.js (Browse is its only user)
+            [ ] 3. filters in the URL: useSearchParams + one parse/serialize util; default values left out of the URL;
+                   invalid values ignored; typing replaces the history entry, a discrete change (select, checkbox) pushes
+                   one, so Back works; replaces the temporary q-only read from Phase 2a
+            [ ] 4. CourseFilters on .field / .button, both themes: Subscription only gone; search and prices debounced
+                   350 ms; min="0" and step="0.01" on both prices, negatives can't be applied; keep a typed 0; min > max =
+                   .has-error message and no request; Free only disables the two price inputs (the server already
+                   ignores them then); Reset clears the URL
+            [ ] 5. BrowseCourses, both themes: the no-flicker behaviour above (dim on isFetching && !isFetchingNextPage, aria-busy,
+                   .spinner), min-height one card row, placeholder cards on first load, real empty state, error + retry,
+                   failed next page shows retry at the end of the list without losing the loaded cards
+            [ ] 6. free courses in CourseCTA: price 0, not enrolled -> "Enroll for free" (logged out: "Login to enroll")
+                   using useEnrollInCourseMutation, then the card moves to "Continue learning"; replace alert() with an inline
+                   error for both buy and enroll
+                   threat: the button is UX; POST /api/enrollments already refuses paid and subscription courses on the
+                   server. check: POST on a paid course still refused
+            [ ] 7. CoursePreview, all states, both themes: hotlinked Unsplash image -> .course-image-fallback; "Preview one
+                   lesson below" only when a preview exists; lessons list + Preview/Locked badges on tokens
+            [ ] 8. SellerPublic, all states, both themes: remove the <Link> around CourseCard (SellerPublic.jsx:259, links
+                   inside a link now that the card has its own); hotlinked Unsplash avatar -> initials on a token background;
+                   courses on .course-list; skills + qualifications on tokens
+            verify: lint 0, build; grep '\[#' = 0 in the 4 files + CourseCTA; Browse, Preview, SellerPublic in BOTH themes at
+                    1440 and 375; filter change shows no empty flash (API delayed 2 s); URL survives reload, Back, sharing;
+                    negative / min > max; free course enroll with a temporary e2e course (cleanup removes it); logged-out,
+                    student and owner on Preview. Then stop and report with screenshots + commit hashes
+        [ ] Phase 2c: auth + payment. Login, Register, PaymentSuccess, PaymentCancel        (~55 hex)
+        [ ] Phase 2d: student. user/Welcome, MyCourses, Favorites, WhatchCourse, ProgressBar,
+            UserCourseCard, FavoriteButton                                                  (~113 hex)
+        [ ] Phase 2e: seller. profile/Welcome, Porfolio, Edit, course editor, StatCard, Tag,
+            ImageUploadField; then delete the legacy --color-* variables and .input        (~70 hex)
+            done when: grep -rE '\[#[0-9a-fA-F]{3,8}\]' client/src returns nothing
+        each phase gets its own detailed brief here (like 2a) before it starts, written after the previous one is reviewed
+    4. add loading, empty and error states where they're missing (done page by page inside 2a-2e)
+
+[ ] free courses: the card CTA still starts Stripe Checkout (Stripe rejects $0) -> Phase 2b step 6
+
+--- FEATURES: maybe (only if cheap or it shows a skill) ---
+
+[ ] choose which lessons are previews (is_preview)
+    problem: the column exists, but the course form never sets it, so no preview ever shows
+    1. CourseVideos.jsx: add a "Free preview" checkbox per video
+    2. courseHandler.js: send is_preview in each video's meta
+    3. CourseService insertCourseVideos / updateVideoMeta: save is_preview (as a migration-safe change)
+    4. CoursePreview.jsx already plays the first preview lesson; only show "Preview one lesson below" when one exists
+
+[ ] instructor stats panel (revenue and students per course)
+    1. one SQL aggregation over payments (status = paid) and enrollments, scoped to req.user.id
+    2. a small panel on the seller dashboard
+
+[ ] comments per course
+    note: the comments table already exists (course_id, user_id, message)
+    1. server: GET /api/courses/:id/comments (public, paginated) and POST (enrolled students + owner only)
+    2. server: DELETE for the comment's author or the course owner
+    3. client: comments list + form under the video on the watch page
+    4. limit message length; React escapes text by default, never use dangerouslySetInnerHTML
+
+[ ] send confirmation email on register
+    only with a real provider (e.g. Resend) and sent asynchronously so registering never waits on email
+    1. users table: email_verified + a verification token with an expiry
+    2. on register: create the token and email a link to /api/auth/verify?token=...
+    3. decide what unverified users can't do (e.g. buy or publish courses)
+
+--- DEFERRED (low signal for a portfolio, high cost) ---
+subscription integration - recurring billing state machine (renewals, failed payments, past_due, cancellations); not worth it unless it becomes the centrepiece
+Nascondere prezzo se subscription-only - only relevant with subscriptions; for now the filter is hidden (CLIENT)
+n8n integration - no engineering signal for the effort
+badges for users and sellers - no engineering signal for the effort
+
+
+=========================== NOTES ===========================
+stripe listen --forward-to http://localhost:3001/api/payments/webhook
