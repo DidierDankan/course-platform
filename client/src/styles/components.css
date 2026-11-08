@@ -436,8 +436,7 @@
     box-shadow: var(--lm-shadow-card);
   }
 
-  /* Vertical course list (Browse, instructor page): a grid in both themes.
-     Home's .course-grid is the one that turns into a scroll row in cinematic. */
+  /* Vertical course list (Browse, instructor page, Home while loading): a grid in both themes. */
   .course-list {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));

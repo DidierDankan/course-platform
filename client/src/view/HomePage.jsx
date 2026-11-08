@@ -5,11 +5,12 @@ import { ArrowRight, Play, Search } from "lucide-react";
 import { useGetAllCoursesQuery } from "@api/modules/courseApi";
 import CourseCard from "@components/ui/CourseCard";
 import CourseCardPlaceholders from "@components/ui/CourseCardPlaceholders";
+import CourseCarousel from "@components/ui/CourseCarousel";
 import { APP_NAME } from "@utils/brand";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-// Home shows a fixed set (CLAUDE.md "Phase 2 decisions"); the full, filterable list is /courses.
+// Home shows a fixed set in a carousel (CLAUDE.md "Phase 2 decisions"); the full, filterable list is /courses.
 const POPULAR_LIMIT = 8;
 
 // The featured course is simply the most popular one, so one request feeds both the hero
@@ -95,7 +96,7 @@ function PopularCourses({ courses, isLoading, isError, refetch }) {
   let content;
   if (isLoading) {
     content = (
-      <div className="course-grid" aria-busy="true" aria-label="Loading courses">
+      <div className="course-list" aria-busy="true" aria-label="Loading courses">
         <CourseCardPlaceholders />
       </div>
     );
@@ -121,16 +122,11 @@ function PopularCourses({ courses, isLoading, isError, refetch }) {
     );
   } else {
     content = (
-      <div className="course-grid">
+      <CourseCarousel label="Popular courses">
         {courses.map((course) => (
           <CourseCard key={course.id} course={course} />
         ))}
-        <Link className="view-all-card" to="/courses">
-          <span className="section-index">All courses</span>
-          <strong>View all courses</strong>
-          <ArrowRight size={20} aria-hidden="true" />
-        </Link>
-      </div>
+      </CourseCarousel>
     );
   }
 

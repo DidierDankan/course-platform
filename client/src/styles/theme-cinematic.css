@@ -219,8 +219,7 @@
 
   /* home: popular courses */
   --lm-courses-padding: 70px max(42px, calc((100vw - 1356px) / 2)) 105px;
-  --lm-courses-m-padding: 50px 0 75px 18px;
-  --lm-courses-m-heading-pad: 18px;
+  --lm-courses-m-padding: 50px 18px 75px;
   --lm-courses-bg: transparent;
   --lm-courses-line: 0 none;
   --lm-courses-mark: none;
@@ -237,7 +236,6 @@
   --lm-text-link-transform: none;
   --lm-text-link-hover-fg: var(--lm-accent);
   --lm-text-link-hover-transform: none;
-  --lm-view-all-display: flex;
   --lm-empty-bg: var(--lm-surface);
 
   /* home: teach on Lumen */

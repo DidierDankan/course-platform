@@ -118,9 +118,9 @@ Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list i
 
 ### Phase 2 decisions (approved)
 
-- **Course list layout (Home only):** brutal = grid, cinematic = horizontal scroll row with scroll-snap. Same markup in both, switched by **one** `[data-theme="cinematic"]` rule. This is the **only approved structural exception** to "theme differences live in variables". Browse (`/courses`) is a grid in both themes, because a sideways row doesn't work with a list that loads more as you scroll.
+- **Course lists:** Home is a looping carousel with arrows (and swipe on touch screens) in both themes, built with Embla. Browse and the instructor page are grids in both themes. There is no approved structural exception any more: theme differences live in variables.
 - **Class names:** keep the reference names (`.button`, `.course-card`, `.field`, `.card-label`…). Don't rename them.
-- **Home page:** the most popular courses (`sort=popular`), no infinite scroll, at most **two full rows**: 4 per row = max 8, 3 per row = max 6. Plus a "View all courses" link to `/courses`.
+- **Home page:** up to **8** of the most popular courses (`sort=popular`) in the carousel, no infinite scroll, plus a "View all courses" link to `/courses`.
 - **`/courses`:** keeps infinite scroll, rebuilt in Phase 2 with **RTK Query `infiniteQuery`**, with the filters stored in the URL (`useSearchParams`) so a filtered list can be shared, bookmarked and survives a reload.
 
 ---

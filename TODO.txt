@@ -11,12 +11,12 @@ How these files fit together:
 updated:      2026-11-08
 branch:       multi-design
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
-done:         Phase 2a and 2b complete and verified (Browse, CoursePreview, SellerPublic in both themes)
+done:         Phase 2a, 2b and the Home carousel complete and verified
 in progress:  nothing
 waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in server/scripts/seed-assets/
               3) npm run seed:demo (until then the demo accounts have a throwaway password)
 open finds:   local DB is MyISAM + drifted from schema.sql (PRIORITY "schema.sql"); no error boundary (CLIENT)
-next step:    review 2b, then write the Phase 2c brief (Login, Register, PaymentSuccess, PaymentCancel)
+next step:    error boundary (CLIENT, needs your go-ahead), then the Phase 2c brief (Login, Register, Payment pages)
 roadmap:      2a, 2b done -> 2c -> 2d -> 2e, then security -> schema + migrations -> tests + CI -> deploy
 GATE:         nothing goes online before the security items are done
 
@@ -306,11 +306,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
             - server: minPrice/maxPrice must be finite numbers >= 0, otherwise ignored (a hand-edited or shared
               URL like ?minPrice=-5 or ?minPrice=abc reaches it directly; today it's Number(...) unchecked)
             - Subscription only removed, client + server (see the item in --- CLIENT ---)
-            - Browse is a grid in BOTH themes, infinite scroll (decided 2026-11-08). The cinematic scroll row is Home
-              only. Browse uses its own .course-list class, so the one approved [data-theme] rule stays as it is
-            - Home stays most popular, two full rows at most: 4 per row = max 8, 3 per row = max 6 (decided 2026-11-08).
-              Layout today is 4 per row, so 8 is already right. If a 3-per-row width is ever added: still fetch 8 and
-              hide the extras in CSS, the server can't know the column count
+            - Browse is a grid in BOTH themes, infinite scroll (decided 2026-11-08), using its own .course-list class
             - free courses get a working button (decided 2026-11-08, step 6 below)
             rules: no new hardcoded hex/radius/shadow (only --lm-* or reference classes); one commit per numbered step,
                    body = why, how verified, what's next; don't touch 2c-2e pages. Only reference for forms is the
@@ -351,6 +347,10 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                     1440 and 375; filter change shows no empty flash (API delayed 2 s); URL survives reload, Back, sharing;
                     negative / min > max; free course enroll with a temporary e2e course (cleanup removes it); logged-out,
                     student and owner on Preview. Then stop and report with screenshots + commit hashes
+        [x] Home carousel, both themes (decided 2026-11-08; Home only)
+            replaces the cinematic scroll row and brutal's grid. Embla Carousel: loop, swipe, no duplicate cards.
+            arrows left/right loop past both ends; arrows hide when every course fits; up to 8 most popular.
+            remove the [data-theme] .course-grid rule and the "View all" card (the heading link stays)
         [ ] Phase 2c: auth + payment. Login, Register, PaymentSuccess, PaymentCancel        (~55 hex)
         [ ] Phase 2d: student. user/Welcome, MyCourses, Favorites, WhatchCourse, ProgressBar,
             UserCourseCard, FavoriteButton                                                  (~113 hex)

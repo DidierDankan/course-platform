@@ -1,8 +1,7 @@
 /*
  * Home page sections: hero, search dock, popular courses, teach-on-Lumen.
  * Markup and class names from design/brutal and design/cinematic (src/App.tsx, identical markup).
- * Every theme difference is a --lm-* variable in the theme files. The one approved structural
- * exception (CLAUDE.md "Phase 2 decisions") is the [data-theme="cinematic"] .course-grid rule.
+ * Every theme difference is a --lm-* variable in the theme files.
  */
 @layer components {
   /* ---------- Hero ---------- */
@@ -318,37 +317,65 @@
     outline-offset: 3px;
   }
 
-  .course-grid {
+  /* ---------- Course carousel ---------- */
+  .course-carousel {
+    --carousel-gap: 20px;
     position: relative;
     z-index: 1;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px;
   }
-  /* last tile of the row; only the cinematic scroll row shows it (the brutal grid has the heading link) */
-  .view-all-card {
-    display: var(--lm-view-all-display);
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-end;
-    gap: 12px;
-    padding: 24px;
+  /* Slide padding, not overflow room: it keeps the hard shadows and hover lift from being clipped. */
+  .carousel-viewport {
+    overflow: hidden;
+    margin: 0 calc(var(--carousel-gap) * -1) 0 -4px;
+  }
+  .carousel-track {
+    display: flex;
+    align-items: stretch;
+    touch-action: pan-y pinch-zoom;
+  }
+  .carousel-slide {
+    flex: 0 0 25%;
+    min-width: 0;
+    padding: 4px var(--carousel-gap) 14px 4px;
+  }
+  .carousel-slide > .course-card {
+    height: 100%;
+  }
+  .carousel-arrow {
+    position: absolute;
+    z-index: 3;
+    top: 34%;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
     color: var(--lm-ink);
     background: var(--lm-surface);
-    border: var(--lm-border-w-dense) solid var(--lm-line);
-    border-radius: var(--lm-radius-card);
-    transition: border-color var(--lm-speed-card);
+    border: var(--lm-border-w) solid var(--lm-line-strong);
+    border-radius: 50%;
+    box-shadow: var(--lm-shadow-label);
+    cursor: pointer;
+    transition:
+      transform var(--lm-speed),
+      box-shadow var(--lm-speed),
+      background var(--lm-speed),
+      color var(--lm-speed);
   }
-  .view-all-card:hover {
-    border-color: var(--lm-accent);
+  .carousel-arrow:hover {
+    color: var(--lm-on-accent);
+    background: var(--lm-accent);
+    box-shadow: var(--lm-shadow-press);
+    transform: var(--lm-small-press-transform);
   }
-  .view-all-card strong {
-    font-size: 22px;
-    letter-spacing: -0.03em;
-  }
-  .view-all-card:focus-visible {
+  .carousel-arrow:focus-visible {
     outline: 2px solid var(--lm-focus);
     outline-offset: 3px;
+  }
+  .carousel-arrow-prev {
+    left: -23px;
+  }
+  .carousel-arrow-next {
+    right: -23px;
   }
 
   /* ---------- Teach on Lumen ---------- */
@@ -416,9 +443,8 @@
     .hero-media {
       min-height: 560px;
     }
-    .course-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 35px;
+    .carousel-slide {
+      flex-basis: 50%;
     }
     .teach-section {
       margin-left: 42px;
@@ -522,7 +548,6 @@
     }
     .section-heading {
       align-items: flex-start;
-      padding-right: var(--lm-courses-m-heading-pad);
     }
     .section-heading h2 {
       max-width: 285px;
@@ -531,9 +556,21 @@
     .section-heading .text-link {
       margin-top: 22px;
     }
-    .course-grid {
-      grid-template-columns: 1fr;
-      gap: 35px;
+    .course-carousel {
+      --carousel-gap: 14px;
+    }
+    .carousel-slide {
+      flex-basis: 88%;
+    }
+    .carousel-arrow {
+      width: 40px;
+      height: 40px;
+    }
+    .carousel-arrow-prev {
+      left: -12px;
+    }
+    .carousel-arrow-next {
+      right: -12px;
     }
     .teach-section {
       min-height: 0;
@@ -547,34 +584,6 @@
     .teach-section h2 {
       margin-bottom: 29px;
       font-size: 42px;
-    }
-  }
-}
-
-/* The one approved structural difference (CLAUDE.md "Phase 2 decisions"):
-   brutal = grid, cinematic = horizontal scroll row with scroll-snap. Same markup in both. */
-[data-theme="cinematic"] .course-grid {
-  display: flex;
-  gap: 18px;
-  overflow-x: auto;
-  padding: 1px 42px 15px 1px;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: thin;
-  scrollbar-color: var(--lm-line-strong) transparent;
-
-  & > * {
-    flex: 0 0 min(365px, 82vw);
-    min-width: min(365px, 82vw);
-    scroll-snap-align: start;
-  }
-
-  @media (max-width: 700px) {
-    gap: 13px;
-    padding-right: 18px;
-
-    & > * {
-      flex-basis: 85vw;
-      min-width: 85vw;
     }
   }
 }

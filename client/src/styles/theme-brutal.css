@@ -223,7 +223,6 @@
   /* home: popular courses */
   --lm-courses-padding: 86px max(42px, calc((100vw - 1356px) / 2)) 110px;
   --lm-courses-m-padding: 64px 18px 80px;
-  --lm-courses-m-heading-pad: 0;
   --lm-courses-bg: var(--lm-success);
   --lm-courses-line: var(--lm-border-w-dense) solid var(--lm-line);
   --lm-courses-mark: "01";
@@ -240,7 +239,6 @@
   --lm-text-link-transform: uppercase;
   --lm-text-link-hover-fg: var(--lm-ink);
   --lm-text-link-hover-transform: translate(2px, 2px);
-  --lm-view-all-display: none;
   --lm-empty-bg: var(--lm-accent);
 
   /* home: teach on Lumen */
