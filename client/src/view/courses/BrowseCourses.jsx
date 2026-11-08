@@ -1,5 +1,5 @@
 // src/view/courses/BrowseCourses.jsx
-import { useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { BookOpen } from "lucide-react";
 import CourseFilters from "@components/ui/CourseFilters";
@@ -7,23 +7,22 @@ import CourseCard from "@components/ui/CourseCard";
 import Spinner from "@components/ui/Spinner";
 import { useBrowseCoursesInfiniteQuery } from "@api/modules/courseApi";
 import { useLoadMoreTrigger } from "@hooks/useLoadMoreTrigger";
+import { parseFilters, serializeFilters, toApiParams } from "@utils/courseFilters";
 
 export default function BrowseCourses() {
-  // Only the initial search term comes from the URL (Home search bar -> /courses?q=...).
-  // Phase 2b moves every filter into the URL with useSearchParams.
-  const [searchParams] = useSearchParams();
-  const [filters, setFilters] = useState(() => ({
-    q: searchParams.get("q") ?? "",
-    sort: "newest",
-    minPrice: "",
-    maxPrice: "",
-    free: "",
-    subscriptionOnly: "",
-    durationBucket: "",
-  }));
+  // The URL is the only copy of the filters: shareable, and Back / reload just work.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filters = useMemo(() => parseFilters(searchParams), [searchParams]);
+  const apiParams = useMemo(() => toApiParams(filters), [filters]);
+
+  // replace: typing updates the current history entry, so Back doesn't undo one keystroke at a time.
+  const onFiltersChange = useCallback(
+    (next, { replace = false } = {}) => setSearchParams(serializeFilters(next), { replace }),
+    [setSearchParams]
+  );
 
   const { data, isLoading, isError, isFetching, isFetchNextPageError, hasNextPage, fetchNextPage } =
-    useBrowseCoursesInfiniteQuery(filters);
+    useBrowseCoursesInfiniteQuery(apiParams);
   const courses = useMemo(() => data?.pages.flat() ?? [], [data]);
   // No automatic retry after a failed page: it would loop forever while the server is down.
   const loadMoreRef = useLoadMoreTrigger(fetchNextPage, hasNextPage && !isFetching && !isFetchNextPageError);
@@ -46,7 +45,7 @@ export default function BrowseCourses() {
         </div>
 
         {/* Filters */}
-        <CourseFilters value={filters} onChange={setFilters} />
+        <CourseFilters value={filters} onChange={onFiltersChange} />
 
         {/* Results */}
         <section className="mt-[16px]">

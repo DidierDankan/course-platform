@@ -323,7 +323,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                    Spinner.jsx on theme tokens: AuthGate shows it on every hard reload as a white overlay today
             [x] 2. RTK Query infiniteQuery: browseCourses endpoint in courseApi (page size 12, initialPageParam 1, next page
                    only if the last page was full); delete hooks/useInfiniteCourses.js (Browse is its only user)
-            [ ] 3. filters in the URL: useSearchParams + one parse/serialize util; default values left out of the URL;
+            [x] 3. filters in the URL: useSearchParams + one parse/serialize util; default values left out of the URL;
                    invalid values ignored; typing replaces the history entry, a discrete change (select, checkbox) pushes
                    one, so Back works; replaces the temporary q-only read from Phase 2a
             [ ] 4. CourseFilters on .field / .button, both themes: Subscription only gone; search and prices debounced
