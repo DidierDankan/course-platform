@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { routes } from "@utils/routes/routeConfig.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
+import RouteErrorBoundary from "./components/RouteErrorBoundary";
 import AuthGate from "@view/layout/AuthGate";
 import ProfileGate from "@view/layout/ProfileGate";
 
@@ -17,6 +18,7 @@ export default function App() {
       <AuthGate>
         <Header />
 
+        <RouteErrorBoundary>
         <Routes>
           {/* 🌍 Public pages */}
           <Route path="/" element={<HomePage />} />
@@ -48,6 +50,7 @@ export default function App() {
             );
           })}
         </Routes>
+        </RouteErrorBoundary>
         <Footer />
       </AuthGate>
     </Router>

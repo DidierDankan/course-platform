@@ -217,7 +217,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
 [x] remove leftover console.log lines -> done in Phase 2a step 0 (0096e6f)
     view/user/WhatchCourse.jsx:31 ("COURSE") and :105 ("ACTIVE LESSON"), view/user/Favorites.jsx:11 ("FAVORITES")
 
-[ ] add a React error boundary (found 2026-11-08)
+[x] add a React error boundary (found 2026-11-08; done, RouteErrorBoundary around the routes)
     problem: any render crash blanks the whole page, header included (seen during 2b)
     1. one boundary around the routes in App.jsx, showing .empty-state with a reload button, in both themes
 
