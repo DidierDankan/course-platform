@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import { BookOpen, Lock, Play, Clock } from "lucide-react";
-import Spinner from "@components/ui/Spinner";
+import { Lock, Play, Clock } from "lucide-react";
 import CourseCTA from "@components/ui/CourseCTA";
 import { useGetPublicCourseQuery } from "@api/modules/courseApi";
 import FavoriteButton from "@components/ui/FavoriteButton";
@@ -10,23 +9,44 @@ import { formatDuration } from "@utils/duration";
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const CourseNotFound = () => (
-  <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
-    <main className="max-w-[900px] mx-auto px-[20px] py-[28px]">
-      <div className="bg-white border border-[#e2e8f0] rounded-[16px] p-[18px] shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
-        <div className="text-[18px] font-bold text-[#1e293b]">Course not found</div>
-        <div className="mt-[6px] text-[14px] text-[#475569]">
-          This course doesn’t exist or is no longer available.
-        </div>
-        <Link
-          to="/courses"
-          className="mt-[14px] inline-flex rounded-[12px] bg-[#4f46e5] px-[14px] py-[10px] text-[13px] font-semibold text-white hover:opacity-95"
-        >
-          Browse courses
-        </Link>
-      </div>
-    </main>
-  </div>
+  <main className="page-main page-main-narrow">
+    <div className="empty-state">
+      <h3>Course not found</h3>
+      <p>This course doesn&apos;t exist or is no longer available.</p>
+      <Link to="/courses" className="button button-secondary">
+        Browse courses
+      </Link>
+    </div>
+  </main>
 );
+
+function Lesson({ lesson }) {
+  const isPreview = lesson.is_preview === 1;
+  return (
+    <li className="lesson">
+      <div className="lesson-body">
+        <div className="lesson-title">
+          <strong>
+            {lesson.order_index ? `${lesson.order_index}. ` : ""}
+            {lesson.title}
+          </strong>
+          {isPreview ? (
+            <span className="lesson-badge lesson-badge-preview">Preview</span>
+          ) : (
+            <span className="lesson-badge">
+              <Lock size={11} aria-hidden="true" /> Locked
+            </span>
+          )}
+        </div>
+        {lesson.description && <p>{lesson.description}</p>}
+      </div>
+      <div className="lesson-duration">
+        <Clock size={14} aria-hidden="true" />
+        <span>{formatDuration(lesson.duration)}</span>
+      </div>
+    </li>
+  );
+}
 
 export default function CoursePreview() {
   const { id } = useParams();
@@ -39,21 +59,18 @@ export default function CoursePreview() {
   });
 
   const course = data?.course;
-
-  const previewLesson = useMemo(() => {
-    const lessons = course?.lessons || [];
-    return lessons.find((l) => l.is_preview === 1 && l.url) || null;
-  }, [course?.lessons]);
+  const lessons = useMemo(() => course?.lessons ?? [], [course?.lessons]);
+  const previewLesson = useMemo(() => lessons.find((l) => l.is_preview === 1 && l.url) ?? null, [lessons]);
 
   if (!isValidId) return <CourseNotFound />;
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc]">
-        <div className="max-w-[900px] mx-auto px-[20px] py-[28px]">
-          <Spinner />
+      <main className="page-main page-main-narrow">
+        <div className="page-inline-loader" role="status" aria-label="Loading course">
+          <span className="spinner" aria-hidden="true" />
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -62,162 +79,87 @@ export default function CoursePreview() {
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
-        <main className="max-w-[900px] mx-auto px-[20px] py-[28px]">
-          <div className="bg-white border border-[#e2e8f0] rounded-[16px] p-[18px] shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
-            <div className="text-[18px] font-bold text-[#1e293b]">
-              Couldn’t load course
-            </div>
-            <div className="mt-[6px] text-[14px] text-[#475569]">
-              {error?.data?.message || error?.error || "Unknown error"}
-            </div>
-            <button
-              onClick={refetch}
-              className="mt-[14px] inline-flex rounded-[12px] bg-[#4f46e5] px-[14px] py-[10px] text-[13px] font-semibold text-white hover:opacity-95"
-            >
-              Retry
-            </button>
-          </div>
-        </main>
-      </div>
+      <main className="page-main page-main-narrow">
+        <div className="empty-state" role="alert">
+          <h3>Couldn&apos;t load this course</h3>
+          <p>Something went wrong on our side. Try again in a moment.</p>
+          <button type="button" className="button button-secondary" onClick={refetch}>
+            Try again
+          </button>
+        </div>
+      </main>
     );
   }
 
   if (!course) return <CourseNotFound />;
 
-  const thumbnail = course.thumbnail_url
-    ? `${API_BASE_URL}${course.thumbnail_url}`
-    : "https://images.unsplash.com/photo-1522199710521-72d69614c702?q=80&w=1600&auto=format&fit=crop";
+  const thumbnail = course.thumbnail_url ? `${API_BASE_URL}${course.thumbnail_url}` : null;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
-      <main className="max-w-[900px] mx-auto px-[20px] py-[28px]">
-        {/* Badge + Heading */}
-        <div className="text-center mb-[20px]">
-          <div className="inline-flex items-center gap-[8px] text-[12px] uppercase tracking-[0.08em] text-[#475569] bg-[#e2e8f0] rounded-[999px] px-[10px] py-[4px] mb-[10px]">
-            <BookOpen size={14} />
-            <span>Course preview</span>
-          </div>
+    <main className="page-main page-main-narrow">
+      <header className="page-heading">
+        <span className="section-index">Course preview</span>
+        <h1>{course.title}</h1>
+        <p>{course.description || "No description provided."}</p>
+      </header>
 
-          <h1 className="text-[28px] sm:text-[34px] font-extrabold leading-[1.2] text-[#1e293b]">
-            {course.title}
-          </h1>
+      <div className="preview-actions">
+        <div className="preview-cta">
+          <CourseCTA courseId={course.id} price={course.price} sellerId={course.seller_id} />
+        </div>
+        <FavoriteButton courseId={course.id} />
+        <Link to="/courses" className="text-link">
+          Back to courses
+        </Link>
+      </div>
 
-          <p className="mt-[6px] text-[#475569] text-[15px]">
-            {course.description || "No description provided."}
+      <section className="panel preview-player">
+        <div className="preview-media">
+          {previewLesson ? (
+            <video src={`${API_BASE_URL}${previewLesson.url}`} controls />
+          ) : (
+            <>
+              {thumbnail ? (
+                <img className="course-image" src={thumbnail} alt="" />
+              ) : (
+                <div className="course-image course-image-fallback" />
+              )}
+              <div className="preview-note">
+                <Play size={16} aria-hidden="true" />
+                <span>No preview video available</span>
+              </div>
+            </>
+          )}
+        </div>
+        <div className="preview-copy">
+          <h2>What you&apos;ll get</h2>
+          <p>
+            {previewLesson
+              ? "Watch the free lesson above. The rest unlocks when you enroll."
+              : "This course has no free lesson yet. Its lessons unlock when you enroll."}
           </p>
-
-          <div className="mt-[14px] flex flex-col sm:flex-row items-center justify-center gap-[10px]">
-            <div className="flex items-center gap-[10px]">
-              <CourseCTA
-                courseId={course.id}
-                price={course.price}
-                sellerId={course.seller_id}
-              />
-
-              {/* ❤️ Favorite */}
-              <FavoriteButton courseId={course.id} />
-            </div>
-
-            <Link
-              to="/courses"
-              className="text-[14px] text-[#4f46e5] font-medium hover:underline"
-            >
-              Back to courses
-            </Link>
-          </div>
         </div>
+      </section>
 
-        {/* Preview player card */}
-        <div className="bg-white border border-[#e2e8f0] shadow-[0_8px_24px_rgba(0,0,0,0.08)] rounded-[16px] overflow-hidden">
-          <div className="aspect-video bg-black">
-            {previewLesson?.url ? (
-              <video
-                src={`${API_BASE_URL}${previewLesson.url}`}
-                controls
-                className="w-full h-full"
-              />
-            ) : (
-              <div className="w-full h-full relative">
-                <img src={thumbnail} alt="Course thumbnail" className="w-full h-full object-cover opacity-90" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="inline-flex items-center gap-[10px] bg-black/55 text-white px-[14px] py-[10px] rounded-[14px]">
-                    <Play size={18} />
-                    <span className="text-[14px] font-semibold">No preview video available</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="p-[18px]">
-            <div className="text-[14px] font-semibold text-[#1e293b]">
-              What you’ll learn
-            </div>
-            <div className="mt-[6px] text-[14px] text-[#475569]">
-              Preview one lesson below. The rest is locked until you purchase / enroll.
-            </div>
-          </div>
+      <section className="lesson-section" aria-labelledby="lessons-title">
+        <div className="lesson-heading">
+          <h2 id="lessons-title">Lessons</h2>
+          <span>
+            {lessons.length} {lessons.length === 1 ? "lesson" : "lessons"}
+          </span>
         </div>
-
-        {/* Lessons list */}
-        <section className="mt-[22px]">
-          <div className="flex items-center justify-between mb-[12px]">
-            <h2 className="text-[18px] sm:text-[20px] font-bold text-[#1e293b]">
-              Lessons
-            </h2>
-            <div className="text-[13px] text-[#475569]">
-              {course.lessons?.length || 0} lessons
-            </div>
-          </div>
-
-          <div className="bg-white border border-[#e2e8f0] rounded-[16px] shadow-[0_6px_18px_rgba(0,0,0,0.06)] overflow-hidden">
-            {(course.lessons || []).length ? (
-              <ul className="divide-y divide-[#e2e8f0]">
-                {(course.lessons || []).map((l) => {
-                  const isPreview = l.is_preview === 1;
-                  return (
-                    <li key={l.id} className="p-[14px] flex items-start justify-between gap-[12px]">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-[8px]">
-                          <div className="text-[13px] font-semibold text-[#1e293b] truncate">
-                            {l.order_index ? `${l.order_index}. ` : ""}{l.title}
-                          </div>
-
-                          {isPreview ? (
-                            <span className="text-[11px] font-semibold text-[#166534] bg-[#dcfce7] px-[8px] py-[2px] rounded-[999px]">
-                              Preview
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-[6px] text-[11px] font-semibold text-[#475569] bg-[#f1f5f9] px-[8px] py-[2px] rounded-[999px]">
-                              <Lock size={12} /> Locked
-                            </span>
-                          )}
-                        </div>
-
-                        {l.description ? (
-                          <div className="mt-[4px] text-[13px] text-[#475569] line-clamp-2">
-                            {l.description}
-                          </div>
-                        ) : null}
-                      </div>
-
-                      <div className="shrink-0 inline-flex items-center gap-[6px] text-[12px] text-[#334155]">
-                        <Clock size={14} />
-                        <span>{formatDuration(l.duration)}</span>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <div className="p-[16px] text-[14px] text-[#475569]">
-                No lessons yet.
-              </div>
-            )}
-          </div>
-        </section>
-      </main>
-    </div>
+        <div className="panel lesson-panel">
+          {lessons.length ? (
+            <ul>
+              {lessons.map((lesson) => (
+                <Lesson key={lesson.id} lesson={lesson} />
+              ))}
+            </ul>
+          ) : (
+            <p className="lesson-empty">No lessons yet.</p>
+          )}
+        </div>
+      </section>
+    </main>
   );
 }

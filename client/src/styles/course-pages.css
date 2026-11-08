@@ -1,0 +1,170 @@
+/*
+ * Course preview and instructor pages. Every value comes from a --lm-* variable.
+ */
+@layer components {
+  .page-inline-loader {
+    min-height: 50vh;
+    display: grid;
+    place-items: center;
+    color: var(--lm-index-fg);
+  }
+  .page-inline-loader .spinner {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* ---------- Course preview ---------- */
+  .preview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .preview-cta {
+    width: min(320px, 100%);
+  }
+  .preview-player {
+    padding: 0;
+    overflow: hidden;
+  }
+  .preview-media {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: var(--lm-player-bg);
+    border-bottom: var(--lm-card-visual-border);
+  }
+  .preview-media video {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .preview-note {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    color: var(--lm-ink);
+    background: var(--lm-surface);
+    border: var(--lm-border-w) solid var(--lm-line);
+    border-radius: var(--lm-radius-input);
+    box-shadow: var(--lm-shadow-label);
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+  }
+  .preview-copy {
+    padding: 20px 22px;
+  }
+  .preview-copy h2,
+  .lesson-heading h2,
+  .instructor-section h2 {
+    margin: 0;
+    font-family: var(--lm-font-display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: var(--lm-card-title-tracking);
+  }
+  .preview-copy p {
+    margin: 6px 0 0;
+    color: var(--lm-muted);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .lesson-section {
+    margin-top: 36px;
+  }
+  .lesson-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .lesson-heading span {
+    color: var(--lm-muted);
+    font-size: 13px;
+  }
+  .lesson-panel {
+    padding: 0;
+    overflow: hidden;
+  }
+  .lesson-panel ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lesson {
+    padding: 15px 22px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .lesson + .lesson {
+    border-top: var(--lm-border-w) solid var(--lm-line);
+  }
+  .lesson-body {
+    min-width: 0;
+  }
+  .lesson-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+  }
+  .lesson-body p {
+    margin: 4px 0 0;
+    color: var(--lm-muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .lesson-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    color: var(--lm-muted);
+    background: var(--lm-surface-2);
+    border: var(--lm-border-w) solid var(--lm-line);
+    border-radius: var(--lm-radius-label);
+    font-family: var(--lm-font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: var(--lm-label-tracking);
+    text-transform: uppercase;
+  }
+  .lesson-badge-preview {
+    color: var(--lm-on-accent);
+    background: var(--lm-success);
+  }
+  .lesson-duration {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--lm-muted);
+    font-size: 12px;
+  }
+  .lesson-empty {
+    margin: 0;
+    padding: 18px 22px;
+    color: var(--lm-muted);
+    font-size: 14px;
+  }
+
+  @media (max-width: 700px) {
+    .preview-cta {
+      width: 100%;
+      order: -1;
+    }
+    .lesson {
+      padding: 14px 16px;
+    }
+  }
+}

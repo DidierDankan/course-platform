@@ -294,4 +294,7 @@
   --lm-action-hover-line: var(--lm-accent);
   --lm-action-size: 11px;
   --lm-action-transform: none;
+
+  /* course preview: the bars around a video that does not fill the frame */
+  --lm-player-bg: var(--lm-bg);
 }

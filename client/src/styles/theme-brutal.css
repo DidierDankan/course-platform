@@ -297,4 +297,7 @@
   --lm-action-hover-line: var(--lm-line);
   --lm-action-size: 10px;
   --lm-action-transform: uppercase;
+
+  /* course preview: the bars around a video that does not fill the frame */
+  --lm-player-bg: var(--lm-ink);
 }

@@ -338,7 +338,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                    error for both buy and enroll
                    threat: the button is UX; POST /api/enrollments already refuses paid and subscription courses on the
                    server. check: POST on a paid course still refused
-            [ ] 7. CoursePreview, all states, both themes: hotlinked Unsplash image -> .course-image-fallback; "Preview one
+            [x] 7. CoursePreview, all states, both themes: hotlinked Unsplash image -> .course-image-fallback; "Preview one
                    lesson below" only when a preview exists; lessons list + Preview/Locked badges on tokens
             [ ] 8. SellerPublic, all states, both themes: remove the <Link> around CourseCard (SellerPublic.jsx:259, links
                    inside a link now that the card has its own); hotlinked Unsplash avatar -> initials on a token background;
