@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { routes } from "@utils/routes/routeConfig.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
@@ -7,7 +7,6 @@ import AuthGate from "@view/layout/AuthGate";
 import ProfileGate from "@view/layout/ProfileGate";
 
 import HomePage from "@view/HomePage";
-import Auth from "@view/auth";
 import Header from "@components/ui/Header";
 import Footer from "@components/ui/Footer";
 
@@ -22,7 +21,7 @@ export default function App() {
         <Routes>
           {/* 🌍 Public pages */}
           <Route path="/" element={<HomePage />} />
-          <Route path="/auth/*" element={<Auth />} />
+          <Route path="/auth/*" element={<Navigate to="/auth/login" replace />} />
 
           {/* 🔐 Protected routes */}
           {routes.map(({ path, element, roles, publicOnly }) => {
