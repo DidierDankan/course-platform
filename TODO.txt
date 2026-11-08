@@ -399,7 +399,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
             rewrite history). No new features
             done when: grep -rE '\[#[0-9a-fA-F]{3,8}\]' client/src returns nothing, and no --color-*, .input, FormikInput
             or Tailwind palette colors (gray-500, red-500, dark:...) are left in the seller files
-            [ ] 0. file names: git tracks view/profile/welcome.jsx, routeConfig imports "Welcome" and "edit" (file is
+            [x] 0. file names: git tracks view/profile/welcome.jsx, routeConfig imports "Welcome" and "edit" (file is
                    Edit.jsx). Works on Windows, fails the Linux build on Vercel. Rename in git, fix the import
                    check: every import matches the case git tracks
             [ ] 1. shared parts on tokens, no page changes yet:
