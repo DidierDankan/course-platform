@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { ExternalLink, Mail, Phone } from "lucide-react";
 import QualificationsAccordion from "@components/ui/QualificationsAccordion";
-import { ExternalLink, Phone, BookOpen } from "lucide-react";
 import SkillTags from "@components/ui/SkillTags";
 import ProfileImg from "@components/ui/ProfileImg";
+import { ensureHttp } from "@utils/url";
 
 const normalizeSkills = (skills) => {
   if (Array.isArray(skills)) return skills;
@@ -33,11 +34,6 @@ const normalizeQualifications = (qualifications) => {
   return [];
 };
 
-const ensureHttp = (url) => {
-  if (!url) return "";
-  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
-};
-
 const Welcome = () => {
   const { profile, isLoading } = useSelector((state) => state.user);
 
@@ -49,109 +45,75 @@ const Welcome = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc]">
-        <div className="animate-pulse space-y-4 mt-8 max-w-[800px] mx-auto p-6">
-          <div className="h-8 bg-gray-200 rounded w-1/3" />
-          <div className="h-4 bg-gray-200 rounded w-1/2" />
-          <div className="h-4 bg-gray-200 rounded w-2/3" />
+      <main className="page-main page-main-narrow">
+        <div className="page-inline-loader" role="status" aria-label="Loading profile">
+          <span className="spinner" aria-hidden="true" />
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
+    <main className="page-main page-main-narrow">
+      <header className="page-heading">
+        <span className="section-index">Welcome back</span>
+        <h1>{profile?.full_name || "Your profile"}</h1>
+        <p>Your teaching profile, as you&apos;ve set it up.</p>
+      </header>
 
-      <main className="max-w-[900px] mx-auto px-[20px] py-[28px]">
-        {/* Badge + Heading */}
-        <div className="text-center mb-[26px]">
-          <div className="inline-flex items-center gap-[8px] text-[12px] uppercase tracking-[0.08em] text-[#475569] bg-[#e2e8f0] rounded-[999px] px-[10px] py-[4px] mb-[10px]">
-            <BookOpen size={14} />
-            <span>Welcome back</span>
-          </div>
-          <h1 className="text-[28px] sm:text-[34px] font-extrabold leading-[1.2] text-[#1e293b]">
-            {profile?.full_name || "Learner"}
-          </h1>
-          <p className="mt-[4px] text-[#475569] text-[15px]">
-            Your personalized learning and teaching dashboard.
-          </p>
-        </div>
+      <section className="panel profile-card" aria-label="Profile">
+        <ProfileImg />
 
-        {/* Profile Card */}
-        <div className="bg-white border border-[#e2e8f0] shadow-[0_8px_24px_rgba(0,0,0,0.08)] rounded-[16px] p-[24px] sm:p-[32px] grid grid-cols-1 md:grid-cols-[auto,1fr] gap-[24px] items-start">
-          <ProfileImg hideName={true} />
-
-          <div className="space-y-[16px]">
-            {/* Bio */}
-            {profile?.bio && (
-              <div>
-                <h2 className="text-[14px] font-semibold text-[#475569] mb-[4px]">
-                  About
-                </h2>
-                <p className="text-[15px] text-[#0f172a] leading-relaxed">
-                  {profile.bio}
-                </p>
-              </div>
-            )}
-
-            {/* Contact */}
-            <div className="flex flex-wrap gap-[14px] text-[14px]">
-              {profile?.email && (
-                <div className="inline-flex items-center gap-[6px] text-[#334155]">
-                  <span className="font-medium">Email:</span> {profile.email}
-                </div>
-              )}
-              {profile?.phone && (
-                <div className="inline-flex items-center gap-[6px] text-[#334155]">
-                  <Phone size={16} />
-                  <span>{profile.phone}</span>
-                </div>
-              )}
-              {profile?.website && (
-                <div className="inline-flex items-center gap-[6px] text-[#1e40af]">
-                  <ExternalLink size={16} />
-                  <a
-                    href={ensureHttp(profile.website)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline underline-offset-2 break-all"
-                  >
-                    {profile.website}
-                  </a>
-                </div>
-              )}
-            </div>
-
-            {/* Skills */}
+        <div className="profile-details">
+          {profile?.bio && (
             <div>
-              <h2 className="text-[14px] font-semibold text-[#475569] mb-[6px]">
-                Skills
-              </h2>
-              <SkillTags skills={skills} />
+              <h2 className="stat-label">About</h2>
+              <p className="profile-bio">{profile.bio}</p>
             </div>
+          )}
+
+          <div className="profile-contact">
+            {profile?.email && (
+              <span>
+                <Mail size={16} aria-hidden="true" />
+                {profile.email}
+              </span>
+            )}
+            {profile?.phone && (
+              <span>
+                <Phone size={16} aria-hidden="true" />
+                {profile.phone}
+              </span>
+            )}
+            {profile?.website && (
+              <span>
+                <ExternalLink size={16} aria-hidden="true" />
+                <a href={ensureHttp(profile.website)} target="_blank" rel="noreferrer" className="text-link">
+                  {profile.website}
+                </a>
+              </span>
+            )}
+          </div>
+
+          <div>
+            <h2 className="stat-label profile-label">Skills</h2>
+            <SkillTags skills={skills} />
           </div>
         </div>
+      </section>
 
-        {/* Qualifications */}
-        <section className="mt-[36px]">
-          <div className="flex items-center justify-between mb-[12px]">
-            <h2 className="text-[18px] sm:text-[20px] font-bold text-[#1e293b]">
-              Qualifications
-            </h2>
-            <Link
-              to="/profile/edit"
-              className="text-[14px] text-[#4f46e5] font-medium hover:underline"
-            >
-              Edit Profile
-            </Link>
-          </div>
-
-          <div className="bg-white border border-[#e2e8f0] rounded-[12px] p-[18px] shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
-            <QualificationsAccordion items={qualifications} />
-          </div>
-        </section>
-      </main>
-    </div>
+      <section className="student-section" aria-labelledby="qualifications-title">
+        <div className="profile-section-head">
+          <h2 id="qualifications-title">Qualifications</h2>
+          <Link to="/profile/edit" className="text-link">
+            Edit profile
+          </Link>
+        </div>
+        <div className="panel">
+          <QualificationsAccordion items={qualifications} />
+        </div>
+      </section>
+    </main>
   );
 };
 

@@ -409,7 +409,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                    - one react-select style file reading --lm-* (replaces the two hardcoded copies)
                    - Tag: one .tag class (only one tone is used)
                    - styles/seller.css
-            [ ] 2. instructor dashboard (profile/Welcome) in both themes: ProfileImg, SkillTags, QualificationsAccordion
+            [x] 2. instructor dashboard (profile/Welcome) in both themes: ProfileImg, SkillTags, QualificationsAccordion
                    on tokens. /default-avatar.png doesn't exist: use a themed fallback (no image file needed)
             [ ] 3. Edit profile in both themes: FormField, ImageUploadField, PhoneInputField, SkillsSelectionField,
                    QualificationsFieldArray. Bugs:
