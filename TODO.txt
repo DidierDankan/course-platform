@@ -11,12 +11,12 @@ How these files fit together:
 updated:      2026-11-08
 branch:       multi-design
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
-done:         Phase 2a, 2b and the Home carousel complete and verified
-in progress:  nothing
+done:         Phase 2a, 2b, Home carousel and error boundary complete and verified; Phase 2c plan written
+in progress:  nothing; Phase 2c NOT started, waiting for approval of the plan
 waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in server/scripts/seed-assets/
               3) npm run seed:demo (until then the demo accounts have a throwaway password)
-open finds:   local DB is MyISAM + drifted from schema.sql (PRIORITY "schema.sql"); no error boundary (CLIENT)
-next step:    error boundary (CLIENT, needs your go-ahead), then the Phase 2c brief (Login, Register, Payment pages)
+open finds:   local DB is MyISAM + drifted from schema.sql (PRIORITY "schema.sql")
+next step:    after approval, Phase 2c step 0 (FormField), one commit per step
 roadmap:      2a, 2b done -> 2c -> 2d -> 2e, then security -> schema + migrations -> tests + CI -> deploy
 GATE:         nothing goes online before the security items are done
 
@@ -351,7 +351,33 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
             replaces the cinematic scroll row and brutal's grid. Embla Carousel: loop, swipe, no duplicate cards.
             arrows left/right loop past both ends; arrows hide when every course fits; up to 8 most popular.
             remove the [data-theme] .course-grid rule and the "View all" card (the heading link stays)
-        [ ] Phase 2c: auth + payment. Login, Register, PaymentSuccess, PaymentCancel        (~55 hex)
+        [ ] Phase 2c: auth + payment. Login, Register, PaymentSuccess, PaymentCancel        (~45 hex lines)
+            rules: same as 2b (only --lm-* or reference classes; one commit per numbered step, body = why, how
+                   verified, what's next; don't touch 2d-2e pages). No reference page exists for these: use
+                   .page-heading, .panel, .field, .button, .empty-state
+            [ ] 0. components/ui/Form/FormField.jsx on Formik useField + .field / .has-error: label tied to the input
+                   (today's htmlFor points at nothing, so clicking a label does nothing and screen readers get no
+                   name). Leave FormikInput alone: Edit and CourseModal use it, and 2e moves them over and deletes it
+            [ ] 1. Login in both themes: FormField; submit = .button-primary with .is-loading + spinner; a wrong password
+                   shows one form-level alert instead of an error under the email field (setStatus in
+                   handleLoginSubmit); "Back to Home" = a plain link styled .button-ghost (today a button inside a link)
+                   keep: redirect back to location.state.from; the server's single "Invalid credentials" message
+                   threat: that message doesn't reveal whether an email exists; the form must not add that signal
+            [ ] 2. Register in both themes: same treatment; Student / Instructor as two themed radio options; password
+                   rules visible up front (min 6, a number, a special character); "email already registered" stays on the
+                   email field, anything else form-level
+                   threat: role is user input; the server already refuses admin. check: POST role=admin is still 403
+            [ ] 3. dead /auth page: view/auth/index.jsx links to /login and /register, which don't exist. Delete it; /auth
+                   redirects to /auth/login. ProtectedRoute sends a wrong role to /auth today: send it to / instead
+            [ ] 4. PaymentSuccess in both themes, spinner + a manual "Go now" link, no emoji. Destination by role: user and
+                   admin -> /user/dashboard, seller -> /courses (a seller who buys a course is bounced from
+                   /user/dashboard today, and landed on the dead /auth page). Not here: checking the payment with Stripe
+                   on return (PRIORITY item, server work)
+            [ ] 5. PaymentCancel in both themes (.empty-state, back to courses)
+            verify: lint 0, build; grep '\\[#' = 0 in these files; all four pages in BOTH themes at 1440 and 375; login right
+                    and wrong password, return to the page you came from; register validation, duplicate email and a
+                    real new account (e2e-*@example.test, removed by cleanup); clicking a label focuses its input; /auth
+                    and a wrong-role URL land somewhere real; success page as student and seller. Then stop and report
         [ ] Phase 2d: student. user/Welcome, MyCourses, Favorites, WhatchCourse, ProgressBar,
             UserCourseCard, FavoriteButton                                                  (~113 hex)
         [ ] Phase 2e: seller. profile/Welcome, Porfolio, Edit, course editor, StatCard, Tag,
