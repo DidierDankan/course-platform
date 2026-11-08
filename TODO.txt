@@ -321,7 +321,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                    no bg-[#f8fafc]), page heading, .panel, .course-list (grid in both themes, 4/2/1 per row, same
                    breakpoints as Home). Move .empty-state and the placeholder card out of home.css (now shared).
                    Spinner.jsx on theme tokens: AuthGate shows it on every hard reload as a white overlay today
-            [ ] 2. RTK Query infiniteQuery: getAllCoursesInfinite in courseApi (page size 12, initialPageParam 1, next page
+            [x] 2. RTK Query infiniteQuery: browseCourses endpoint in courseApi (page size 12, initialPageParam 1, next page
                    only if the last page was full); delete hooks/useInfiniteCourses.js (Browse is its only user)
             [ ] 3. filters in the URL: useSearchParams + one parse/serialize util; default values left out of the URL;
                    invalid values ignored; typing replaces the history entry, a discrete change (select, checkbox) pushes

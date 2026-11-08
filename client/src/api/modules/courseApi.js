@@ -1,17 +1,33 @@
 import { apiSlice } from "@api/apiSlice";
 
+export const COURSE_PAGE_SIZE = 12;
+
+const coursesUrl = (params = {}) => {
+  const sp = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v === undefined || v === null || v === "") return;
+    sp.set(k, String(v));
+  });
+  return `/courses/all?${sp.toString()}`;
+};
+
 export const courseApi = apiSlice.injectEndpoints({
   reducerPath: 'api',
   endpoints: (builder) => ({
     getAllCourses: builder.query({
-      query: (params = {}) => {
-        const sp = new URLSearchParams();
-        Object.entries(params).forEach(([k, v]) => {
-          if (v === undefined || v === null || v === "") return;
-          sp.set(k, String(v));
-        });
-        return `/courses/all?${sp.toString()}`;
+      query: coursesUrl,
+      providesTags: ["Courses"],
+    }),
+    // Browse: the library keeps the pages together and keeps showing the previous
+    // filter's results until the new ones arrive. The arg is the filter set.
+    browseCourses: builder.infiniteQuery({
+      infiniteQueryOptions: {
+        initialPageParam: 1,
+        // A short page means there is nothing after it.
+        getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+          lastPage.length === COURSE_PAGE_SIZE ? lastPageParam + 1 : undefined,
       },
+      query: ({ queryArg, pageParam }) => coursesUrl({ ...queryArg, page: pageParam, limit: COURSE_PAGE_SIZE }),
       providesTags: ["Courses"],
     }),
     getCourses: builder.query({
@@ -65,6 +81,7 @@ export const courseApi = apiSlice.injectEndpoints({
 
 export const {
   useGetAllCoursesQuery,
+  useBrowseCoursesInfiniteQuery,
   useGetCoursesQuery,
   useAddCourseMutation,
   useUpdateCourseMutation,

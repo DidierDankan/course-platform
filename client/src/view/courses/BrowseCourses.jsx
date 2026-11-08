@@ -1,11 +1,12 @@
 // src/view/courses/BrowseCourses.jsx
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { BookOpen } from "lucide-react";
 import CourseFilters from "@components/ui/CourseFilters";
 import CourseCard from "@components/ui/CourseCard";
 import Spinner from "@components/ui/Spinner";
-import { useInfiniteCourses } from "@hooks/useInfiniteCourses";
+import { useBrowseCoursesInfiniteQuery } from "@api/modules/courseApi";
+import { useLoadMoreTrigger } from "@hooks/useLoadMoreTrigger";
 
 export default function BrowseCourses() {
   // Only the initial search term comes from the URL (Home search bar -> /courses?q=...).
@@ -21,7 +22,11 @@ export default function BrowseCourses() {
     durationBucket: "",
   }));
 
-  const { courses, isLoading, isError, hasMore, loadMoreRef } = useInfiniteCourses(12, filters);
+  const { data, isLoading, isError, isFetching, isFetchNextPageError, hasNextPage, fetchNextPage } =
+    useBrowseCoursesInfiniteQuery(filters);
+  const courses = useMemo(() => data?.pages.flat() ?? [], [data]);
+  // No automatic retry after a failed page: it would loop forever while the server is down.
+  const loadMoreRef = useLoadMoreTrigger(fetchNextPage, hasNextPage && !isFetching && !isFetchNextPageError);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
@@ -61,7 +66,7 @@ export default function BrowseCourses() {
                 ))}
               </div>
 
-              {hasMore && (
+              {hasNextPage && (
                 <div ref={loadMoreRef} className="mt-[16px] h-[1px] bg-transparent" />
               )}
 
