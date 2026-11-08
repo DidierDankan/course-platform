@@ -16,8 +16,8 @@ in progress:  nothing
 waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in server/scripts/seed-assets/
               3) npm run seed:demo (until then the demo accounts have a throwaway password)
 open finds:   local DB is MyISAM + drifted from schema.sql (PRIORITY "schema.sql")
-next step:    write the Phase 2e brief (seller: dashboard, Portfolio, Edit, course editor, then delete legacy styles)
-roadmap:      2a-2d done -> 2e, then security -> schema + migrations -> tests + CI -> deploy
+next step:    Phase 2e steps are written (not built, waiting for review): once approved, start at step 0
+roadmap:      2a-2d done -> 2e, then security -> schema + migrations -> reviews -> tests + CI -> deploy
 GATE:         nothing goes online before the security items are done
 
 =========================== DONE ===========================
@@ -393,9 +393,53 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
             verify: lint 0, build; grep '\[#' = 0 in these files; all pages in BOTH themes at 1440 and 375; empty and error
                     states (mocked); search with and without matches; switching lessons; resume only on the right lesson;
                     owner and not-enrolled on the watch page. Then stop and report
-        [ ] Phase 2e: seller. profile/Welcome, Porfolio, Edit, course editor, StatCard, Tag,
-            ImageUploadField; then delete the legacy --color-* variables and .input        (~70 hex)
-            done when: grep -rE '\[#[0-9a-fA-F]{3,8}\]' client/src returns nothing
+        [ ] Phase 2e: seller. profile/Welcome, Porfolio, Edit, course editor, Modal, Tag, form fields;
+            then delete the legacy --color-* variables and .input
+            rules: same as 2b-2d (only --lm-* or reference classes; one commit per numbered step, explicit paths, never
+            rewrite history). No new features
+            done when: grep -rE '\[#[0-9a-fA-F]{3,8}\]' client/src returns nothing, and no --color-*, .input, FormikInput
+            or Tailwind palette colors (gray-500, red-500, dark:...) are left in the seller files
+            [ ] 0. file names: git tracks view/profile/welcome.jsx, routeConfig imports "Welcome" and "edit" (file is
+                   Edit.jsx). Works on Windows, fails the Linux build on Vercel. Rename in git, fix the import
+                   check: every import matches the case git tracks
+            [ ] 1. shared parts on tokens, no page changes yet:
+                   - Modal: centered (today it sits in the left half and is 50% wide on phones), scrolls when tall,
+                     new --lm-scrim in both themes, Esc closes only the top one, focus moves in and comes back
+                   - FormField also renders a textarea
+                   - one react-select style file reading --lm-* (replaces the two hardcoded copies)
+                   - Tag: one .tag class (only one tone is used)
+                   - styles/seller.css
+            [ ] 2. instructor dashboard (profile/Welcome) in both themes: ProfileImg, SkillTags, QualificationsAccordion
+                   on tokens. /default-avatar.png doesn't exist: use a themed fallback (no image file needed)
+            [ ] 3. Edit profile in both themes: FormField, ImageUploadField, PhoneInputField, SkillsSelectionField,
+                   QualificationsFieldArray. Bugs:
+                   - a failed save calls setErrors({ email }), a field this form doesn't have: show it in .form-alert
+                   - a qualification with no date fails validation inside a closed popup and blocks Save with no message:
+                     empty date = no date; mark any qualification that has an error
+                   - the phone error is never shown
+                   threat: profile_image is user input; the server's MIME whitelist and 200 MB cap stay as they are
+            [ ] 4. Portfolio in both themes: loading, empty and error (+ retry) states. Delete asks in a themed Modal and
+                   shows failures on the page (replaces confirm(), alert(), console.error)
+            [ ] 5. server, course save (threat model: a seller calling the API directly can send an empty title or a
+                   negative or non-numeric price; ownership checks already exist and don't change):
+                   - validators/courseValidator.js + validateRequest on POST and PUT, after multer (it parses the body):
+                     title and description required, price a number >= 0 -> 400
+                   - a refused request removes the files it just uploaded, so bad requests can't fill the disk
+                   - PUT ignores a new thumbnail today: save it and delete the old one (reads pick MAX(url), so keeping
+                     both would show either)
+            [ ] 6. course editor in both themes (CourseModal, CourseVideos). Bugs:
+                   - Done / Delete / X in the video popup have no type="button", so they submit the whole course form
+                   - the video popup opens by itself when editing a course and after deleting: only after adding files
+                   - title always says "Add Course"; the spinner only runs when adding, not updating
+                   - no validation and a failed save shows nothing: Yup schema matching step 5 + .form-alert
+                   - remove console.error from courseHandler; free the thumbnail preview URL
+            [ ] 7. delete legacy, only when grep shows no users: --color-*, --radius, --shadow-soft/strong, .input, FormikInput
+            verify: lint 0, build, server boots; the done-when greps; all seller pages + both popups in BOTH themes at 1440
+                    and 375, no horizontal overflow; empty and error states (mocked); edit profile with a new photo, a
+                    qualification with no date, and a failed save; add, edit (new thumbnail), delete a course with a real
+                    small video using an e2e-*@example.test seller, removed by cleanup; Done in the video popup doesn't save;
+                    API: empty title, price -1 and price abc -> 400 with no file left in uploads; seller A still can't edit
+                    seller B's course (403). Then re-run the full route smoke test, stop and report
         each phase gets its own detailed brief here (like 2a) before it starts, written after the previous one is reviewed
     4. add loading, empty and error states where they're missing (done page by page inside 2a-2e)
 
@@ -417,6 +461,28 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
 [ ] instructor stats panel (revenue and students per course)
     1. one SQL aggregation over payments (status = paid) and enrollments, scoped to req.user.id
     2. a small panel on the seller dashboard
+
+[ ] course reviews + seller average rating (requested 2026-11-08; build AFTER schema + migrations, BEFORE tests + CI)
+    why after migrations: a new table needs a safe way onto the live DB. why before tests: its permission rules should be tested
+    threat: anyone could inflate a course by posting ratings. Only the server decides who may review and computes every average;
+            nothing the client sends about averages is used
+    1. migration: reviews (id, course_id, user_id, rating TINYINT 1-5, body TEXT NULL, created_at, updated_at),
+       UNIQUE (user_id, course_id) = one review per student, INDEX (course_id)
+    2. server: PUT /api/courses/:id/reviews (validated: rating integer 1-5, body max 1000 chars; upsert so a student can change
+       it; requires an enrollment; the owner is refused 403), DELETE own review, GET public + paginated
+    3. server: rating_avg and rating_count on course lists and the course page, via correlated subqueries like "popular"
+       (a JOIN would multiply course_media rows and inflate total_duration)
+    4. server: seller average on the instructor page = AVG over ALL reviews of their courses, so a course with 100 reviews
+       counts more than one with 1 (not an average of averages)
+    5. sort "top_rated" in SORT_ORDER + "Top rated" in SORT_OPTIONS: damped score (reviews * avg + 5 * 3.5) / (reviews + 5), so one
+       5-star review can't outrank 200 reviews at 4.8. Constants in one place. "popular" stays enrollment count
+    6. client: stars + count on CourseCard, CoursePreview and the instructor page; "no reviews yet" when empty; review form on the
+       watch page; list on CoursePreview; both themes, tokens only; React escapes text, never dangerouslySetInnerHTML
+    7. seed-demo: a few reviews from demo students
+    shortcut: on free courses a seller's second account could review their own course. Production: require some watch progress
+    note: overlaps "comments per course" below; reviews with text probably replace it
+    verify: not enrolled -> 403, owner -> 403, rating 0 / 6 / abc -> 400, second review updates instead of duplicating, averages
+            correct by hand on seeded data, total_duration unchanged, top_rated paging repeats nothing
 
 [ ] comments per course
     note: the comments table already exists (course_id, user_id, message)
