@@ -1,95 +1,55 @@
 import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { BookOpen, Search, ArrowRight, Clock } from "lucide-react";
+import { ArrowRight, Clock } from "lucide-react";
 import { useGetMyEnrollmentsQuery } from "@api/modules/enrollmentApi";
+import ProgressBar from "@components/ui/ProgressBar";
 import { formatPrice } from "@utils/currency";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-const clampPct = (n) => Math.max(0, Math.min(100, Number(n) || 0));
-
 function MyCourseCard({ item }) {
-  const pct = clampPct(item.progress);
-
-  const thumb = item.thumbnail_url
-    ? `${API_BASE_URL}${item.thumbnail_url}`
-    : "https://images.unsplash.com/photo-1522199710521-72d69614c702?q=80&w=1200&auto=format&fit=crop";
+  const thumb = item.thumbnail_url ? `${API_BASE_URL}${item.thumbnail_url}` : null;
 
   return (
-    <div className="bg-white border border-[#e2e8f0] rounded-[16px] shadow-[0_6px_18px_rgba(0,0,0,0.06)] overflow-hidden">
-      <div className="grid grid-cols-1 sm:grid-cols-[140px,1fr]">
-        <div className="h-[140px] sm:h-full bg-[#f1f5f9]">
-          <img
-            src={thumb}
-            alt={item.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+    <article className="panel my-course">
+      <div className="my-course-image">
+        {thumb ? (
+          <img className="course-image" src={thumb} alt="" loading="lazy" />
+        ) : (
+          <div className="course-image course-image-fallback" />
+        )}
+      </div>
+
+      <div className="my-course-body">
+        <div className="my-course-head">
+          <div>
+            <h3>{item.title}</h3>
+            {item.description && <p>{item.description}</p>}
+          </div>
+          <Link to={`/courses/${item.course_id}/watch`} className="button button-primary button-small">
+            Continue <ArrowRight size={16} aria-hidden="true" />
+          </Link>
         </div>
 
-        <div className="p-[16px] flex flex-col gap-[10px]">
-          <div className="flex items-start justify-between gap-[12px]">
-            <div className="min-w-0">
-              <h3 className="text-[16px] font-semibold text-[#0f172a] truncate">
-                {item.title}
-              </h3>
-              {item.description ? (
-                <p className="text-[13px] text-[#475569] line-clamp-2 mt-[4px]">
-                  {item.description}
-                </p>
-              ) : null}
-            </div>
+        <ProgressBar value={item.progress} />
 
-            <Link
-              to={`/courses/${item.course_id}/watch`}
-              className="shrink-0 inline-flex items-center gap-[6px] rounded-[12px] bg-[#4f46e5] px-[12px] py-[9px] text-[13px] font-semibold text-white hover:opacity-95"
-            >
-              Continue <ArrowRight size={16} />
-            </Link>
-          </div>
-
-          {/* Progress */}
-          <div className="mt-[2px]">
-            <div className="flex items-center justify-between text-[12px] text-[#475569]">
-              <span>Progress</span>
-              <span className="font-semibold text-[#0f172a]">{pct}%</span>
-            </div>
-            <div className="mt-[6px] h-[8px] w-full rounded-full bg-[#e2e8f0] overflow-hidden">
-              <div
-                className="h-full bg-[#4f46e5]"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Small meta row */}
-          <div className="flex items-center justify-between pt-[6px] text-[12px] text-[#64748b]">
-            <div className="inline-flex items-center gap-[6px]">
-              <Clock size={14} />
-              <span>
-                Last update:{" "}
-                {item.updated_at
-                  ? new Date(item.updated_at).toLocaleDateString()
-                  : "—"}
-              </span>
-            </div>
-
-            <div className="font-semibold text-[#1e40af]">
-              {formatPrice(item.price)}
-            </div>
-          </div>
+        <div className="my-course-meta">
+          <span>
+            <Clock size={12} aria-hidden="true" /> Last update:{" "}
+            {item.updated_at ? new Date(item.updated_at).toLocaleDateString() : "—"}
+          </span>
+          <span>{formatPrice(item.price)}</span>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
 export default function MyCourses() {
   const { profile } = useSelector((s) => s.user || {});
-  const { data, isLoading, isError, error, refetch } = useGetMyEnrollmentsQuery();
+  const { data, isLoading, isError, refetch } = useGetMyEnrollmentsQuery();
 
-  // your API returns { ok: true, enrollments: rows } OR just rows depending on your controller
   const enrollments = useMemo(() => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
@@ -113,101 +73,81 @@ export default function MyCourses() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc]">
-        <div className="animate-pulse space-y-4 mt-8 max-w-[900px] mx-auto px-[20px] py-[28px]">
-          <div className="h-8 bg-gray-200 rounded w-1/3" />
-          <div className="h-4 bg-gray-200 rounded w-1/2" />
-          <div className="h-[160px] bg-gray-200 rounded-[16px]" />
-          <div className="h-[160px] bg-gray-200 rounded-[16px]" />
+      <main className="page-main page-main-narrow">
+        <div className="page-inline-loader" role="status" aria-label="Loading your courses">
+          <span className="spinner" aria-hidden="true" />
         </div>
-      </div>
+      </main>
     );
   }
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
-        <main className="max-w-[900px] mx-auto px-[20px] py-[28px]">
-          <div className="bg-white border border-[#e2e8f0] rounded-[16px] p-[18px] shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
-            <div className="text-[18px] font-bold text-[#1e293b]">
-              Couldn’t load your courses
-            </div>
-            <div className="mt-[6px] text-[14px] text-[#475569]">
-              {error?.data?.message || error?.error || "Unknown error"}
-            </div>
-            <button
-              onClick={refetch}
-              className="mt-[14px] inline-flex rounded-[12px] bg-[#4f46e5] px-[14px] py-[10px] text-[13px] font-semibold text-white hover:opacity-95"
-            >
-              Retry
-            </button>
-          </div>
-        </main>
+      <main className="page-main page-main-narrow">
+        <div className="empty-state" role="alert">
+          <h3>Couldn&apos;t load your courses</h3>
+          <p>Something went wrong on our side. Try again in a moment.</p>
+          <button type="button" className="button button-secondary" onClick={refetch}>
+            Try again
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  let list;
+  if (filtered.length) {
+    list = (
+      <div className="my-course-list">
+        {filtered.map((e) => (
+          <MyCourseCard key={e.course_id} item={e} />
+        ))}
+      </div>
+    );
+  } else if (enrollments.length) {
+    list = (
+      <div className="empty-state">
+        <h3>No matches</h3>
+        <p>None of your courses match that search.</p>
+        <button type="button" className="button button-secondary" onClick={() => setQ("")}>
+          Clear search
+        </button>
+      </div>
+    );
+  } else {
+    list = (
+      <div className="empty-state">
+        <h3>No courses yet</h3>
+        <p>Courses you buy or enroll in will show up here.</p>
+        <Link to="/courses" className="button button-secondary">
+          Browse courses
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a]">
-      <main className="max-w-[900px] mx-auto px-[20px] py-[28px]">
-        {/* Heading */}
-        <div className="text-center mb-[20px]">
-          <div className="inline-flex items-center gap-[8px] text-[12px] uppercase tracking-[0.08em] text-[#475569] bg-[#e2e8f0] rounded-[999px] px-[10px] py-[4px] mb-[10px]">
-            <BookOpen size={14} />
-            <span>My courses</span>
-          </div>
-          <h1 className="text-[28px] sm:text-[34px] font-extrabold leading-[1.2] text-[#1e293b]">
-            {name}'s Courses
-          </h1>
-          <p className="mt-[4px] text-[#475569] text-[15px]">
-            Pick up where you left off.
-          </p>
-        </div>
+    <main className="page-main page-main-narrow">
+      <header className="page-heading">
+        <span className="section-index">My courses</span>
+        <h1>{name}&apos;s courses</h1>
+        <p>Pick up where you left off.</p>
+      </header>
 
-        {/* Search */}
-        <div className="bg-white border border-[#e2e8f0] rounded-[16px] p-[14px] shadow-[0_6px_18px_rgba(0,0,0,0.06)] mb-[16px]">
-          <div className="flex items-center gap-[10px]">
-            <div className="shrink-0 text-[#64748b]">
-              <Search size={18} />
-            </div>
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search your courses…"
-              className="w-full outline-none text-[14px] text-[#0f172a] placeholder:text-[#94a3b8]"
-            />
-            {q ? (
-              <button
-                onClick={() => setQ("")}
-                className="text-[13px] font-semibold text-[#4f46e5] hover:underline"
-              >
-                Clear
-              </button>
-            ) : null}
-          </div>
-        </div>
+      {enrollments.length > 0 && (
+        <label className="field my-search">
+          <span>Search your courses</span>
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search your courses…"
+            maxLength={100}
+          />
+        </label>
+      )}
 
-        {/* List */}
-        {filtered.length ? (
-          <div className="grid grid-cols-1 gap-[14px]">
-            {filtered.map((e) => (
-              <MyCourseCard key={e.course_id} item={e} />
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white border border-[#e2e8f0] rounded-[16px] p-[18px] shadow-[0_6px_18px_rgba(0,0,0,0.06)] text-[14px] text-[#475569]">
-            You don’t have any courses yet.
-            <div className="mt-[12px]">
-              <Link
-                to="/courses"
-                className="inline-flex rounded-[12px] bg-[#4f46e5] px-[14px] py-[10px] text-[13px] font-semibold text-white hover:opacity-95"
-              >
-                Browse courses
-              </Link>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
+      {list}
+    </main>
   );
 }
