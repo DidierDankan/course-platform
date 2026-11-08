@@ -317,7 +317,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                    sent (helper in server/lib, same idea as parsePagination)
                    threat: ?minPrice=abc or -5 comes straight from the URL; parameterized already, this stops NaN
                    and nonsense reaching the query. check: curl with -5, abc, 10, and subscriptionOnly=1 ignored
-            [ ] 1. shared page styles in styles/components.css, values in the theme files: page shell (theme background,
+            [x] 1. shared page styles in styles/components.css, values in the theme files: page shell (theme background,
                    no bg-[#f8fafc]), page heading, .panel, .course-list (grid in both themes, 4/2/1 per row, same
                    breakpoints as Home). Move .empty-state and the placeholder card out of home.css (now shared).
                    Spinner.jsx on theme tokens: AuthGate shows it on every hard reload as a white overlay today

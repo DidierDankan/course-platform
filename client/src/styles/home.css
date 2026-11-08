@@ -351,56 +351,6 @@
     outline-offset: 3px;
   }
 
-  /* loading placeholder with the card's frame, so the row doesn't jump when data arrives */
-  .course-card-placeholder .card-body {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .course-card-placeholder .card-body span {
-    height: 12px;
-    border-radius: 2px;
-    background: var(--lm-line);
-    opacity: 0.18;
-    animation: lm-pulse 1.2s ease-in-out infinite alternate;
-  }
-  .course-card-placeholder .card-body span:first-child {
-    width: 80%;
-    height: 18px;
-  }
-  .course-card-placeholder .card-body span:last-child {
-    width: 45%;
-  }
-
-  /* ---------- Empty / error states ---------- */
-  .empty-state {
-    position: relative;
-    z-index: 1;
-    padding: 66px 25px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    background: var(--lm-empty-bg);
-    border: var(--lm-border-w-dense) solid var(--lm-line);
-    border-radius: var(--lm-radius-card);
-    box-shadow: var(--lm-shadow-card);
-  }
-  .empty-state h3 {
-    margin: 0 0 9px;
-    font-weight: 700;
-    font-size: 27px;
-    letter-spacing: -0.045em;
-    text-transform: var(--lm-hero-title-transform);
-  }
-  .empty-state p {
-    max-width: 390px;
-    margin: 0 0 25px;
-    color: var(--lm-muted);
-    font-size: 13px;
-    line-height: 1.6;
-  }
-
   /* ---------- Teach on Lumen ---------- */
   .teach-section {
     position: relative;
@@ -598,12 +548,6 @@
       margin-bottom: 29px;
       font-size: 42px;
     }
-  }
-}
-
-@keyframes lm-pulse {
-  to {
-    opacity: 0.35;
   }
 }
 
