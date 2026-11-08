@@ -4,13 +4,13 @@ import { useSelector } from "react-redux";
 import { ArrowRight, Play, Search } from "lucide-react";
 import { useGetAllCoursesQuery } from "@api/modules/courseApi";
 import CourseCard from "@components/ui/CourseCard";
+import CourseCardPlaceholders from "@components/ui/CourseCardPlaceholders";
 import { APP_NAME } from "@utils/brand";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // Home shows a fixed set (CLAUDE.md "Phase 2 decisions"); the full, filterable list is /courses.
 const POPULAR_LIMIT = 8;
-const PLACEHOLDER_CARDS = 4;
 
 // The featured course is simply the most popular one, so one request feeds both the hero
 // and the row: no second limit=1 call for the same data.
@@ -96,16 +96,7 @@ function PopularCourses({ courses, isLoading, isError, refetch }) {
   if (isLoading) {
     content = (
       <div className="course-grid" aria-busy="true" aria-label="Loading courses">
-        {Array.from({ length: PLACEHOLDER_CARDS }, (_, i) => (
-          <div key={i} className="course-card course-card-placeholder" aria-hidden="true">
-            <div className="card-visual" />
-            <div className="card-body">
-              <span />
-              <span />
-              <span />
-            </div>
-          </div>
-        ))}
+        <CourseCardPlaceholders />
       </div>
     );
   } else if (isError) {

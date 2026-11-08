@@ -330,7 +330,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                    350 ms; min="0" and step="0.01" on both prices, negatives can't be applied; keep a typed 0; min > max =
                    .has-error message and no request; Free only disables the two price inputs (the server already
                    ignores them then); Reset clears the URL
-            [ ] 5. BrowseCourses, both themes: the no-flicker behaviour above (dim on isFetching && !isFetchingNextPage, aria-busy,
+            [x] 5. BrowseCourses, both themes: the no-flicker behaviour above (dim on isFetching && !isFetchingNextPage, aria-busy,
                    .spinner), min-height one card row, placeholder cards on first load, real empty state, error + retry,
                    failed next page shows retry at the end of the list without losing the loaded cards
             [ ] 6. free courses in CourseCTA: price 0, not enrolled -> "Enroll for free" (logged out: "Login to enroll")
