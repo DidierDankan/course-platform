@@ -1,12 +1,18 @@
 import { setCredentials } from '@store/slices/authSlice';
 
+const EMAIL_TAKEN = 409;
+
 export const handleRegisterSubmit = (registerUser, navigate) => {
-  return async (values, { setSubmitting, setErrors }) => {
+  return async (values, { setSubmitting, setErrors, setStatus }) => {
+    setStatus(undefined);
     try {
       await registerUser(values).unwrap();
       navigate('/auth/login');
     } catch (err) {
-      setErrors({ email: err?.data?.message || 'Registration failed' });
+      const message = err?.data?.message || 'Registration failed. Please try again.';
+      // Only "email already registered" belongs to a field; the rest concern the whole form.
+      if (err?.status === EMAIL_TAKEN) setErrors({ email: message });
+      else setStatus(message);
     }
     setSubmitting(false);
   };

@@ -363,7 +363,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                    handleLoginSubmit); "Back to Home" = a plain link styled .button-ghost (today a button inside a link)
                    keep: redirect back to location.state.from; the server's single "Invalid credentials" message
                    threat: that message doesn't reveal whether an email exists; the form must not add that signal
-            [ ] 2. Register in both themes: same treatment; Student / Instructor as two themed radio options; password
+            [x] 2. Register in both themes: same treatment; Student / Instructor as two themed radio options; password
                    rules visible up front (min 6, a number, a special character); "email already registered" stays on the
                    email field, anything else form-level
                    threat: role is user input; the server already refuses admin. check: POST role=admin is still 403

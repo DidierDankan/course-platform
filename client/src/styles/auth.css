@@ -16,6 +16,67 @@
   .auth-form .button {
     width: 100%;
   }
+  .role-field {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .role-field legend {
+    margin-bottom: var(--lm-field-gap);
+    padding: 0;
+    color: var(--lm-muted);
+    font-family: var(--lm-font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .role-field small {
+    display: block;
+    margin-top: 6px;
+    color: var(--lm-danger);
+    font-family: var(--lm-font-mono);
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .role-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .role-option {
+    min-height: 50px;
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--lm-ink);
+    background: var(--lm-field-bg);
+    border: var(--lm-border-w) solid var(--lm-field-line);
+    border-radius: var(--lm-radius-input);
+    box-shadow: var(--lm-shadow-field);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background var(--lm-speed),
+      color var(--lm-speed),
+      border-color var(--lm-speed);
+  }
+  .role-option input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--lm-on-accent);
+    color-scheme: var(--lm-color-scheme);
+  }
+  .role-option:has(input:checked) {
+    color: var(--lm-on-accent);
+    background: var(--lm-accent);
+    border-color: var(--lm-accent);
+  }
+  .role-option:has(input:focus-visible) {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 2px;
+  }
   .form-alert {
     margin: 0;
     padding: 12px 14px;
