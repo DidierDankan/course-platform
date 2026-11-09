@@ -223,6 +223,55 @@
     overflow-wrap: anywhere;
   }
 
+  /* ---------- Portfolio ---------- */
+  .portfolio-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .portfolio-head .button {
+    flex-shrink: 0;
+  }
+  .portfolio-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .portfolio-actions .button {
+    flex: 1;
+    padding: 0 10px;
+    gap: 6px;
+  }
+  .icon-button-danger {
+    flex-shrink: 0;
+    width: var(--lm-button-small-height);
+    height: var(--lm-button-small-height);
+    display: grid;
+    place-items: center;
+    color: var(--lm-danger);
+    background: none;
+    border: var(--lm-border-w) solid var(--lm-danger);
+    border-radius: var(--lm-radius-button);
+    cursor: pointer;
+  }
+  .icon-button-danger:hover {
+    color: var(--lm-surface);
+    background: var(--lm-danger);
+  }
+  .icon-button-danger:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 2px;
+  }
+  .button-danger {
+    color: var(--lm-surface);
+    background: var(--lm-danger);
+    border-color: var(--lm-danger);
+  }
+  .modal-alert {
+    margin-top: 14px;
+  }
+
   /* ---------- Seller forms ---------- */
   .seller-form {
     display: flex;
@@ -340,6 +389,13 @@
   }
 
   @media (max-width: 700px) {
+    .portfolio-head {
+      flex-direction: column;
+      margin-bottom: 24px;
+    }
+    .portfolio-head .page-heading {
+      margin-bottom: 0;
+    }
     .form-grid {
       grid-template-columns: minmax(0, 1fr);
     }

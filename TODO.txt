@@ -420,7 +420,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                    - removing a skill or qualification never reached the database (insert only): the server now replaces
                      the list; a website can be cleared; a malformed list is a 400, not a 500
                    threat: profile_image is user input; the server's MIME whitelist and 200 MB cap stay as they are
-            [ ] 4. Portfolio in both themes: loading, empty and error (+ retry) states. Delete asks in a themed Modal and
+            [x] 4. Portfolio in both themes: loading, empty and error (+ retry) states. Delete asks in a themed Modal and
                    shows failures on the page (replaces confirm(), alert(), console.error)
             [ ] 5. server, course save (threat model: a seller calling the API directly can send an empty title or a
                    negative or non-numeric price; ownership checks already exist and don't change):
