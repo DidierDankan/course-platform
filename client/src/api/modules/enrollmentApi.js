@@ -27,10 +27,6 @@ export const enrollmentApi = apiSlice.injectEndpoints({
       invalidatesTags: ["Enrollments", "Dashboard"],
     }),
 
-    checkEnrollment: builder.query({
-      query: (courseId) => `/enrollments/${courseId}`,
-      providesTags: (r, e, courseId) => [{ type: "Enrollments", id: courseId }],
-    }),
   }),
 });
 
@@ -38,5 +34,4 @@ export const {
   useGetMyEnrollmentsQuery,
   useEnrollInCourseMutation,
   useUpdateProgressMutation,
-  useCheckEnrollmentQuery
 } = enrollmentApi;

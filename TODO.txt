@@ -19,8 +19,8 @@ waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in ser
               3) npm run seed:demo (until then the demo accounts have a throwaway password)
 open finds:   local tables still MyISAM (new default is InnoDB): never run schema.sql on course_platform, it drops everything;
               rebuild happens in the migrations stage (PRIORITY "schema.sql")
-next step:    write the security brief (PRIORITY "JWT secrets" first, then 401/403 and refresh tokens)
-roadmap:      Phase 2 done -> security -> schema + migrations -> reviews -> tests + CI -> SEO/GEO basics -> deploy
+next step:    "PLAN: WHAT'S NEXT" below, Stage 1 step 1 (expired login -> 401), once the owner says go
+roadmap:      Phase 2 done -> security -> migrations -> refresh tokens -> reviews -> tests + CI -> pre-deploy -> deploy
 GATE:         nothing goes online before the security items are done
 
 =========================== DONE ===========================
@@ -45,6 +45,7 @@ API base comes from VITE_API_URL everywhere (no localhost fallbacks left in clie
 jsconfig.json: baseUrl removed, paths are ./src/... (editor navigation works again),
 renamed LearnHub -> Lumen: one APP_NAME in client/src/utils/brand/index.js, tab title, README heading,
 Stripe Checkout shows "Lumen": branding_settings.display_name from server/lib/brand.js (tested: session 200, page shows Lumen),
+checkout refused (409) if the buyer already owns the course; it used to allow paying twice and reset the paid record to pending,
 
 --- security ---
 security: POST /api/enrollments only enrolls in free courses (paid ones need checkout),
@@ -54,6 +55,55 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
 
 
 =========================== TO DO ===========================
+
+--- PLAN: WHAT'S NEXT, IN ORDER (written 2026-11-09) ---
+how we work: Claude never commits. One step at a time: Claude builds it, verifies it, lists the changed files, suggests a commit
+message and STOPS. The owner reviews and commits, then says go for the next step. The detailed steps of each item stay in its own
+entry below; this list is only the order and what's specific to doing it now.
+
+STAGE 1: security that needs no database change
+    [x] 1. expired login -> 401 (item "expired token returns 403"). authMiddleware.js:15 answers 403, the client only refreshes on 401.
+           403 stays for "logged in but not allowed". check: an expired token refreshes silently, a wrong role still gets 403
+    [x] 2. server/config.js: reads and validates every env variable at startup; a missing one stops the server and names it, never
+           prints a value. Today dotenv only works in time because db/connection.js happens to be imported first (index.js:24 is too
+           late for the imports above it). Also DB_PORT, ignored today. check: remove a variable -> clear error, restore -> boots
+    [x] 3. JWT secrets (item "JWT secrets"). threat: the source code holds a known fallback secret, so anyone reading it could forge an
+           admin token; one secret for both token kinds means a refresh token works as an access token.
+           Sign only in helpers/tokens.js (duplicate at AuthController.js:119); verify through one helper in the 5 places that do it
+           (authMiddleware:11, authOptional:9, protectVideos:16, AuthController:116 and :168); type claim; no fallback.
+           needs: JWT_ACCESS_SECRET + JWT_REFRESH_SECRET in server/.env. Everyone is logged out once.
+           check: forged token and a refresh token used as access -> 401; login, refresh, logout still work
+    [ ] 4. webhook (item "webhook: check payment_status"). PaymentController.js:94-98. threat: an unpaid session must never enroll.
+           check: signed test events, paid -> enrolled, unpaid -> not, repeat -> no duplicate
+    [ ] 5. rate limiting on login and register (item "rate limiting"). threat: password guessing. check: attempt 11 -> 429 with a readable message
+    [ ] 6. helmet + CORS from CLIENT_URL (items "add helmet", "CORS origin"). index.js:38-41. check: every page still loads images and videos
+    [ ] 7. remove the per-request log at index.js:45-48 (item "logging", step 1)
+
+STAGE 2: schema + migrations (item "fix schema.sql")
+    schema.sql is already fixed and tested on a throwaway database
+    [ ] 1. server/migrations/001_initial.sql from schema.sql, without the DROP lines and without reviews
+    [ ] 2. small runner (npm run migrate) that records applied files in schema_migrations; running it twice does nothing the second time
+    [ ] 3. test on a throwaway database, never course_platform
+    [ ] 4. rebuild the local database: backup first (mysqldump), then migrate and seed.
+           needs from the owner first: DEMO_PASSWORD in server/.env and at least one .mp4 in server/scripts/seed-assets/.
+           Local data that isn't demo data is lost in the rebuild (the backup keeps it): the owner confirms before this step
+    [ ] 5. retire schema.sql once 001 is proven (it drops every table), update CLAUDE.md and DEPLOY.txt
+
+STAGE 3: refresh tokens can be revoked (item "refresh tokens"), as a migration
+    decide first: option B, stored hashes + rotation + reuse detection (recommended: the better interview story), or option A, token_version (cheap)
+
+STAGE 4: course reviews + seller average (item "course reviews"), as a migration, moving the reviews table out of schema.sql
+    decide first: require a title on every lesson video, form + server? (recommended, small; the column stays NULL for thumbnails)
+
+STAGE 5: tests + CI (items in "TESTS & CI"). Money path and authorization first, including reviews and the course validators
+
+STAGE 6: before deploy
+    check the payment when the buyer returns; replace the old thumbnail that shows internal hostnames; demo accounts on the login page;
+    SEO + AI search basics; bundle splitting; README; everything in DEPLOY.txt section 2.0
+
+STAGE 7: deploy (DEPLOY.txt). GATE: stages 1 and 3 must be done first
+
+housekeeping: "lesson durations wrong" and "UI polish" step 2 below were done in Phase 2 (2d, 2e): tick them next time this file is touched
 
 --- PRIORITY (before going online) ---
 

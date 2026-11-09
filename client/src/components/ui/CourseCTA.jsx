@@ -3,9 +3,8 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { ArrowRight } from "lucide-react";
 import { useCreateCheckoutSessionMutation } from "@api/modules/paymentApi";
-import { useCheckEnrollmentQuery, useEnrollInCourseMutation } from "@api/modules/enrollmentApi";
+import { useGetMyEnrollmentsQuery, useEnrollInCourseMutation } from "@api/modules/enrollmentApi";
 import { formatPrice } from "@utils/currency";
-
 // The course's call to action, one of:
 //   owner              -> "View course"        (owners watch their own course without enrolling)
 //   logged out         -> "Login to buy" / "Login to enroll"  (login, then back here)
@@ -14,7 +13,7 @@ import { formatPrice } from "@utils/currency";
 //   paid course        -> "Buy for $X", then "Redirecting…" while the Stripe session is created
 //   free course        -> "Enroll for free", then "Enrolling…"
 // What the button offers is UX only: the server decides who may watch (protectVideos), who may buy
-// (checkout refuses your own course; enrollment only comes from the verified webhook) and who may
+// (checkout refuses your own course or one you've already bought; enrollment only comes from the verified webhook) and who may
 // enroll for free (POST /api/enrollments refuses paid and subscription courses).
 export default function CourseCTA({ courseId, price, sellerId }) {
   const navigate = useNavigate();
@@ -24,9 +23,15 @@ export default function CourseCTA({ courseId, price, sellerId }) {
 
   const isOwner = !!user && Number(user.id) === Number(sellerId);
   const isFree = Number(price) === 0;
-  const { data: enrData, isFetching } = useCheckEnrollmentQuery(courseId, {
-    skip: !courseId || !user || isOwner,
+   // Every card reads the same cached list, so a page of cards sends one request.
+  const { enrollment, isFetching } = useGetMyEnrollmentsQuery(undefined, {
+    skip: !user || isOwner,
+    selectFromResult: ({ data, isFetching }) => ({
+      enrollment: data?.enrollments?.find((e) => Number(e.course_id) === Number(courseId)),
+      isFetching,
+    }),
   });
+
   const [createCheckout, { isLoading: paying }] = useCreateCheckoutSessionMutation();
   const [enroll, { isLoading: enrolling }] = useEnrollInCourseMutation();
 
@@ -52,8 +57,9 @@ export default function CourseCTA({ courseId, price, sellerId }) {
     );
   }
 
-  if (enrData?.enrolled) {
-    const progress = Math.min(Math.max(Number(enrData.enrollment?.progress) || 0, 0), 100);
+  if (enrollment) {
+    const progress = Math.min(Math.max(Number(enrollment.progress) || 0, 0), 100);
+
     return (
       <>
         <div className="mini-progress">

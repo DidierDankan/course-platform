@@ -6,7 +6,7 @@ import { useLogoutMutation } from "@api/modules/authApi";
 import { logout as logoutAction } from "@store/slices/authSlice";
 import { useTheme } from "@hooks/useTheme";
 import Logo from "@components/ui/Logo";
-
+import { apiSlice } from "@api/apiSlice";
 // Role -> header links. Server-side checks protect the pages; this only decides what to show.
 const ROLE_LINKS = {
   user: [
@@ -58,6 +58,7 @@ const Header = () => {
       // The server session may already be gone; the local logout below still has to happen.
     } finally {
       dispatch(logoutAction());
+      dispatch(apiSlice.util.resetApiState());
       navigate("/");
     }
   };
