@@ -53,21 +53,19 @@ export const buildCourseFormData = (values) => {
   return formData;
 };
 
-export const courseHandler = async (values, { addCourse, updateCourse, courseId }, resetForm, onClose) => {
+export const courseHandler = async (values, { addCourse, updateCourse, courseId }, { setStatus }, onClose) => {
+  setStatus(undefined);
   try {
     const formData = buildCourseFormData(values);
 
     if (courseId) {
-      // UPDATE existing course
       await updateCourse({ id: courseId, formData }).unwrap();
     } else {
-      // CREATE new course
       await addCourse(formData).unwrap();
     }
 
-    resetForm();
     onClose();
   } catch (err) {
-    console.error("Failed to save course:", err);
+    setStatus(err?.data?.errors?.[0] || err?.data?.message || "Couldn't save this course. Please try again.");
   }
 };

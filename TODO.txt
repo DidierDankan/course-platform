@@ -429,7 +429,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                    - a refused request removes the files it just uploaded, so bad requests can't fill the disk
                    - PUT ignores a new thumbnail today: save it and delete the old one (reads pick MAX(url), so keeping
                      both would show either)
-            [ ] 6. course editor in both themes (CourseModal, CourseVideos). Bugs:
+            [x] 6. course editor in both themes (CourseModal, CourseVideos). Bugs:
                    - Done / Delete / X in the video popup have no type="button", so they submit the whole course form
                    - the video popup opens by itself when editing a course and after deleting: only after adding files
                    - title always says "Add Course"; the spinner only runs when adding, not updating

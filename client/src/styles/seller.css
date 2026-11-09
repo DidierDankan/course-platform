@@ -316,6 +316,73 @@
     flex-wrap: wrap;
     gap: 12px;
   }
+  .form-actions-end {
+    justify-content: flex-end;
+  }
+  .thumbnail-field {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .thumbnail-preview {
+    width: 200px;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: var(--lm-border-w) solid var(--lm-line);
+    border-radius: var(--lm-radius-input);
+  }
+  .video-tiles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .video-tile {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 2px;
+    color: var(--lm-ink);
+    background: var(--lm-surface-2);
+    border: var(--lm-border-w) solid var(--lm-line-strong);
+    border-radius: var(--lm-radius-input);
+    cursor: pointer;
+  }
+  .video-tile small {
+    font-family: var(--lm-font-mono);
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .video-tile:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 2px;
+  }
+  .video-tile-add {
+    color: var(--lm-muted);
+    background: none;
+    border-style: dashed;
+  }
+  .video-tile-add:hover {
+    color: var(--lm-ink);
+  }
+  .video-tile-warning {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    color: var(--lm-on-accent);
+    background: var(--lm-accent);
+    border-radius: 50%;
+  }
+  .video-preview {
+    max-height: 50vh;
+  }
   .avatar-field {
     display: flex;
     align-items: center;

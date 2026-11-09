@@ -1,143 +1,111 @@
-import { useState, useEffect } from "react";
-import { Plus, X, AlertTriangle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { AlertTriangle, Film, Plus } from "lucide-react";
+import Modal from "@components/ui/Modal";
+import FormField from "@components/ui/Form/FormField";
+import useObjectUrl from "@hooks/useObjectUrl";
 
-const CourseVideos = ({ videos, onAdd, onRemove, onUpdate }) => {
+const CourseVideos = ({ videos, onAdd, onRemove }) => {
   const [selectedIndex, setSelectedIndex] = useState(null);
-  const [videoURL, setVideoURL] = useState(null);
+  const fileInputRef = useRef(null);
+  // Set when files are picked, so only that opens the popup: not loading a course or deleting a lesson.
+  const openNewest = useRef(false);
 
-  // Automatically open the last added video
   useEffect(() => {
-    if (videos.length > 0) {
-      setSelectedIndex(videos.length - 1);
-    }
+    if (!openNewest.current || videos.length === 0) return;
+    openNewest.current = false;
+    setSelectedIndex(videos.length - 1);
   }, [videos.length]);
 
-  const selectedVideo =
-    selectedIndex !== null && videos[selectedIndex]
-      ? videos[selectedIndex]
-      : null;
+  const selectedVideo = selectedIndex !== null ? videos[selectedIndex] ?? null : null;
+  const localUrl = useObjectUrl(selectedVideo?.file);
+  const videoUrl = localUrl ?? selectedVideo?.url ?? null;
 
-  useEffect(() => {
-    if (selectedVideo?.file) {
-      const url = URL.createObjectURL(selectedVideo.file);
-      setVideoURL(url);
-      return () => URL.revokeObjectURL(url);
-    } else if (selectedVideo?.url) {
-      setVideoURL(selectedVideo.url); // 👈 use backend URL
-    } else {
-      setVideoURL(null);
-    }
-  }, [selectedVideo?.file, selectedVideo?.url]);
+  const close = () => setSelectedIndex(null);
 
   return (
     <div>
-      <label className="block font-medium mb-1">Course Videos</label>
+      <span className="field-label">Lessons</span>
 
-      {/* Add Video Button */}
-      <button
-        type="button"
-        onClick={() => document.getElementById("video-upload").click()}
-        className="w-16 h-16 flex items-center justify-center border-2 border-dashed border-gray-400 rounded-lg hover:border-blue-500 hover:bg-gray-50 transition"
-      >
-        <Plus size={32} className="text-gray-600" />
-      </button>
-
-      {/* Hidden file input */}
       <input
-        id="video-upload"
+        ref={fileInputRef}
         type="file"
-        accept="video/*"
+        accept="video/mp4,video/webm,video/quicktime"
         multiple
-        onChange={onAdd}
         className="hidden"
+        aria-label="Add lesson videos"
+        onChange={(e) => {
+          openNewest.current = true;
+          onAdd(e); // reads the file list right away, so the input can be cleared next
+          e.target.value = ""; // lets the same file be picked again after removing it
+        }}
       />
 
-      {/* Thumbnails */}
-      {videos.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-3">
-          {videos.map((vid, idx) => {
-            const isIncomplete = !vid.title?.trim() || !vid.description?.trim();
+      <div className="video-tiles">
+        {videos.map((video, index) => {
+          const isIncomplete = !video.title?.trim() || !video.description?.trim();
+          const name = video.title?.trim() || `Lesson ${index + 1}`;
 
-            return (
-              <div
-                key={idx}
-                className="relative w-16 h-16 flex items-center justify-center bg-gray-200 rounded-md shadow cursor-pointer hover:scale-105 transition"
-                onClick={() => setSelectedIndex(idx)}
-              >
-                <span className="text-[24px]">🎥</span>
-                {isIncomplete && (
-                  <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-[12px] rounded-full p-1 shadow flex items-center justify-center">
-                    <AlertTriangle size={12} />
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Modal */}
-      {selectedVideo && (
-        <div className="fixed top-[0px] right-[0px] bottom-[0px] left-[0px] bg-black/70 flex items-center justify-center z-50">
-          <div className="relative bg-white dark:bg-neutral-900 p-4 rounded-lg shadow-xl max-w-3xl w-full mx-4">
+          return (
             <button
-              onClick={() => setSelectedIndex(null)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+              key={video.id ?? `new-${index}`}
+              type="button"
+              className="video-tile"
+              onClick={() => setSelectedIndex(index)}
+              aria-label={isIncomplete ? `${name}, missing details` : name}
+              title={name}
             >
-              <X size={24} />
+              <Film size={22} aria-hidden="true" />
+              <small>{index + 1}</small>
+              {isIncomplete && (
+                <span className="video-tile-warning" aria-hidden="true">
+                  <AlertTriangle size={12} />
+                </span>
+              )}
             </button>
+          );
+        })}
 
-            {/* Video stays mounted */}
-            {videoURL && (
-              <video
-                key={selectedIndex}
-                src={videoURL}
-                controls
-                className="w-full max-h-[70vh] rounded-md"
-              />
-            )}
+        <button
+          type="button"
+          className="video-tile video-tile-add"
+          onClick={() => fileInputRef.current.click()}
+          aria-label="Add lesson videos"
+        >
+          <Plus size={26} aria-hidden="true" />
+        </button>
+      </div>
 
-            {/* Editable fields */}
-            <div className="mt-4 space-y-3">
-              <input
-                type="text"
-                placeholder="Video Title"
-                className="input w-full"
-                value={selectedVideo.title}
-                onChange={(e) =>
-                  onUpdate(selectedIndex, "title", e.target.value)
-                }
-              />
-              <textarea
-                placeholder="Video Description"
-                className="input w-full"
-                value={selectedVideo.description}
-                onChange={(e) =>
-                  onUpdate(selectedIndex, "description", e.target.value)
-                }
-              />
-            </div>
-
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  onRemove(selectedIndex);
-                  setSelectedIndex(null);
-                }}
-                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-              >
-                Delete Video
-              </button>
-              <button
-                onClick={() => setSelectedIndex(null)}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              >
-                Done
-              </button>
-            </div>
+      <Modal
+        open={!!selectedVideo}
+        onClose={close}
+        title={`Lesson ${selectedIndex === null ? "" : selectedIndex + 1}`}
+        size="lg"
+        footer={
+          <>
+            <button
+              type="button"
+              className="text-button-danger"
+              onClick={() => {
+                onRemove(selectedIndex);
+                close();
+              }}
+            >
+              Delete lesson
+            </button>
+            <button type="button" className="button button-primary button-small" onClick={close}>
+              Done
+            </button>
+          </>
+        }
+      >
+        {selectedVideo && (
+          <div className="seller-form">
+            {videoUrl && <video key={videoUrl} src={videoUrl} controls className="watch-video video-preview" />}
+            <FormField name={`videos[${selectedIndex}].title`} label="Lesson title" />
+            <FormField name={`videos[${selectedIndex}].description`} label="Lesson description" as="textarea" rows={3} />
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 };

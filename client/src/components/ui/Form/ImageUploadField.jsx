@@ -1,26 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { getIn, useFormikContext } from "formik";
 import { User } from "lucide-react";
+import useObjectUrl from "@hooks/useObjectUrl";
 import { uploadUrl } from "@utils/url";
 
 const ImageUploadField = () => {
   const { values, errors, touched, setFieldValue } = useFormikContext();
   const fileInputRef = useRef(null);
-  const [localPreview, setLocalPreview] = useState(null);
   const [brokenSrc, setBrokenSrc] = useState(null);
 
   const value = values.profile_image;
-
-  // A newly picked file is previewed from memory; the address is released when it's replaced.
-  useEffect(() => {
-    if (!(value instanceof File)) {
-      setLocalPreview(null);
-      return undefined;
-    }
-    const url = URL.createObjectURL(value);
-    setLocalPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [value]);
+  const localPreview = useObjectUrl(value);
 
   const preview = localPreview ?? (typeof value === "string" ? uploadUrl(value) : null);
   const error = getIn(touched, "profile_image") ? getIn(errors, "profile_image") : undefined;
