@@ -17,6 +17,16 @@ const SORT_ORDER = Object.freeze({
     "(SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) DESC, c.created_at DESC, c.id DESC",
 });
 
+// Best effort: the database row is what matters, and a file that's already gone is fine.
+const removeStoredFile = (url) => {
+  if (!url) return;
+  try {
+    fs.unlinkSync(path.join(process.cwd(), url.replace(/^\//, "")));
+  } catch {
+    /* nothing to remove */
+  }
+};
+
 class CourseService {
 
   // server/db/CourseService.js
@@ -204,6 +214,24 @@ class CourseService {
       vals
     );
     return result.affectedRows;
+  }
+
+  // Points the existing row at the new file in one statement, so the course always has exactly one
+  // thumbnail (lists show MAX(url), so a leftover image could be the one displayed).
+  async replaceCourseThumbnail(courseId, file) {
+    const [images] = await db.query(
+      "SELECT id, url FROM course_media WHERE course_id = ? AND type = 'image' ORDER BY id",
+      [courseId]
+    );
+    if (!images.length) return this.insertCourseMedia(courseId, file);
+
+    const [current, ...extras] = images;
+    await db.query("UPDATE course_media SET url = ?, uploaded_at = NOW() WHERE id = ?", [
+      `/uploads/${file.filename}`,
+      current.id,
+    ]);
+    removeStoredFile(current.url);
+    await Promise.all(extras.map(({ id }) => this.deleteMediaByIdWithFile(id, courseId)));
   }
 
   async insertCourseMedia(courseId, file, meta = {}) {
@@ -484,11 +512,7 @@ class CourseService {
     );
     if (!row) return 0;
 
-    // delete file (best-effort)
-    if (row?.url) {
-      const filePath = path.join(process.cwd(), row.url.replace(/^\//, ""));
-      try { fs.unlinkSync(filePath); } catch { /* ignore */ }
-    }
+    removeStoredFile(row.url);
 
     const [result] = await db.query(
       "DELETE FROM course_media WHERE id = ? AND course_id = ?",

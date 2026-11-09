@@ -422,7 +422,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                    threat: profile_image is user input; the server's MIME whitelist and 200 MB cap stay as they are
             [x] 4. Portfolio in both themes: loading, empty and error (+ retry) states. Delete asks in a themed Modal and
                    shows failures on the page (replaces confirm(), alert(), console.error)
-            [ ] 5. server, course save (threat model: a seller calling the API directly can send an empty title or a
+            [x] 5. server, course save (threat model: a seller calling the API directly can send an empty title or a
                    negative or non-numeric price; ownership checks already exist and don't change):
                    - validators/courseValidator.js + validateRequest on POST and PUT, after multer (it parses the body):
                      title and description required, price a number >= 0 -> 400

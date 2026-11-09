@@ -6,6 +6,8 @@ import upload from "../middleware/uploadMiddleware.js";
 import { authenticate } from "../middleware/authMiddleware.js";
 import { authorizeRoles } from "../middleware/authMiddleware.js";
 import { requireCourseOwner, requireMediaOwner } from "../middleware/courseOwnership.js";
+import validateRequest from "../middleware/validateRequest.js";
+import { courseValidation } from "../validators/courseValidator.js";
 
 const router = express.Router();
 
@@ -28,6 +30,8 @@ router.post(
     { name: "thumbnail", maxCount: 1 },
     { name: "videos", maxCount: 20 },
   ]),
+  courseValidation,
+  validateRequest,
   CourseController.addCourse // saves both course & media in one go
 );
 router.put(
@@ -38,6 +42,8 @@ router.put(
     { name: "thumbnail", maxCount: 1 },
     { name: "videos", maxCount: 20 },
   ]),
+  courseValidation,
+  validateRequest,
   CourseController.updateCourse
 );
 router.delete("/:id", authorizeRoles("admin", "seller"), requireCourseOwner, CourseController.deleteCourse);

@@ -115,6 +115,11 @@ class CourseController {
       const { title, description, price } = req.body;
       await CourseService.updateCourseById(id, { title, description, price });
 
+      const newThumbnail = req.files?.thumbnail?.[0];
+      if (newThumbnail) {
+        await CourseService.replaceCourseThumbnail(id, newThumbnail);
+      }
+
       // Handle new video inserts
       const files = req.files?.videos || [];
       if (files.length) {
