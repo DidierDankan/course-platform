@@ -8,16 +8,16 @@ How these files fit together:
 =========================== NOW ===========================
 (handoff for the next session: REWRITE this block at the end of every session, never append; max ~12 lines)
 
-updated:      2026-11-08
-branch:       multi-design (commits may reach GitHub on their own: never rewrite history here)
+updated:      2026-11-09
+branch:       multi-design (commits reach GitHub on their own, not pushed from here: never rewrite history)
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
-done:         Phase 2a, 2b, 2c, 2d, Home carousel and error boundary complete and verified
+done:         Phase 2 (2a-2e) complete and verified: every page on the themes, legacy styles deleted
 in progress:  nothing
 waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in server/scripts/seed-assets/
               3) npm run seed:demo (until then the demo accounts have a throwaway password)
 open finds:   local DB is MyISAM + drifted from schema.sql (PRIORITY "schema.sql")
-next step:    Phase 2e steps are written (not built, waiting for review): once approved, start at step 0
-roadmap:      2a-2d done -> 2e, then security -> schema + migrations -> reviews -> tests + CI -> deploy
+next step:    write the security brief (PRIORITY "JWT secrets" first, then 401/403 and refresh tokens)
+roadmap:      Phase 2 done -> security -> schema + migrations -> reviews -> tests + CI -> deploy
 GATE:         nothing goes online before the security items are done
 
 =========================== DONE ===========================
@@ -393,7 +393,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
             verify: lint 0, build; grep '\[#' = 0 in these files; all pages in BOTH themes at 1440 and 375; empty and error
                     states (mocked); search with and without matches; switching lessons; resume only on the right lesson;
                     owner and not-enrolled on the watch page. Then stop and report
-        [ ] Phase 2e: seller. profile/Welcome, Porfolio, Edit, course editor, Modal, Tag, form fields;
+        [x] Phase 2e: seller. profile/Welcome, Porfolio, Edit, course editor, Modal, Tag, form fields;
             then delete the legacy --color-* variables and .input
             rules: same as 2b-2d (only --lm-* or reference classes; one commit per numbered step, explicit paths, never
             rewrite history). No new features
@@ -435,7 +435,7 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                    - title always says "Add Course"; the spinner only runs when adding, not updating
                    - no validation and a failed save shows nothing: Yup schema matching step 5 + .form-alert
                    - remove console.error from courseHandler; free the thumbnail preview URL
-            [ ] 7. delete legacy, only when grep shows no users: --color-*, --radius, --shadow-soft/strong, .input, FormikInput
+            [x] 7. delete legacy, only when grep shows no users: --color-*, --radius, --shadow-soft/strong, .input, FormikInput
             verify: lint 0, build, server boots; the done-when greps; all seller pages + both popups in BOTH themes at 1440
                     and 375, no horizontal overflow; empty and error states (mocked); edit profile with a new photo, a
                     qualification with no date, and a failed save; add, edit (new thumbnail), delete a course with a real
@@ -446,6 +446,9 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
     4. add loading, empty and error states where they're missing (done page by page inside 2a-2e)
 
 [x] free courses: the card CTA no longer goes to Stripe -> done in Phase 2b step 6
+
+[ ] cleanup:test-data leaves test sellers' profile photos in server/uploads (found 2026-11-09, dev tool only)
+    delete user_profiles.profile_image files for the e2e-* users before removing them
 
 [ ] register validator message is wrong (found 2026-11-08, cosmetic)
     server/validators/authValidator.js:15 says "one of: admin, seller, user", but only seller and user are accepted.

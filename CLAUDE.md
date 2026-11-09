@@ -100,12 +100,12 @@ Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list i
 4. **`schema.sql` fails on a fresh DB:** `schema.sql:71` indexes `course_media(course_id, position)`, but the column is `order_index`. Blocks DEPLOY.txt step 3. The schema also drops every table: add versioned migrations before deploy. *(TODO)*
 5. **Hardening:** CORS origin hardcoded *(TODO)*, no helmet *(TODO; needs `crossOriginResourcePolicy: "same-site"` locally and the Supabase domain in CSP live)*, no rate limiting on login/register *(TODO; needs `trust proxy` on Render)*, `DB_PORT` ignored *(DEPLOY.txt 2.1)*.
 6. **Webhook:** enrolls without checking `session.payment_status === "paid"`, and logs `session.metadata` / `session.payment_intent` (`PaymentController.js:94-95`). *(TODO)*
-7. **Hardcoded styling:** ~370 Tailwind arbitrary hex classes across 26 files block theming. *(TODO: CLIENT "rename + design system")*
-8. **Logging:** per-request `console.log` in `index.js`; debug logs in `WhatchCourse.jsx:30,106` and `Favorites.jsx:11`. *(TODO)*
+7. **Hardcoded styling:** resolved in Phase 2 (2026-11-09). No arbitrary hex classes remain in `client/src`; colors live only in the theme files.
+8. **Logging:** per-request `console.log` in `index.js`. The client has no `console.*` left. *(TODO)*
 9. **No tests and no CI.** *(TODO: TESTS & CI)*
 10. **Enrollment depends only on the webhook.** On Render's free plan the server sleeps, so the webhook can arrive late and the buyer returns to `/payment/success` without access. Fix: the server retrieves the session from Stripe by `session_id` on return and enrolls through the same idempotent code as the webhook. This doesn't trust the redirect, because the server asks Stripe. *(TODO: PRIORITY "check the payment when the buyer returns")*
 
-## Design system (in progress)
+## Design system
 
 - Brand: **Lumen**. The name comes from `APP_NAME` in `client/src/utils/brand/index.js` (plus the `<title>` in `client/index.html`) and, on the server, `server/lib/brand.js`, which `PaymentController` sends to Stripe Checkout as `branding_settings.display_name`. Keep the two constants in sync; never hardcode the name. The Stripe dashboard's Company name only affects receipts and emails. Two switchable themes from Figma Make: **`brutal`** (neo-brutalist: cream, black 2px outlines, hard offset shadows, yellow/red/mint) and **`cinematic`** (dark, lime `#C6F432` accent, 16:9 thumbnails, 1px borders).
 - Approach: **one token set**, values switched by `<html data-theme="brutal|cinematic">` (default `brutal`). Saved in localStorage key `lumen-theme` and applied by an inline script in `client/index.html` before React mounts (no flash). `client/src/hooks/useTheme.js` treats the `data-theme` attribute as the single store (`useSyncExternalStore` + one `MutationObserver`), so every component using it stays in sync; change the theme only through it (`setTheme` / `toggleTheme` / `applyTheme`). Both validate the value and fall back to `brutal`.
@@ -114,7 +114,7 @@ Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list i
 - **Component classes** use the reference names: `.button` (+ `-primary/-secondary/-ghost/-ink/-small`, `:disabled`, `.is-loading` + `.spinner`), `.course-card` / `.card-visual` / `.card-body`, `.card-label`, `.field` (+ `.has-error`), `.section-index`, `.toast`. They read `--lm-*` variables only: **no hex in `components.css`**.
 - **Tailwind** stays for layout and spacing. One-off styling uses the token utilities `bg-lm-surface`, `text-lm-muted`, `border-lm-line`, `rounded-lm-card`, `shadow-lm-card`, `font-lm-display` (mapped with `@theme inline`, so they follow the theme). **No new arbitrary hex/radius/shadow values.**
 - Theme differences live in theme variables (e.g. `--lm-press-transform`, `--lm-tilt-label`), not in duplicate components or `[data-theme]` selectors inside components.
-- Legacy: the old `--color-*` variables and `.input` in `index.css` stay until the last page is migrated (Phase 2), then get deleted. The `--lm-` prefix exists so the two sets can't collide.
+- Popups use `components/ui/Modal.jsx` (native `<dialog>`, portalled to `body`). react-select can only be themed through inline styles, so it uses `components/ui/Form/selectStyles.js`, which passes `--lm-*` variables.
 
 ### Phase 2 decisions (approved)
 
