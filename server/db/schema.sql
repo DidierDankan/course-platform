@@ -1,5 +1,6 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS subscriptions;
 DROP TABLE IF EXISTS lesson_progress;
 DROP TABLE IF EXISTS user_skills;
 DROP TABLE IF EXISTS qualifications;
@@ -11,6 +12,7 @@ DROP TABLE IF EXISTS course_media;
 DROP TABLE IF EXISTS enrollments;
 DROP TABLE IF EXISTS courses;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS reviews;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -22,7 +24,7 @@ CREATE TABLE users (
   role ENUM('admin', 'seller', 'user') NOT NULL DEFAULT 'user',
   stripe_customer_id VARCHAR(255) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+)ENGINE=InnoDB;
 
 -- COURSES
 CREATE TABLE courses (
@@ -34,7 +36,7 @@ CREATE TABLE courses (
   is_subscription_only TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE SET NULL
-);
+)ENGINE=InnoDB;
 
 -- ENROLLMENTS
 CREATE TABLE enrollments (
@@ -51,15 +53,15 @@ CREATE TABLE enrollments (
   UNIQUE KEY unique_enrollment (user_id, course_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
-);
+)ENGINE=InnoDB;
 
 -- COURSE MEDIA
 CREATE TABLE course_media (
   id INT AUTO_INCREMENT PRIMARY KEY,
   course_id INT NOT NULL,
   type ENUM('image', 'video', 'pdf') NOT NULL,
+  title VARCHAR(255) NULL,
   url TEXT NOT NULL,
-  title VARCHAR(100) NOT NULL,
   description TEXT,
   duration INT NULL,
   order_index INT NOT NULL DEFAULT 0,
@@ -67,9 +69,9 @@ CREATE TABLE course_media (
   uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
-  INDEX idx_course_media_course (course_id),
-  INDEX idx_course_media_position (course_id, position)
-);
+  INDEX idx_course_media_position (course_id, order_index),
+  UNIQUE KEY uniq_course_video_order (course_id, type, order_index)
+)ENGINE=InnoDB;
 
 -- FAVORITES
 CREATE TABLE favorites (
@@ -80,7 +82,7 @@ CREATE TABLE favorites (
   UNIQUE KEY unique_favorite (user_id, course_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
-);
+)ENGINE=InnoDB;
 
 -- PAYMENTS
 CREATE TABLE payments (
@@ -95,7 +97,7 @@ CREATE TABLE payments (
   UNIQUE KEY uniq_payment_user_course (user_id, course_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
-);
+)ENGINE=InnoDB;
 
 -- COMMENTS
 CREATE TABLE comments (
@@ -106,19 +108,20 @@ CREATE TABLE comments (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
+)ENGINE=InnoDB;
 
 -- USER PROFILES
 CREATE TABLE user_profiles (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL UNIQUE,
+  phone VARCHAR(20),
   full_name VARCHAR(255),
   bio TEXT,
   profile_image VARCHAR(255),
   website VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
+)ENGINE=InnoDB;
 
 -- QUALIFICATIONS
 CREATE TABLE qualifications (
@@ -126,14 +129,13 @@ CREATE TABLE qualifications (
   user_id INT NOT NULL,
   title VARCHAR(100) NOT NULL,
   institution VARCHAR(100),
-  phone VARCHAR(20),
   description TEXT,
   certificate_url TEXT,
   issued_at DATE,
 
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   UNIQUE KEY unique_qualification (user_id, title, institution)
-);
+)ENGINE=InnoDB;
 
 -- USER SKILLS
 CREATE TABLE user_skills (
@@ -143,25 +145,40 @@ CREATE TABLE user_skills (
 
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   UNIQUE KEY unique_skill (user_id, skill)
-);
+)ENGINE=InnoDB;
 
 -- LESSON PROGRESS
 CREATE TABLE lesson_progress (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
-  course_id INT NOT NULL,
-  media_id INT NOT NULL,
-  last_position_seconds INT NOT NULL DEFAULT 0,
+  course_media_id INT NOT NULL,
   completed TINYINT(1) NOT NULL DEFAULT 0,
+  completed_at DATETIME NULL,
+  last_position_seconds INT NOT NULL DEFAULT 0,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-  UNIQUE KEY uniq_user_media (user_id, media_id),
-  INDEX idx_lp_user_course (user_id, course_id),
+  UNIQUE KEY uniq_user_lesson (user_id, course_media_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
-  FOREIGN KEY (media_id) REFERENCES course_media(id) ON DELETE CASCADE
-);
+  FOREIGN KEY (course_media_id) REFERENCES course_media(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
+CREATE TABLE reviews (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  course_id INT NOT NULL,
+  user_id INT NOT NULL,
+  rating TINYINT NOT NULL,
+  body TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  CONSTRAINT chk_review_rating CHECK (rating BETWEEN 1 AND 5),
+  UNIQUE KEY uniq_review_user_course (user_id, course_id),
+  INDEX idx_reviews_course (course_id),
+  FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- SUBSCRIPTIONS
 CREATE TABLE subscriptions (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
@@ -175,4 +192,4 @@ CREATE TABLE subscriptions (
 
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
-);
+)ENGINE=InnoDB;

@@ -19,6 +19,7 @@ Every change comes with its reasoning: the trade-offs considered and why this op
 - **Teach in context.** When you introduce a pattern (idempotent webhooks, refresh-token rotation, design tokens…), explain it in 2–4 sentences, including the failure it prevents. No lectures.
 - **Small, reviewable diffs.** One concern per change. Before a large refactor, give a short plan (files touched, risk, how to verify) and wait for a go-ahead.
 - **Verify, don't claim.** After a change, run the build, lint or tests, or describe exactly how to check it manually. Never say "this should work".
+- **Never commit.** Don't run `git commit`, `git push`, or anything that stages for a commit or changes history. Leave the changes in the working tree; I review and commit them myself. At the end of a task, list the changed files and suggest a commit message.
 - **Be direct.** No filler, no "Great question!", no recap of what you just did. Lead with the answer or the problem.
 - If my request conflicts with good engineering, say so before doing it.
 
@@ -154,4 +155,4 @@ Before starting any task, place it in one of these buckets and say which one.
 3. Errors are handled with the right status codes (400 validation, 401 unauthenticated, 403 forbidden, 404, 409 conflict) and nothing internal leaks to the client.
 4. `npm run lint` and `npm run build` pass in `client`, the server boots, and the relevant tests pass (once tests exist).
 5. A short explanation of what changed, why, and how to verify it, plus any trade-off I should know about.
-6. Tracking is updated: the TODO item is ticked or moved to DONE, the commit body says why + what's next, and the `NOW` block in TODO.txt is rewritten before the session ends.
+6. Tracking is updated: the TODO item is ticked or moved to DONE, a suggested commit message says why + what's next (I do the committing), and the `NOW` block in TODO.txt is rewritten before the session ends.

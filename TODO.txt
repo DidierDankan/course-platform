@@ -10,14 +10,17 @@ How these files fit together:
 
 updated:      2026-11-09
 branch:       multi-design (commits reach GitHub on their own, not pushed from here: never rewrite history)
+RULE:         Claude never commits: leave changes uncommitted, the owner reviews and commits (CLAUDE.md)
+uncommitted:  server/db/schema.sql fixed (InnoDB, matches the code, reviews table; tested on a throwaway DB), TODO.txt, CLAUDE.md
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
 done:         Phase 2 (2a-2e) complete and verified: every page on the themes, legacy styles deleted
 in progress:  nothing
 waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in server/scripts/seed-assets/
               3) npm run seed:demo (until then the demo accounts have a throwaway password)
-open finds:   local DB is MyISAM + drifted from schema.sql (PRIORITY "schema.sql")
+open finds:   local tables still MyISAM (new default is InnoDB): never run schema.sql on course_platform, it drops everything;
+              rebuild happens in the migrations stage (PRIORITY "schema.sql")
 next step:    write the security brief (PRIORITY "JWT secrets" first, then 401/403 and refresh tokens)
-roadmap:      Phase 2 done -> security -> schema + migrations -> reviews -> tests + CI -> deploy
+roadmap:      Phase 2 done -> security -> schema + migrations -> reviews -> tests + CI -> SEO/GEO basics -> deploy
 GATE:         nothing goes online before the security items are done
 
 =========================== DONE ===========================
@@ -130,6 +133,29 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
     1. fix the folder structure (server/db/ not services/, index.js not server.js)
     2. add: architecture diagram (from DEPLOY.txt section 0), a "decisions & trade-offs" section,
        env variables, how to run locally, stripe listen, demo accounts, live link
+
+[ ] SEO + AI search (GEO / AEO) basics, before deploy (asked 2026-11-09)
+    problem: Lumen is a client-rendered SPA. Crawlers that don't run JavaScript (most AI crawlers: GPTBot,
+             ClaudeBot, PerplexityBot) see only <div id="root"> and <title>Lumen</title>; a link shared on LinkedIn
+             has no preview; the favicon is still vite.svg
+    scope: portfolio-sized. The full fix (pages rendered on the server) is a framework change, see step 6
+    1. client/index.html: meta description, Open Graph + Twitter card tags (og:title, og:description, og:url,
+       og:image 1200x630 made from the design), Lumen favicon instead of vite.svg. Static, so every crawler
+       and every link preview sees it. Highest value step: it's what recruiters see when you share the link
+    2. per-page <title> + <meta name="description"> using React 19's built-in <title>/<meta> (no react-helmet):
+       Home, Browse, CoursePreview (course title + short description), SellerPublic; name from APP_NAME
+    3. JSON-LD: WebSite + Organization on Home; Course (name, description, provider, offers in USD) on
+       CoursePreview. Limitation: added by JavaScript, so only crawlers that render JS (Googlebot) see it
+    4. client/public/robots.txt: allow everything incl. AI crawlers, disallow /api, /profile, /user, /payment;
+       point to the sitemap. sitemap.xml: static pages; optional GET /sitemap.xml on the server listing
+       published course URLs (one parameterized query, served through the Vercel rewrite)
+    5. client/public/llms.txt: what Lumen is, the main URLs, "portfolio demo, Stripe test mode", link to the
+       GitHub repo and README
+    6. decide and write down in README "decisions & trade-offs": what crawlers without JS miss.
+       default: accept it (steps 1 + 5 cover them); prerendering or SSR (Next.js) is out of scope
+    verify (after deploy): view-source shows the meta/OG tags; LinkedIn Post Inspector shows the preview;
+           Google Rich Results Test passes on a course page; Lighthouse SEO >= 90;
+           curl -A "GPTBot" <live url> returns the static meta. All free tools, no cost
 
 --- SECURITY ---
 
