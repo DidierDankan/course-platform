@@ -29,17 +29,22 @@ class UserController {
       } = req.body;
 
       const profileImageFile = req.file;
-      let parsedSkills = [];
-      let parsedQualifi = [];
+      let parsedSkills;
+      let parsedQualifi;
 
-      if (typeof skills === "string") parsedSkills = JSON.parse(skills);
-      if (typeof qualifications === "string") parsedQualifi = JSON.parse(qualifications);
+      try {
+        if (typeof skills === "string") parsedSkills = JSON.parse(skills);
+        if (typeof qualifications === "string") parsedQualifi = JSON.parse(qualifications);
+      } catch {
+        if (profileImageFile) await deleteFileIfExists(profileImageFile.path);
+        return res.status(400).json({ message: "Invalid skills or qualifications" });
+      }
 
       const updates = {
         ...(full_name && { full_name }),
         ...(bio && { bio }),
         ...(phone && { phone }),
-        ...(website && { website }),
+        ...(website !== undefined && { website }), // may be "": the user can remove their website
       };
 
       // ✅ Handle profile image replacement
@@ -51,14 +56,13 @@ class UserController {
       // ✅ Update user profile data
       await UserService.updateUserProfile(userId, updates);
 
-      // ✅ Update skills
+      // Only lists that were actually sent are replaced, so a partial request can't wipe the others.
       if (Array.isArray(parsedSkills)) {
-        await UserService.insertUserSkills(userId, parsedSkills);
+        await UserService.replaceUserSkills(userId, parsedSkills);
       }
 
-      // ✅ Update qualifications
       if (Array.isArray(parsedQualifi)) {
-        await UserService.insertUserQualifications(userId, parsedQualifi);
+        await UserService.replaceUserQualifications(userId, parsedQualifi);
       }
 
       res.json({ message: "Profile updated successfully" });

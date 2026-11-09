@@ -411,12 +411,14 @@ security: uploads limited to images/videos, max 200 MB, extension set by server,
                    - styles/seller.css
             [x] 2. instructor dashboard (profile/Welcome) in both themes: ProfileImg, SkillTags, QualificationsAccordion
                    on tokens. /default-avatar.png doesn't exist: use a themed fallback (no image file needed)
-            [ ] 3. Edit profile in both themes: FormField, ImageUploadField, PhoneInputField, SkillsSelectionField,
+            [x] 3. Edit profile in both themes: FormField, ImageUploadField, PhoneInputField, SkillsSelectionField,
                    QualificationsFieldArray. Bugs:
                    - a failed save calls setErrors({ email }), a field this form doesn't have: show it in .form-alert
                    - a qualification with no date fails validation inside a closed popup and blocks Save with no message:
                      empty date = no date; mark any qualification that has an error
                    - the phone error is never shown
+                   - removing a skill or qualification never reached the database (insert only): the server now replaces
+                     the list; a website can be cleared; a malformed list is a 400, not a 500
                    threat: profile_image is user input; the server's MIME whitelist and 200 MB cap stay as they are
             [ ] 4. Portfolio in both themes: loading, empty and error (+ retry) states. Delete asks in a themed Modal and
                    shows failures on the page (replaces confirm(), alert(), console.error)

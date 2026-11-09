@@ -22,7 +22,7 @@ const CustomOption = (props) => (
   <SelectComponents.Option {...props}>
     <span className="mr-2">{props.data.flag}</span>
     <span className="font-medium">{props.data.iso}</span>
-    <span className="text-gray-500 ml-2">{props.data.value}</span>
+    <span className="ml-2">{props.data.value}</span>
   </SelectComponents.Option>
 );
 
@@ -45,7 +45,8 @@ const selectStyles = {
 };
 
 const PhoneInputField = () => {
-  const { values, setFieldValue } = useFormikContext();
+  const { values, errors, touched, setFieldValue, setFieldTouched } = useFormikContext();
+  const error = touched.phone ? errors.phone : undefined;
 
   // Extract prefix & number from stored value
   const match = values.phone?.match(/^\((\+\d+)\)(.*)$/);
@@ -68,35 +69,34 @@ const PhoneInputField = () => {
   }, [values.phone, setFieldValue]);
 
   return (
-    <div className="flex flex-col gap-2">
-      <label className="font-medium text-sm">Phone Number</label>
+    <div className="phone-field">
+      <div>
+        <span className="field-label">Country code</span>
+        <Select
+          aria-label="Country code"
+          options={phoneOptions}
+          value={selectedOption || null}
+          onChange={(selected) => {
+            setFieldValue("phone", `(${selected.value})${numberWithoutPrefix}`);
+          }}
+          isSearchable
+          placeholder="Select"
+          classNamePrefix="react-select"
+          styles={selectStyles}
+          components={{
+            Option: CustomOption,
+            SingleValue: CustomSingleValue,
+          }}
+        />
+      </div>
 
-      <div className="flex gap-2">
-        {/* Country Select */}
-        <div className="w-80">
-          <Select
-            options={phoneOptions}
-            value={selectedOption || null}
-            onChange={(selected) => {
-              setFieldValue("phone", `(${selected.value})${numberWithoutPrefix}`);
-            }}
-            isSearchable
-            placeholder="Select"
-            classNamePrefix="react-select"
-            styles={selectStyles}
-            components={{
-              Option: CustomOption,
-              SingleValue: CustomSingleValue,
-            }}
-          />
-        </div>
-
-        {/* Phone Number Input */}
+      <label className={`field ${error ? "has-error" : ""}`}>
+        <span>Phone number</span>
         <input
           type="tel"
-          className="input flex-1"
-          placeholder="Phone number"
           value={numberWithoutPrefix}
+          aria-invalid={!!error}
+          onBlur={() => setFieldTouched("phone", true)}
           onChange={(e) =>
             setFieldValue(
               "phone",
@@ -104,7 +104,8 @@ const PhoneInputField = () => {
             )
           }
         />
-      </div>
+        <small>{error}</small>
+      </label>
     </div>
   );
 };

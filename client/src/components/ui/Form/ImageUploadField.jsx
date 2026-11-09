@@ -1,74 +1,57 @@
-import { useEffect, useRef, useState } from 'react';
-import { ErrorMessage, useFormikContext } from 'formik';
+import { useEffect, useRef, useState } from "react";
+import { getIn, useFormikContext } from "formik";
+import { User } from "lucide-react";
+import { uploadUrl } from "@utils/url";
 
 const ImageUploadField = () => {
-  const { values, setFieldValue } = useFormikContext();
-  const [preview, setPreview] = useState(null);
+  const { values, errors, touched, setFieldValue } = useFormikContext();
   const fileInputRef = useRef(null);
+  const [localPreview, setLocalPreview] = useState(null);
+  const [brokenSrc, setBrokenSrc] = useState(null);
 
+  const value = values.profile_image;
+
+  // A newly picked file is previewed from memory; the address is released when it's replaced.
   useEffect(() => {
-    if (values.profile_image && typeof values.profile_image === 'string') {
-      const imagePath = values.profile_image.startsWith('uploads/')
-        ? `/${values.profile_image}`
-        : `${import.meta.env.VITE_API_URL}/uploads/${values.profile_image}`;
-
-      setPreview(imagePath);
+    if (!(value instanceof File)) {
+      setLocalPreview(null);
+      return undefined;
     }
-  }, [values.profile_image]);
+    const url = URL.createObjectURL(value);
+    setLocalPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [value]);
 
-  const handleImageChange = (event) => {
-    const file = event.currentTarget.files[0];
-    if (file) {
-      setFieldValue('profile_image', file);
-      setPreview(URL.createObjectURL(file));
-    }
-  };
+  const preview = localPreview ?? (typeof value === "string" ? uploadUrl(value) : null);
+  const error = getIn(touched, "profile_image") ? getIn(errors, "profile_image") : undefined;
 
   return (
-    <div className="mb-4">
-      <label htmlFor="profile_image" className="text-[16px] font-semibold text-[#1e293b] mb-[8px]">
-        Profile Picture
-      </label>
-
-      {/* Hidden input */}
-      <input
-        id="profile_image"
-        name="profile_image"
-        type="file"
-        accept="image/*"
-        ref={fileInputRef}
-        onChange={handleImageChange}
-        className="hidden"
-      />
-
-      <ErrorMessage
-        name="profile_image"
-        component="div"
-        className="text-red-500 text-sm mt-1"
-      />
-
-      {/* Clickable container */}
-      <div
-        className={`relative mt-4 w-[150px] h-[150px] cursor-pointer rounded-full overflow-hidden border-2 group 
-          ${preview ? 'border-gray-300' : 'border-dashed border-gray-400 bg-gray-50'}`}
-        onClick={() => fileInputRef.current.click()}
-      >
-        {/* Image */}
-        <img
-          src={preview || '/default-avatar.png'}
-          alt="Profile"
-          className="absolute w-full h-full object-cover rounded-full"
-        />
-
-        {/* Overlay */}
-        <div
-          className="absolute w-full h-full inset-0 bg-black/40 flex items-center justify-center rounded-full 
-          opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
-        >
-          <span className="text-white text-sm font-semibold">
-            {preview ? 'Change' : 'Upload'}
-          </span>
+    <div className="avatar-field">
+      {preview && preview !== brokenSrc ? (
+        <img className="avatar" src={preview} alt="Your profile" onError={() => setBrokenSrc(preview)} />
+      ) : (
+        <div className="avatar avatar-empty" aria-hidden="true">
+          <User size={64} />
         </div>
+      )}
+
+      <div>
+        <span className="field-label">Profile picture</span>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="hidden"
+          aria-label="Profile picture"
+          onChange={(e) => {
+            const file = e.currentTarget.files[0];
+            if (file) setFieldValue("profile_image", file);
+          }}
+        />
+        <button type="button" className="button button-secondary button-small" onClick={() => fileInputRef.current.click()}>
+          {preview ? "Change photo" : "Upload photo"}
+        </button>
+        <small className={`field-message ${error ? "is-error" : ""}`}>{error || "JPG, PNG, WebP or GIF"}</small>
       </div>
     </div>
   );

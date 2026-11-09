@@ -170,7 +170,7 @@
     font-weight: 700;
   }
 
-  .qualification + .qualification {
+  .qualification-row + .qualification-row {
     border-top: var(--lm-border-w) solid var(--lm-line);
   }
   .qualification-head {
@@ -223,7 +223,126 @@
     overflow-wrap: anywhere;
   }
 
+  /* ---------- Seller forms ---------- */
+  .seller-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .seller-form .field small {
+    min-height: 15px;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .form-grid-full {
+    grid-column: 1 / -1;
+  }
+  /* a label for controls that can't sit inside .field (react-select brings its own input) */
+  .field-label {
+    display: block;
+    margin-bottom: var(--lm-field-gap);
+    color: var(--lm-muted);
+    font-family: var(--lm-font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .field-message {
+    display: block;
+    min-height: 15px;
+    margin-top: var(--lm-field-gap);
+    color: var(--lm-muted);
+    font-family: var(--lm-font-mono);
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .field-message.is-error {
+    color: var(--lm-danger);
+  }
+  .form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .avatar-field {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .phone-field {
+    display: grid;
+    grid-template-columns: 130px minmax(0, 1fr);
+    gap: 10px;
+  }
+  .form-section-head {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .form-section-head .field-label {
+    margin: 0;
+  }
+  .chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    max-width: 100%;
+    min-height: 38px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    color: var(--lm-ink);
+    background: var(--lm-field-bg);
+    border: var(--lm-border-w) solid var(--lm-field-line);
+    border-radius: var(--lm-radius-input);
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .chip:hover {
+    background: var(--lm-surface-2);
+  }
+  .chip:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 2px;
+  }
+  .chip.has-error {
+    color: var(--lm-danger);
+    border-color: var(--lm-danger);
+  }
+  .text-button-danger {
+    margin-right: auto;
+    color: var(--lm-danger);
+    background: none;
+    border: 0;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .text-button-danger:hover {
+    text-decoration: underline;
+  }
+  .text-button-danger:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 2px;
+  }
+
   @media (max-width: 700px) {
+    .form-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
     .profile-card {
       grid-template-columns: minmax(0, 1fr);
       justify-items: center;

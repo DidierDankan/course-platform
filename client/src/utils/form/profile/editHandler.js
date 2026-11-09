@@ -1,13 +1,11 @@
-
-
-export const handleEditSubmit = (EditUser, navigate) => {
-  return async (values, { setSubmitting, setErrors }) => {
+export const handleEditSubmit = (editUser, navigate) => {
+  return async (values, { setSubmitting, setStatus }) => {
+    setStatus(undefined);
     try {
-      await EditUser(values).unwrap();
-      navigate('/profile/dashboard');
-      // No need to manually call fetchProfile here
+      await editUser(values).unwrap();
+      navigate("/profile/dashboard");
     } catch (err) {
-      setErrors({ email: err?.data?.message || 'Edit profile failed' });
+      setStatus(err?.data?.message || "Couldn't save your profile. Please try again.");
     }
     setSubmitting(false);
   };

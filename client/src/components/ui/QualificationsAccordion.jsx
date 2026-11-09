@@ -27,7 +27,7 @@ const QualificationsAccordion = ({ items = [] }) => {
         const panelId = `qualification-panel-${index}`;
 
         return (
-          <div key={index} className="qualification">
+          <div key={index} className="qualification-row">
             <button
               type="button"
               id={headId}

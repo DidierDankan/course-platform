@@ -109,42 +109,51 @@ class UserService {
     await db.query(sql, [insertData, updates]);
   }
 
-  async insertUserSkills(userId, skills) {
-    if (!Array.isArray(skills) || skills.length === 0) return;
-
-    const skillValues = skills.map(skill => [userId, skill]);
-
-    const sql = `
-      INSERT INTO user_skills (user_id, skill)
-      VALUES ?
-      ON DUPLICATE KEY UPDATE skill = VALUES(skill)
-    `;
-
-    const [result] = await db.query(sql, [skillValues]);
+  // The form always sends the whole list, so the list is replaced: anything removed there goes
+  // away here too. The transaction takes effect once the tables are InnoDB (TODO: schema.sql).
+  async replaceRows(deleteSql, userId, insertSql, rows) {
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+      await conn.query(deleteSql, [userId]);
+      if (rows.length) await conn.query(insertSql, [rows]);
+      await conn.commit();
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
   }
 
-  async insertUserQualifications(userId, qualifications) {
-    if (!Array.isArray(qualifications) || qualifications.length === 0) return;
-
-    const values = qualifications.map(q => [
+  async replaceUserSkills(userId, skills) {
+    await this.replaceRows(
+      "DELETE FROM user_skills WHERE user_id = ?",
       userId,
-      q.title,
-      q.institution,
-      q.description,
-      q.certificate_url,
-      q.issued_at,
-    ]);
+      "INSERT INTO user_skills (user_id, skill) VALUES ?",
+      [...new Set(skills)].map((skill) => [userId, skill])
+    );
+  }
 
-    const sql = `
-      INSERT INTO qualifications (user_id, title, institution, description, certificate_url, issued_at)
-      VALUES ?
-      ON DUPLICATE KEY UPDATE
-        description = VALUES(description),
-        certificate_url = VALUES(certificate_url),
-        issued_at = VALUES(issued_at)
-    `;
-
-    const [result] = await db.query(sql, [values]);
+  async replaceUserQualifications(userId, qualifications) {
+    await this.replaceRows(
+      "DELETE FROM qualifications WHERE user_id = ?",
+      userId,
+      `INSERT INTO qualifications (user_id, title, institution, description, certificate_url, issued_at)
+       VALUES ?
+       ON DUPLICATE KEY UPDATE
+         description = VALUES(description),
+         certificate_url = VALUES(certificate_url),
+         issued_at = VALUES(issued_at)`,
+      qualifications.map((q) => [
+        userId,
+        q.title,
+        q.institution,
+        q.description,
+        q.certificate_url,
+        q.issued_at || null, // an empty date input sends ""
+      ])
+    );
   }
 
 }

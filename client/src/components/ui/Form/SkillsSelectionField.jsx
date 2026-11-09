@@ -1,11 +1,12 @@
 import Select from "react-select";
-import { ErrorMessage, useFormikContext } from "formik";
+import { useFormikContext } from "formik";
 
 import { skills } from "@utils/skills";
 import { themedSelectStyles } from "./selectStyles";
 
 const SkillsSelectionField = () => {
-  const { values, setFieldValue } = useFormikContext();
+  const { values, errors, touched, setFieldValue } = useFormikContext();
+  const error = touched.skills ? errors.skills : undefined;
 
   // Normalize skills array (supports strings or pre-built { value, label })
   const normalizedOptions = skills.map((opt) =>
@@ -18,10 +19,10 @@ const SkillsSelectionField = () => {
   );
 
   return (
-    <div className="mb-4">
-      <label className="block mb-1 font-medium">Skills</label>
-
+    <div>
+      <span className="field-label">Skills</span>
       <Select
+        aria-label="Skills"
         isMulti
         isSearchable
         options={availableOptions}
@@ -36,12 +37,7 @@ const SkillsSelectionField = () => {
         styles={themedSelectStyles}
         classNamePrefix="react-select"
       />
-
-      <ErrorMessage
-        name="skills"
-        component="div"
-        className="text-red-500 text-sm"
-      />
+      <small className={`field-message ${error ? "is-error" : ""}`}>{error}</small>
     </div>
   );
 };
