@@ -3,7 +3,7 @@
 // public; a course video is only served to its owner, an admin, an enrolled student,
 // or anyone when the lesson is marked as a preview.
 import path from "path";
-import jwt from "jsonwebtoken";
+import { verifyAccessToken } from "../helpers/tokens.js";
 import CourseService from "../db/CourseService.js";
 import EnrollmentService from "../db/EnrollmentService.js";
 
@@ -13,7 +13,8 @@ const currentUser = (req) => {
   const token = req.cookies?.token;
   if (!token) return null;
   try {
-    return jwt.verify(token, process.env.JWT_SECRET);
+    return verifyAccessToken(token);
+
   } catch {
     return null; // expired or invalid token = not logged in
   }

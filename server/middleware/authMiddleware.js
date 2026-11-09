@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import { verifyAccessToken } from "../helpers/tokens.js";
 
 export const authenticate = (req, res, next) => {
   const token = req.cookies?.token || req.headers["authorization"]?.split(" ")[1];
@@ -8,7 +8,7 @@ export const authenticate = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = verifyAccessToken(token);
     req.user = decoded;
     next(); // ✅ only go forward if token is valid
   } catch (err) {

@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import { verifyAccessToken } from "../helpers/tokens.js";
 
 export const authenticateOptional = (req, res, next) => {
   try {
@@ -6,7 +6,8 @@ export const authenticateOptional = (req, res, next) => {
     const token = req.cookies?.token;
     if (!token) return next();
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = verifyAccessToken(token);
+
     req.user = decoded; // { id, role, ... } depending on your token payload
     return next();
   } catch (err) {

@@ -1,11 +1,6 @@
 import config from '../config.js';
-import jwt from 'jsonwebtoken';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../helpers/tokens.js';
 import UserService from '../db/UserService.js';
-import { generateAccessToken, generateRefreshToken } from '../helpers/tokens.js';
-
-
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
 class AuthController {
   async register(req, res) {
@@ -113,14 +108,10 @@ class AuthController {
       }
 
       // ✅ Verify refresh token
-      const decoded = jwt.verify(refreshToken, JWT_SECRET);
+      const decoded = verifyRefreshToken(refreshToken);
 
       // ✅ Issue new access token
-      const accessToken = jwt.sign(
-        { id: decoded.id, email: decoded.email, role: decoded.role },
-        JWT_SECRET,
-        { expiresIn: "15m" }
-      );
+      const accessToken = generateAccessToken(decoded);
 
       // ✅ Set new access token cookie
       res.cookie("token", accessToken, {
@@ -158,19 +149,10 @@ class AuthController {
     return res.status(200).json({ message: "Logged out successfully" });
   }
 
-
-
   me(req, res) {
-    try {
-      const token = req.cookies.token;
-      if (!token) return res.status(401).json({ message: 'No token' });
-
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      return res.json({ user: decoded }); // You could re-fetch from DB here if needed
-    } catch (err) {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
+    return res.json({ user: req.user });
   }
+
 }
 
 export default new AuthController();

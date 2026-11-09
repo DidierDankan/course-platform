@@ -7,7 +7,8 @@ const REQUIRED = [
   "DB_HOST",
   "DB_USER",
   "DB_NAME",
-  "JWT_SECRET",
+  "JWT_ACCESS_SECRET",
+  "JWT_REFRESH_SECRET",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
   "CLIENT_URL",
@@ -21,6 +22,10 @@ const fail = (message) => {
 
 const missing = REQUIRED.filter((name) => !process.env[name]);
 if (missing.length) fail(`missing ${missing.join(", ")}. Add them to server/.env.`);
+if (process.env.JWT_ACCESS_SECRET === process.env.JWT_REFRESH_SECRET) {
+  fail("JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be different.");
+}
+
 
 const portFrom = (name, fallback) => {
   const raw = process.env[name];
@@ -34,6 +39,10 @@ const config = Object.freeze({
   port: portFrom("PORT", 3001),
   isProduction: process.env.NODE_ENV === "production",
   clientUrl: process.env.CLIENT_URL,
+  jwt: {
+    accessSecret: process.env.JWT_ACCESS_SECRET,
+    refreshSecret: process.env.JWT_REFRESH_SECRET,
+  },
   db: {
     host: process.env.DB_HOST,
     port: portFrom("DB_PORT", 3306),
