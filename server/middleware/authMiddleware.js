@@ -12,7 +12,7 @@ export const authenticate = (req, res, next) => {
     req.user = decoded;
     next(); // ✅ only go forward if token is valid
   } catch (err) {
-    return res.status(403).json({ message: "Invalid or expired token" }); // ⛔ stop here
+    return res.status(401).json({ message: "Invalid or expired token" }); // ⛔ stop here
   }
 };
 

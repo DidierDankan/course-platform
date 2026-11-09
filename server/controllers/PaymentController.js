@@ -1,9 +1,10 @@
+import config from "../config.js";
 import PaymentService from "../db/PaymentService.js";
 import { stripe } from "../lib/stripe.js";
 import { CURRENCY } from "../lib/currency.js";
 import { APP_NAME } from "../lib/brand.js";
 
-const CLIENT_URL = process.env.CLIENT_URL;
+const CLIENT_URL = config.clientUrl;
 
 class PaymentController {
   // POST /api/payments/checkout
@@ -83,7 +84,7 @@ class PaymentController {
       event = stripe.webhooks.constructEvent(
         req.body,
         sig,
-        process.env.STRIPE_WEBHOOK_SECRET
+        config.stripe.webhookSecret
       );
     } catch (err) {
       console.error("Webhook signature verification failed:", err.message);

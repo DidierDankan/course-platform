@@ -1,9 +1,9 @@
+import config from '../config.js';
 import jwt from 'jsonwebtoken';
 import UserService from '../db/UserService.js';
-import dotenv from 'dotenv';
 import { generateAccessToken, generateRefreshToken } from '../helpers/tokens.js';
 
-dotenv.config();
+
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
@@ -79,14 +79,14 @@ class AuthController {
       // ✅ Set cookies
       res.cookie("token", accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: config.isProduction,
         sameSite: "lax",
         maxAge: 15 * 60 * 1000, // 15m
       });
 
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: config.isProduction,
         sameSite: "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
@@ -125,7 +125,7 @@ class AuthController {
       // ✅ Set new access token cookie
       res.cookie("token", accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: config.isProduction,
         sameSite: "lax",
         maxAge: 15 * 60 * 1000,
       });
@@ -144,14 +144,14 @@ class AuthController {
     // Clear access token
     res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: config.isProduction,
       sameSite: "lax",
     });
 
     // Clear refresh token
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: config.isProduction,
       sameSite: "lax",
     });
 

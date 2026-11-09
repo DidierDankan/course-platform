@@ -1,7 +1,8 @@
 // server/index.js
+import config from './config.js';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
+
 import path from 'path';
 import cookieParser from 'cookie-parser';
 
@@ -21,11 +22,9 @@ import multer from "multer";
 import { UploadError, MAX_FILE_SIZE_MB } from "./middleware/uploadMiddleware.js";
 
 
-dotenv.config();
-
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = config.port;
 
 app.use(cookieParser());
 
