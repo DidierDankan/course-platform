@@ -1,11 +1,11 @@
 import config from "../config.js";
 import PaymentService from "../db/PaymentService.js";
+import EnrollmentService from "../db/EnrollmentService.js";
 import { stripe } from "../lib/stripe.js";
 import { CURRENCY } from "../lib/currency.js";
 import { APP_NAME } from "../lib/brand.js";
-
 const CLIENT_URL = config.clientUrl;
-
+const PAYMENT_PAID = "paid";
 class PaymentController {
   // POST /api/payments/checkout
   async createCheckoutSession(req, res) {
@@ -23,6 +23,10 @@ class PaymentController {
       // ✅ sellers can enroll, but NOT in their own course
       if (course.seller_id && Number(course.seller_id) === Number(userId)) {
         return res.status(400).json({ ok: false, message: "You cannot buy your own course." });
+      }
+      
+      if (await EnrollmentService.getEnrollment(userId, courseId)) {
+        return res.status(409).json({ ok: false, message: "You already own this course." });
       }
 
       const customerId = await PaymentService.ensureStripeCustomer(userId);
@@ -95,8 +99,8 @@ class PaymentController {
       if (event.type === "checkout.session.completed") {
         const session = event.data.object;
 
-        console.log("session.metadata", session.metadata);
-        console.log("session.payment_intent", session.payment_intent);
+        // "completed" means the buyer finished Checkout, not that the money arrived.
+        if (session.payment_status !== PAYMENT_PAID) return res.json({ received: true });
 
         // session.payment_intent exists for payment mode
         let userId = Number(session.metadata?.user_id);

@@ -6,7 +6,6 @@ class EnrollmentController {
     // Bind methods so they work when passed directly to routes
     this.enroll = this.enroll.bind(this);
     this.listUserEnrollments = this.listUserEnrollments.bind(this);
-    this.checkEnrollment = this.checkEnrollment.bind(this);
     this.updateProgress = this.updateProgress.bind(this);
   }
 
@@ -39,24 +38,6 @@ class EnrollmentController {
       return res.json({ ok: true, enrollments });
     } catch (err) {
       console.error("List enrollments error:", err);
-      return res.status(500).json({ ok: false, message: "Server error" });
-    }
-  }
-
-  async checkEnrollment(req, res) {
-    try {
-      const userId = req.user.id;
-      const courseId = Number(req.params.courseId);
-
-      const enrollment = await EnrollmentService.getEnrollment(userId, courseId);
-
-      if (!enrollment) {
-        return res.status(404).json({ ok: true, enrolled: false });
-      }
-
-      return res.json({ ok: true, enrolled: true, enrollment });
-    } catch (err) {
-      console.error("Check enrollment error:", err);
       return res.status(500).json({ ok: false, message: "Server error" });
     }
   }
