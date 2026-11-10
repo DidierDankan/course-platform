@@ -11,15 +11,13 @@ How these files fit together:
 updated:      2026-11-10
 branch:       multi-design (commits reach GitHub on their own, not pushed from here: never rewrite history)
 RULE:         Claude never commits: leave changes uncommitted, the owner reviews and commits (CLAUDE.md)
-uncommitted:  scripts/migrate.js, db/connection.js, package.json, TODO.txt (Stage 2 step 2)
+uncommitted:  TODO.txt (Stage 2 steps 3-4)
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
 done:         Phase 2 and Stage 1 complete (401 on expired login, config.js, JWT secrets, webhook, rate limiting, helmet + CORS, request logs removed), checkout 409, one shared enrollment request
 in progress:  nothing
-waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in server/scripts/seed-assets/
-              3) npm run seed:demo (until then the demo accounts have a throwaway password)
-open finds:   local tables still MyISAM (new default is InnoDB): never run schema.sql on course_platform, it drops everything;
-              rebuild happens in the migrations stage (PRIORITY "schema.sql")
-next step:    Stage 2 step 3 (test on a throwaway database, strict sql_mode, cleanup script), once the owner says go. Don't run npm run migrate on course_platform before step 4
+waiting on you: nothing
+open finds:   local database is now lumen_dev (InnoDB, migrated). course_platform is the old MyISAM copy: keep until step 5 is done, its demo files were replaced by the seed. Backup with all files: Desktop/course-platform-backups/2026-11-10
+next step:    Stage 2 step 5 (retire schema.sql, update CLAUDE.md, DEPLOY.txt and README), once the owner says go
 roadmap:      Phase 2 done -> security -> migrations -> refresh tokens -> reviews -> tests + CI -> pre-deploy -> deploy
 GATE:         nothing goes online before the security items are done
 
@@ -83,13 +81,21 @@ STAGE 2: schema + migrations (item "fix schema.sql")
     schema.sql is already fixed and tested on a throwaway database
     [x] 1. server/migrations/001_initial.sql from schema.sql, without the DROP lines, reviews, comments and subscriptions (reviews and comments come back as 002 and 003; subscriptions are out of scope)
     [x] 2. small runner (npm run migrate) that records applied files in schema_migrations; running it twice does nothing the second time
-    [ ] 3. test on a throwaway database, never course_platform
+    [x] 3. test on a throwaway database, never course_platform
            also run the app's queries with a strict sql_mode: local is IGNORE_SPACE only (found 2026-11-10), so bad writes and loose GROUP BY pass here and can fail on Aiven
-    [ ] 4. rebuild the local database: backup first (mysqldump), then migrate and seed.
+    [x] 4. rebuild the local database: backup first (mysqldump), then migrate and seed.
            needs from the owner first: DEMO_PASSWORD in server/.env and at least one .mp4 in server/scripts/seed-assets/.
            Local data that isn't demo data is lost in the rebuild (the backup keeps it): the owner confirms before this step
            found 2026-11-10: today's rows have no duplicates or orphans, so they fit 001's rules and could be copied across instead of lost
     [ ] 5. retire schema.sql once 001 is proven (it drops every table), update CLAUDE.md and DEPLOY.txt
+
+STAGE 2b: server input validation (found 2026-11-10 in Stage 2 step 3). Must be done before deploy; the app works on strict MySQL, but bad input answers 500 instead of 400/404
+    only fails on a strict server (loose MySQL cuts or changes the value silently): full_name, phone, website, skill and qualification title too long; bad issued_at;
+      huge lastPositionSeconds; lesson duration that isn't a number; lesson title over 255; email over 191
+    fails on every server: empty skill or qualification title; progress on a lesson that doesn't exist; favorite on a course that doesn't exist;
+      text in minDuration/maxDuration/sellerId on /courses/all (NaN reaches SQL); text id on /courses/:id/public
+    also delete dead code: CourseService.fetchCourseForWatching (never called, reads columns that don't exist) and deleteCourseThumbnail (never called)
+    check: every case answers 4xx in strict mode; confirm Aiven's real sql_mode when the database exists (both strict modes tested locally)
 
 STAGE 3: refresh tokens can be revoked (item "refresh tokens"), as a migration
     decide first: option B, stored hashes + rotation + reuse detection (recommended: the better interview story), or option A, token_version (cheap)
