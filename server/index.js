@@ -2,6 +2,7 @@
 import config from './config.js';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 
 import path from 'path';
 import cookieParser from 'cookie-parser';
@@ -27,6 +28,9 @@ const app = express();
 const PORT = config.port;
 app.set('trust proxy', config.trustProxyHops);
 
+// "same-site" lets the client on another localhost port load images and videos; the default "same-origin" would block them.
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }));
+
 
 app.use(cookieParser());
 
@@ -37,14 +41,13 @@ app.post(
 );
 
 app.use(cors({
-  origin: 'http://localhost:5173', // your Vite frontend
-  credentials: true               // ✅ Allow cookies
+  origin: config.clientUrl,
+  credentials: true,
 }));
 
 app.use(express.json());
 
 app.use((req, res, next) => {
-  console.log(`➡️ Incoming ${req.method} ${req.url}`);
   next();
 });
 
@@ -57,10 +60,8 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/public", publicRoutes);
-app.use('/uploads', protectVideos, express.static(path.join(process.cwd(), 'uploads'), {
-  // Browsers must trust our Content-Type and never "guess" a file is HTML or script.
-  setHeaders: (res) => res.set('X-Content-Type-Options', 'nosniff'),
-}));
+app.use('/uploads', protectVideos, express.static(path.join(process.cwd(), 'uploads')));
+
 
 app.get('/', (req, res) => {
   res.send('Server is running!');

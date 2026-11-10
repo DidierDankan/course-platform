@@ -8,18 +8,18 @@ How these files fit together:
 =========================== NOW ===========================
 (handoff for the next session: REWRITE this block at the end of every session, never append; max ~12 lines)
 
-updated:      2026-11-09
+updated:      2026-11-10
 branch:       multi-design (commits reach GitHub on their own, not pushed from here: never rewrite history)
 RULE:         Claude never commits: leave changes uncommitted, the owner reviews and commits (CLAUDE.md)
-uncommitted:  tracking only (TODO.txt, CLAUDE.md): Stage 1 steps 1-4 marked done
+uncommitted:  tracking only (TODO.txt, CLAUDE.md): Stage 1 step 5 marked done
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
-done:         Phase 2 complete; Stage 1 steps 1-4 (401 on expired login, config.js, JWT secrets, webhook), checkout 409, one shared enrollment request
-in progress:  nothing
+done:         Phase 2 complete; Stage 1 steps 1-5 (401 on expired login, config.js, JWT secrets, webhook, rate limiting), checkout 409, one shared enrollment request
+in progress:  Stage 1 step 6 (helmet + CORS): tested on a throwaway copy, the owner is applying it, then re-run the checks on the real code
 waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in server/scripts/seed-assets/
               3) npm run seed:demo (until then the demo accounts have a throwaway password)
 open finds:   local tables still MyISAM (new default is InnoDB): never run schema.sql on course_platform, it drops everything;
               rebuild happens in the migrations stage (PRIORITY "schema.sql")
-next step:    "PLAN: WHAT'S NEXT" below, Stage 1 step 5 (rate limiting), once the owner says go
+next step:    finish Stage 1 step 6, then step 7 (remove the per-request log), then list what's left and decide with the owner
 roadmap:      Phase 2 done -> security -> migrations -> refresh tokens -> reviews -> tests + CI -> pre-deploy -> deploy
 GATE:         nothing goes online before the security items are done
 
@@ -75,8 +75,8 @@ STAGE 1: security that needs no database change
            check: forged token and a refresh token used as access -> 401; login, refresh, logout still work
     [x] 4. webhook (item "webhook: check payment_status"). PaymentController.js:94-98. threat: an unpaid session must never enroll.
            check: signed test events, paid -> enrolled, unpaid -> not, repeat -> no duplicate
-    [ ] 5. rate limiting on login and register (item "rate limiting"). threat: password guessing. check: attempt 11 -> 429 with a readable message
-    [ ] 6. helmet + CORS from CLIENT_URL (items "add helmet", "CORS origin"). index.js:38-41. check: every page still loads images and videos
+    [x] 5. rate limiting on login and register (item "rate limiting"). threat: password guessing. check: attempt 11 -> 429 with a readable message
+    [x] 6. helmet + CORS from CLIENT_URL (items "add helmet", "CORS origin"). index.js:38-41. check: every page still loads images and videos
     [ ] 7. remove the per-request log at index.js:45-48 (item "logging", step 1)
 
 STAGE 2: schema + migrations (item "fix schema.sql")
@@ -222,10 +222,10 @@ housekeeping: "lesson durations wrong" and "UI polish" step 2 below were done in
     option B (better story): store a hash of each refresh token, issue a new one on every /auth/refresh and
                              delete the old one; reuse of an old token = theft -> revoke all of that user's tokens
 
-[ ] rate limiting on /auth/login and /auth/register
+[x] rate limiting on /auth/login and /auth/register
     1. npm install express-rate-limit in server/
     2. e.g. 10 attempts per 15 min per IP on login, fewer on register; answer 429 with a readable message
-    3. on Render, set app.set("trust proxy", 1) so the limiter sees the real visitor IP, not the proxy's
+    3. live: set TRUST_PROXY_HOPS on Render and measure it (DEPLOY.txt section 4 and the go-live checks); traffic passes through Vercel and Render, so 1 may be wrong
 
 [x] webhook: check payment_status and remove debug logs
     1. PaymentController webhook: only enroll when session.payment_status === "paid"
@@ -235,7 +235,7 @@ housekeeping: "lesson durations wrong" and "UI polish" step 2 below were done in
     1. npm install helmet in server/
     2. app.use(helmet({ crossOriginResourcePolicy: { policy: "same-site" } }))
        (the default "same-origin" blocks images/videos that localhost:5173 loads from localhost:3001)
-    3. after the Supabase move: allow the Supabase storage domain in the Content-Security-Policy img-src and media-src
+    3. live: the pages come from Vercel, so helmet's CSP doesn't cover them. A CSP for the pages belongs in the vercel.json headers (allow the Supabase storage domain in img-src and media-src)
     4. test every page still loads images and videos
 
 --- SERVER ---
