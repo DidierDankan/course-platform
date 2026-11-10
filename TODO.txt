@@ -11,7 +11,7 @@ How these files fit together:
 updated:      2026-11-10
 branch:       multi-design (commits reach GitHub on their own, not pushed from here: never rewrite history)
 RULE:         Claude never commits: leave changes uncommitted, the owner reviews and commits (CLAUDE.md)
-uncommitted:  index.js and EnrollmentController.js (step 7 log cleanup), TODO.txt, CLAUDE.md (Stage 1 closed)
+uncommitted:  server/migrations/001_initial.sql, cleanup-test-data.js, TODO.txt (Stage 2 step 1)
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
 done:         Phase 2 and Stage 1 complete (401 on expired login, config.js, JWT secrets, webhook, rate limiting, helmet + CORS, request logs removed), checkout 409, one shared enrollment request
 in progress:  nothing
@@ -19,7 +19,7 @@ waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in ser
               3) npm run seed:demo (until then the demo accounts have a throwaway password)
 open finds:   local tables still MyISAM (new default is InnoDB): never run schema.sql on course_platform, it drops everything;
               rebuild happens in the migrations stage (PRIORITY "schema.sql")
-next step:    list what's left and decide with the owner; the roadmap's next item is Stage 2 (migrations) below
+next step:    Stage 2 step 2 (migration runner, npm run migrate), once the owner says go
 roadmap:      Phase 2 done -> security -> migrations -> refresh tokens -> reviews -> tests + CI -> pre-deploy -> deploy
 GATE:         nothing goes online before the security items are done
 
@@ -81,12 +81,14 @@ STAGE 1: security that needs no database change (DONE 2026-11-10: full re-run of
 
 STAGE 2: schema + migrations (item "fix schema.sql")
     schema.sql is already fixed and tested on a throwaway database
-    [ ] 1. server/migrations/001_initial.sql from schema.sql, without the DROP lines and without reviews
+    [x] 1. server/migrations/001_initial.sql from schema.sql, without the DROP lines, reviews, comments and subscriptions (reviews and comments come back as 002 and 003; subscriptions are out of scope)
     [ ] 2. small runner (npm run migrate) that records applied files in schema_migrations; running it twice does nothing the second time
     [ ] 3. test on a throwaway database, never course_platform
+           also run the app's queries with a strict sql_mode: local is IGNORE_SPACE only (found 2026-11-10), so bad writes and loose GROUP BY pass here and can fail on Aiven
     [ ] 4. rebuild the local database: backup first (mysqldump), then migrate and seed.
            needs from the owner first: DEMO_PASSWORD in server/.env and at least one .mp4 in server/scripts/seed-assets/.
            Local data that isn't demo data is lost in the rebuild (the backup keeps it): the owner confirms before this step
+           found 2026-11-10: today's rows have no duplicates or orphans, so they fit 001's rules and could be copied across instead of lost
     [ ] 5. retire schema.sql once 001 is proven (it drops every table), update CLAUDE.md and DEPLOY.txt
 
 STAGE 3: refresh tokens can be revoked (item "refresh tokens"), as a migration
@@ -94,6 +96,8 @@ STAGE 3: refresh tokens can be revoked (item "refresh tokens"), as a migration
 
 STAGE 4: course reviews + seller average (item "course reviews"), as a migration, moving the reviews table out of schema.sql
     decide first: require a title on every lesson video, form + server? (recommended, small; the column stays NULL for thumbnails)
+
+STAGE 4b: comments per course (item "comments per course"), as its own migration. Owner's decision 2026-11-10: both reviews and comments go in before deploy
 
 STAGE 5: tests + CI (items in "TESTS & CI"). Money path and authorization first, including reviews and the course validators
 
@@ -561,12 +565,12 @@ housekeeping: "lesson durations wrong" and "UI polish" step 2 below were done in
        watch page; list on CoursePreview; both themes, tokens only; React escapes text, never dangerouslySetInnerHTML
     7. seed-demo: a few reviews from demo students
     shortcut: on free courses a seller's second account could review their own course. Production: require some watch progress
-    note: overlaps "comments per course" below; reviews with text probably replace it
+    note: comments stay as a separate feature (owner's decision 2026-11-10): a review is one rating per student per course, comments are an open discussion
     verify: not enrolled -> 403, owner -> 403, rating 0 / 6 / abc -> 400, second review updates instead of duplicating, averages
             correct by hand on seeded data, total_duration unchanged, top_rated paging repeats nothing
 
 [ ] comments per course
-    note: the comments table already exists (course_id, user_id, message)
+    note: the table is created by this feature's migration, not by 001; add updated_at if edits are allowed, and an index for listing a course's comments newest first
     1. server: GET /api/courses/:id/comments (public, paginated) and POST (enrolled students + owner only)
     2. server: DELETE for the comment's author or the course owner
     3. client: comments list + form under the video on the watch page

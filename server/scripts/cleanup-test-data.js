@@ -20,8 +20,6 @@ const USER_TABLES = [
   "enrollments",
   "payments",
   "favorites",
-  "comments",
-  "subscriptions",
   "qualifications",
   "user_skills",
   "user_profiles",
@@ -74,7 +72,7 @@ async function main() {
       if (media.length) {
         await conn.query("DELETE FROM lesson_progress WHERE course_media_id IN (?)", [media.map((m) => m.id)]);
       }
-      for (const table of ["course_media", "enrollments", "payments", "favorites", "comments"]) {
+      for (const table of ["course_media", "enrollments", "payments", "favorites"]) {
         await conn.query(`DELETE FROM ${table} WHERE course_id IN (?)`, [courseIds]);
       }
       await conn.query("DELETE FROM courses WHERE id IN (?)", [courseIds]);
@@ -82,7 +80,6 @@ async function main() {
     for (const table of USER_TABLES) {
       await conn.query(`DELETE FROM ${table} WHERE user_id IN (?)`, [userIds]);
     }
-    await conn.query("DELETE FROM subscriptions WHERE seller_id IN (?)", [userIds]);
     await conn.query("DELETE FROM users WHERE id IN (?)", [userIds]);
     await conn.commit();
   } catch (err) {
