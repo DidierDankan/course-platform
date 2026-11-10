@@ -52,8 +52,6 @@ class EnrollmentController {
         return res.status(403).json({ ok: false, message: "Not enrolled" });
       }
 
-      console.log("PATCH progress payload:", req.body);
-
       const { progress, completed, lastWatchedMediaId, lastPositionSeconds } = req.body;
 
       await EnrollmentService.updateProgress({

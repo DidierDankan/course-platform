@@ -11,15 +11,15 @@ How these files fit together:
 updated:      2026-11-10
 branch:       multi-design (commits reach GitHub on their own, not pushed from here: never rewrite history)
 RULE:         Claude never commits: leave changes uncommitted, the owner reviews and commits (CLAUDE.md)
-uncommitted:  tracking only (TODO.txt, CLAUDE.md): Stage 1 step 5 marked done
+uncommitted:  index.js and EnrollmentController.js (step 7 log cleanup), TODO.txt, CLAUDE.md (Stage 1 closed)
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
-done:         Phase 2 complete; Stage 1 steps 1-5 (401 on expired login, config.js, JWT secrets, webhook, rate limiting), checkout 409, one shared enrollment request
-in progress:  Stage 1 step 6 (helmet + CORS): tested on a throwaway copy, the owner is applying it, then re-run the checks on the real code
+done:         Phase 2 and Stage 1 complete (401 on expired login, config.js, JWT secrets, webhook, rate limiting, helmet + CORS, request logs removed), checkout 409, one shared enrollment request
+in progress:  nothing
 waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in server/scripts/seed-assets/
               3) npm run seed:demo (until then the demo accounts have a throwaway password)
 open finds:   local tables still MyISAM (new default is InnoDB): never run schema.sql on course_platform, it drops everything;
               rebuild happens in the migrations stage (PRIORITY "schema.sql")
-next step:    finish Stage 1 step 6, then step 7 (remove the per-request log), then list what's left and decide with the owner
+next step:    list what's left and decide with the owner; the roadmap's next item is Stage 2 (migrations) below
 roadmap:      Phase 2 done -> security -> migrations -> refresh tokens -> reviews -> tests + CI -> pre-deploy -> deploy
 GATE:         nothing goes online before the security items are done
 
@@ -61,7 +61,7 @@ how we work: Claude never commits. One step at a time: Claude builds it, verifie
 message and STOPS. The owner reviews and commits, then says go for the next step. The detailed steps of each item stay in its own
 entry below; this list is only the order and what's specific to doing it now.
 
-STAGE 1: security that needs no database change
+STAGE 1: security that needs no database change (DONE 2026-11-10: full re-run of every check passed)
     [x] 1. expired login -> 401 (item "expired token returns 403"). authMiddleware.js:15 answers 403, the client only refreshes on 401.
            403 stays for "logged in but not allowed". check: an expired token refreshes silently, a wrong role still gets 403
     [x] 2. server/config.js: reads and validates every env variable at startup; a missing one stops the server and names it, never
@@ -77,7 +77,7 @@ STAGE 1: security that needs no database change
            check: signed test events, paid -> enrolled, unpaid -> not, repeat -> no duplicate
     [x] 5. rate limiting on login and register (item "rate limiting"). threat: password guessing. check: attempt 11 -> 429 with a readable message
     [x] 6. helmet + CORS from CLIENT_URL (items "add helmet", "CORS origin"). index.js:38-41. check: every page still loads images and videos
-    [ ] 7. remove the per-request log at index.js:45-48 (item "logging", step 1)
+    [x] 7. remove the per-request log at index.js:45-48 (item "logging", step 1)
 
 STAGE 2: schema + migrations (item "fix schema.sql")
     schema.sql is already fixed and tested on a throwaway database
@@ -142,7 +142,7 @@ housekeeping: "lesson durations wrong" and "UI polish" step 2 below were done in
 [ ] API address for the live build
     see DEPLOY.txt 2.4 (client/.env.production with an empty VITE_API_URL; Vercel forwards /api and /uploads)
 
-[ ] server: CORS origin is hardcoded to http://localhost:5173
+[x] server: CORS origin is hardcoded to http://localhost:5173
     problem: server/index.js cors({ origin: 'http://localhost:5173' })
     1. change it to origin: CLIENT_URL (from config.js)
     2. live, the browser only talks to the Vercel domain (rewrites), so this mostly matters for local dev; keep it env-based anyway
@@ -231,11 +231,11 @@ housekeeping: "lesson durations wrong" and "UI polish" step 2 below were done in
     1. PaymentController webhook: only enroll when session.payment_status === "paid"
     2. remove console.log("session.metadata"...) and console.log("session.payment_intent"...)
 
-[ ] add helmet for security headers on every response
+[x] add helmet for security headers on every response
     1. npm install helmet in server/
     2. app.use(helmet({ crossOriginResourcePolicy: { policy: "same-site" } }))
        (the default "same-origin" blocks images/videos that localhost:5173 loads from localhost:3001)
-    3. live: the pages come from Vercel, so helmet's CSP doesn't cover them. A CSP for the pages belongs in the vercel.json headers (allow the Supabase storage domain in img-src and media-src)
+    3. still open, live only: the pages come from Vercel, so helmet's CSP doesn't cover them. A CSP for the pages belongs in the vercel.json headers (allow the Supabase storage domain in img-src and media-src)
     4. test every page still loads images and videos
 
 --- SERVER ---
@@ -245,9 +245,9 @@ housekeeping: "lesson durations wrong" and "UI polish" step 2 below were done in
     1. first do "expired token returns 403" (SECURITY) so the normal API refresh works
     2. then on the watch page, call /auth/refresh every ~10 min while it is open
 
-[ ] logging
+[x] logging
     1. remove the per-request console.log in index.js
-    2. optional: pino (+ a request id) for real logs on Render
+    2. still optional: pino (+ a request id) for real logs on Render
 
 --- TESTS & CI ---
 

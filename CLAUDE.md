@@ -88,6 +88,7 @@ There are **no tests yet** (`server` test script is a stub).
 - Stripe: checkout → verified webhook → idempotent enrollment (`INSERT … ON DUPLICATE KEY`), only when `payment_status === "paid"`. Free-only `POST /api/enrollments`. Can't buy your own course; checkout answers 409 if you already own it.
 - Auth tokens: only `helpers/tokens.js` signs or verifies them, with separate access and refresh secrets, a `type` claim and a pinned algorithm. Missing, invalid or expired → 401; 403 only for authenticated but not allowed. `server/config.js` stops the server if a required variable is missing.
 - Login and register are rate limited per IP (`server/middleware/rateLimitMiddleware.js`), 429 with a readable message. Counters are in memory (one server only). `TRUST_PROXY_HOPS` has to be measured on the live site.
+- Helmet sets security headers on every answer (`same-site` resource policy, so local ports can share media). CORS origin comes from `CLIENT_URL`. Helmet's CSP only covers what Express serves; a CSP for the pages would go in `vercel.json`.
 - Sellers can only edit or delete their own courses and media. `getCourses` scopes to `req.user.id` unless admin.
 - Currency: **USD everywhere** (`server/lib/currency.js` ↔ `client/src/utils/currency/index.js`, `formatPrice`).
 - Client API base comes from `VITE_API_URL` everywhere (no localhost fallbacks). `jsconfig.json` uses `./src/...` paths, no `baseUrl`.
@@ -99,11 +100,10 @@ Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list i
 
 1. **Refresh tokens can't be revoked or rotated.** A stolen refresh cookie works for 7 days, and logout can't kill it. Fix: `token_version` (cheap) or stored hashed refresh tokens with rotation and reuse detection (better story). *(TODO)*
 2. **`schema.sql` fails on a fresh DB:** `schema.sql:71` indexes `course_media(course_id, position)`, but the column is `order_index`. Blocks DEPLOY.txt step 3. The schema also drops every table: add versioned migrations before deploy. *(TODO)*
-3. **Hardening:** CORS origin hardcoded *(TODO)*, no helmet *(TODO; needs `crossOriginResourcePolicy: "same-site"` locally)*, no database SSL yet *(DEPLOY.txt 2.1)*.
+3. **Hardening:** no database SSL yet *(DEPLOY.txt 2.1)*.
 4. **Hardcoded styling:** resolved in Phase 2 (2026-11-09). No arbitrary hex classes remain in `client/src`; colors live only in the theme files.
-5. **Logging:** per-request `console.log` in `index.js`. The client has no `console.*` left. *(TODO)*
-6. **No tests and no CI.** *(TODO: TESTS & CI)*
-7. **Enrollment depends only on the webhook.** On Render's free plan the server sleeps, so the webhook can arrive late and the buyer returns to `/payment/success` without access. Fix: the server retrieves the session from Stripe by `session_id` on return and enrolls through the same idempotent code as the webhook. This doesn't trust the redirect, because the server asks Stripe. *(TODO: PRIORITY "check the payment when the buyer returns")*
+5. **No tests and no CI.** *(TODO: TESTS & CI)*
+6. **Enrollment depends only on the webhook.** On Render's free plan the server sleeps, so the webhook can arrive late and the buyer returns to `/payment/success` without access. Fix: the server retrieves the session from Stripe by `session_id` on return and enrolls through the same idempotent code as the webhook. This doesn't trust the redirect, because the server asks Stripe. *(TODO: PRIORITY "check the payment when the buyer returns")*
 
 ## Design system
 
