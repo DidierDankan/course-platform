@@ -11,7 +11,7 @@ How these files fit together:
 updated:      2026-11-10
 branch:       multi-design (commits reach GitHub on their own, not pushed from here: never rewrite history)
 RULE:         Claude never commits: leave changes uncommitted, the owner reviews and commits (CLAUDE.md)
-uncommitted:  server/migrations/001_initial.sql, cleanup-test-data.js, TODO.txt (Stage 2 step 1)
+uncommitted:  scripts/migrate.js, db/connection.js, package.json, TODO.txt (Stage 2 step 2)
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
 done:         Phase 2 and Stage 1 complete (401 on expired login, config.js, JWT secrets, webhook, rate limiting, helmet + CORS, request logs removed), checkout 409, one shared enrollment request
 in progress:  nothing
@@ -19,7 +19,7 @@ waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in ser
               3) npm run seed:demo (until then the demo accounts have a throwaway password)
 open finds:   local tables still MyISAM (new default is InnoDB): never run schema.sql on course_platform, it drops everything;
               rebuild happens in the migrations stage (PRIORITY "schema.sql")
-next step:    Stage 2 step 2 (migration runner, npm run migrate), once the owner says go
+next step:    Stage 2 step 3 (test on a throwaway database, strict sql_mode, cleanup script), once the owner says go. Don't run npm run migrate on course_platform before step 4
 roadmap:      Phase 2 done -> security -> migrations -> refresh tokens -> reviews -> tests + CI -> pre-deploy -> deploy
 GATE:         nothing goes online before the security items are done
 
@@ -82,7 +82,7 @@ STAGE 1: security that needs no database change (DONE 2026-11-10: full re-run of
 STAGE 2: schema + migrations (item "fix schema.sql")
     schema.sql is already fixed and tested on a throwaway database
     [x] 1. server/migrations/001_initial.sql from schema.sql, without the DROP lines, reviews, comments and subscriptions (reviews and comments come back as 002 and 003; subscriptions are out of scope)
-    [ ] 2. small runner (npm run migrate) that records applied files in schema_migrations; running it twice does nothing the second time
+    [x] 2. small runner (npm run migrate) that records applied files in schema_migrations; running it twice does nothing the second time
     [ ] 3. test on a throwaway database, never course_platform
            also run the app's queries with a strict sql_mode: local is IGNORE_SPACE only (found 2026-11-10), so bad writes and loose GROUP BY pass here and can fail on Aiven
     [ ] 4. rebuild the local database: backup first (mysqldump), then migrate and seed.
