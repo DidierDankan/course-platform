@@ -11,15 +11,15 @@ How these files fit together:
 updated:      2026-11-09
 branch:       multi-design (commits reach GitHub on their own, not pushed from here: never rewrite history)
 RULE:         Claude never commits: leave changes uncommitted, the owner reviews and commits (CLAUDE.md)
-uncommitted:  server/db/schema.sql fixed (InnoDB, matches the code, reviews table; tested on a throwaway DB), TODO.txt, CLAUDE.md
+uncommitted:  tracking only (TODO.txt, CLAUDE.md): Stage 1 steps 1-4 marked done
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
-done:         Phase 2 (2a-2e) complete and verified: every page on the themes, legacy styles deleted
+done:         Phase 2 complete; Stage 1 steps 1-4 (401 on expired login, config.js, JWT secrets, webhook), checkout 409, one shared enrollment request
 in progress:  nothing
 waiting on you: 1) DEMO_PASSWORD=... in server/.env  2) at least one .mp4 in server/scripts/seed-assets/
               3) npm run seed:demo (until then the demo accounts have a throwaway password)
 open finds:   local tables still MyISAM (new default is InnoDB): never run schema.sql on course_platform, it drops everything;
               rebuild happens in the migrations stage (PRIORITY "schema.sql")
-next step:    "PLAN: WHAT'S NEXT" below, Stage 1 step 1 (expired login -> 401), once the owner says go
+next step:    "PLAN: WHAT'S NEXT" below, Stage 1 step 5 (rate limiting), once the owner says go
 roadmap:      Phase 2 done -> security -> migrations -> refresh tokens -> reviews -> tests + CI -> pre-deploy -> deploy
 GATE:         nothing goes online before the security items are done
 
@@ -73,7 +73,7 @@ STAGE 1: security that needs no database change
            (authMiddleware:11, authOptional:9, protectVideos:16, AuthController:116 and :168); type claim; no fallback.
            needs: JWT_ACCESS_SECRET + JWT_REFRESH_SECRET in server/.env. Everyone is logged out once.
            check: forged token and a refresh token used as access -> 401; login, refresh, logout still work
-    [ ] 4. webhook (item "webhook: check payment_status"). PaymentController.js:94-98. threat: an unpaid session must never enroll.
+    [x] 4. webhook (item "webhook: check payment_status"). PaymentController.js:94-98. threat: an unpaid session must never enroll.
            check: signed test events, paid -> enrolled, unpaid -> not, repeat -> no duplicate
     [ ] 5. rate limiting on login and register (item "rate limiting"). threat: password guessing. check: attempt 11 -> 429 with a readable message
     [ ] 6. helmet + CORS from CLIENT_URL (items "add helmet", "CORS origin"). index.js:38-41. check: every page still loads images and videos
@@ -123,7 +123,7 @@ housekeeping: "lesson durations wrong" and "UI polish" step 2 below were done in
       says media_id + course_id); enrollments has NO (user_id, course_id) unique key, so the webhook's
       INSERT ... ON DUPLICATE KEY can't dedupe locally. 001_initial.sql must match the code, not the old file
 
-[ ] JWT secrets: one config, two secrets, no fallback
+[x] JWT secrets: one config, two secrets, no fallback
     problem: helpers/tokens.js AND controllers/AuthController.js:8 sign with JWT_SECRET || 'your_jwt_secret',
              but authMiddleware.js, authOptional.js and protectVideos.js verify with process.env.JWT_SECRET only.
              /auth/refresh (AuthController.js:116-123) also signs its own access token instead of using helpers/tokens.js.
@@ -136,8 +136,8 @@ housekeeping: "lesson durations wrong" and "UI polish" step 2 below were done in
 [ ] uploads: disk -> Supabase Storage
     see DEPLOY.txt 2.2 (Render's free plan deletes local files on every deploy)
 
-[ ] database connection: DB_PORT ignored, no SSL
-    see DEPLOY.txt 2.1 (db/connection.js never passes the port; Aiven needs a non-3306 port and SSL)
+[ ] database connection: no SSL (DB_PORT done in config.js)
+    see DEPLOY.txt 2.1 (Aiven requires SSL)
 
 [ ] API address for the live build
     see DEPLOY.txt 2.4 (client/.env.production with an empty VITE_API_URL; Vercel forwards /api and /uploads)
@@ -209,7 +209,7 @@ housekeeping: "lesson durations wrong" and "UI polish" step 2 below were done in
 
 --- SECURITY ---
 
-[ ] expired token returns 403, but the client only refreshes on 401
+[x] expired token returns 403, but the client only refreshes on 401
     problem: authMiddleware.js:15 answers 403 "Invalid or expired token"; baseQueryWithReauth.js:16 only refreshes on 401,
              so an expired session logs the user out instead of refreshing
     1. authMiddleware.js (and protectVideos.js): 401 for missing, invalid or expired tokens
@@ -227,7 +227,7 @@ housekeeping: "lesson durations wrong" and "UI polish" step 2 below were done in
     2. e.g. 10 attempts per 15 min per IP on login, fewer on register; answer 429 with a readable message
     3. on Render, set app.set("trust proxy", 1) so the limiter sees the real visitor IP, not the proxy's
 
-[ ] webhook: check payment_status and remove debug logs
+[x] webhook: check payment_status and remove debug logs
     1. PaymentController webhook: only enroll when session.payment_status === "paid"
     2. remove console.log("session.metadata"...) and console.log("session.payment_intent"...)
 

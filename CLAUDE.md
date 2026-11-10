@@ -66,7 +66,7 @@ cd client && npm run lint && npm run build
 # Stripe webhooks locally
 stripe listen --forward-to http://localhost:3001/api/payments/webhook
 ```
-Env: `server/.env` (PORT, DB_*, JWT_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, CLIENT_URL), `client/.env` (VITE_API_URL). JWT_SECRET becomes JWT_ACCESS_SECRET + JWT_REFRESH_SECRET with the planned `config.js` (issue 1); DEPLOY.txt section 4 already lists the live set. Both are gitignored. **Never print, commit or hardcode secrets.**
+Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, CLIENT_URL), `client/.env` (VITE_API_URL). `server/config.js` validates them at boot; DEPLOY.txt section 4 lists the live set. Both are gitignored. **Never print, commit or hardcode secrets.**
 
 There are **no tests yet** (`server` test script is a stub).
 
@@ -85,7 +85,8 @@ There are **no tests yet** (`server` test script is a stub).
 
 - Paid videos gated by `server/middleware/protectVideos.js` (owner / admin / enrolled / `is_preview`), `Cache-Control: private, no-store`, unknown video files → 404.
 - Uploads: MIME whitelist → server-chosen extension, 200 MB cap, `nosniff`, multer errors → 400.
-- Stripe: checkout → verified webhook → idempotent enrollment (`INSERT … ON DUPLICATE KEY`). Free-only `POST /api/enrollments`. Can't buy your own course.
+- Stripe: checkout → verified webhook → idempotent enrollment (`INSERT … ON DUPLICATE KEY`), only when `payment_status === "paid"`. Free-only `POST /api/enrollments`. Can't buy your own course; checkout answers 409 if you already own it.
+- Auth tokens: only `helpers/tokens.js` signs or verifies them, with separate access and refresh secrets, a `type` claim and a pinned algorithm. Missing, invalid or expired → 401; 403 only for authenticated but not allowed. `server/config.js` stops the server if a required variable is missing.
 - Sellers can only edit or delete their own courses and media. `getCourses` scopes to `req.user.id` unless admin.
 - Currency: **USD everywhere** (`server/lib/currency.js` ↔ `client/src/utils/currency/index.js`, `formatPrice`).
 - Client API base comes from `VITE_API_URL` everywhere (no localhost fallbacks). `jsconfig.json` uses `./src/...` paths, no `baseUrl`.
@@ -95,16 +96,13 @@ There are **no tests yet** (`server` test script is a stub).
 
 Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list is only the status.
 
-1. **JWT secrets.** `helpers/tokens.js` **and** `controllers/AuthController.js:8` sign with `JWT_SECRET || 'your_jwt_secret'`, while `authMiddleware.js`, `authOptional.js` and `protectVideos.js` verify with `process.env.JWT_SECRET` and no fallback. `/auth/refresh` (`AuthController.js:116-123`) also signs its own access token instead of using `helpers/tokens.js`. Fix: `config.js` that validates env at boot, `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`, a `type` claim, and one token helper. *(TODO: PRIORITY "JWT secrets")*
-2. **Expired token → 403, but the client only refreshes on 401** (`authMiddleware.js:15` vs `api/baseQueryWithReauth.js:16`). Fix: 401 for missing/invalid/expired, 403 only for "authenticated but not allowed". Also unblocks the "long videos after 15 minutes" item. *(TODO)*
-3. **Refresh tokens can't be revoked or rotated.** A stolen refresh cookie works for 7 days, and logout can't kill it. Fix: `token_version` (cheap) or stored hashed refresh tokens with rotation and reuse detection (better story). *(TODO)*
-4. **`schema.sql` fails on a fresh DB:** `schema.sql:71` indexes `course_media(course_id, position)`, but the column is `order_index`. Blocks DEPLOY.txt step 3. The schema also drops every table: add versioned migrations before deploy. *(TODO)*
-5. **Hardening:** CORS origin hardcoded *(TODO)*, no helmet *(TODO; needs `crossOriginResourcePolicy: "same-site"` locally and the Supabase domain in CSP live)*, no rate limiting on login/register *(TODO; needs `trust proxy` on Render)*, `DB_PORT` ignored *(DEPLOY.txt 2.1)*.
-6. **Webhook:** enrolls without checking `session.payment_status === "paid"`, and logs `session.metadata` / `session.payment_intent` (`PaymentController.js:94-95`). *(TODO)*
-7. **Hardcoded styling:** resolved in Phase 2 (2026-11-09). No arbitrary hex classes remain in `client/src`; colors live only in the theme files.
-8. **Logging:** per-request `console.log` in `index.js`. The client has no `console.*` left. *(TODO)*
-9. **No tests and no CI.** *(TODO: TESTS & CI)*
-10. **Enrollment depends only on the webhook.** On Render's free plan the server sleeps, so the webhook can arrive late and the buyer returns to `/payment/success` without access. Fix: the server retrieves the session from Stripe by `session_id` on return and enrolls through the same idempotent code as the webhook. This doesn't trust the redirect, because the server asks Stripe. *(TODO: PRIORITY "check the payment when the buyer returns")*
+1. **Refresh tokens can't be revoked or rotated.** A stolen refresh cookie works for 7 days, and logout can't kill it. Fix: `token_version` (cheap) or stored hashed refresh tokens with rotation and reuse detection (better story). *(TODO)*
+2. **`schema.sql` fails on a fresh DB:** `schema.sql:71` indexes `course_media(course_id, position)`, but the column is `order_index`. Blocks DEPLOY.txt step 3. The schema also drops every table: add versioned migrations before deploy. *(TODO)*
+3. **Hardening:** CORS origin hardcoded *(TODO)*, no helmet *(TODO; needs `crossOriginResourcePolicy: "same-site"` locally and the Supabase domain in CSP live)*, no rate limiting on login/register *(TODO; needs `trust proxy` on Render)*, no database SSL yet *(DEPLOY.txt 2.1)*.
+4. **Hardcoded styling:** resolved in Phase 2 (2026-11-09). No arbitrary hex classes remain in `client/src`; colors live only in the theme files.
+5. **Logging:** per-request `console.log` in `index.js`. The client has no `console.*` left. *(TODO)*
+6. **No tests and no CI.** *(TODO: TESTS & CI)*
+7. **Enrollment depends only on the webhook.** On Render's free plan the server sleeps, so the webhook can arrive late and the buyer returns to `/payment/success` without access. Fix: the server retrieves the session from Stripe by `session_id` on return and enrolls through the same idempotent code as the webhook. This doesn't trust the redirect, because the server asks Stripe. *(TODO: PRIORITY "check the payment when the buyer returns")*
 
 ## Design system
 
