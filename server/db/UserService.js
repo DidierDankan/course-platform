@@ -110,7 +110,7 @@ class UserService {
   }
 
   // The form always sends the whole list, so the list is replaced: anything removed there goes
-  // away here too. The transaction takes effect once the tables are InnoDB (TODO: schema.sql).
+  // away here too, in one transaction, so a failed insert keeps the old list.
   async replaceRows(deleteSql, userId, insertSql, rows) {
     const conn = await db.getConnection();
     try {

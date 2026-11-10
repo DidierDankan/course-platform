@@ -241,8 +241,8 @@ async function main() {
 
     // Student state: one course half done, one favorite.
     const enrolledId = courseIds[ENROLLED_COURSE];
-    // Look up, then update or insert: not every database has the (user_id, course_id) unique key
-    // that ON DUPLICATE KEY would need (see TODO "schema.sql").
+    // Look up, then update or insert, so running the seed again keeps a single enrollment
+    // even on a database without the (user_id, course_id) unique key.
     const [[enrollment]] = await conn.query("SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?", [
       studentId,
       enrolledId,

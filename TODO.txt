@@ -11,13 +11,13 @@ How these files fit together:
 updated:      2026-11-10
 branch:       multi-design (commits reach GitHub on their own, not pushed from here: never rewrite history)
 RULE:         Claude never commits: leave changes uncommitted, the owner reviews and commits (CLAUDE.md)
-uncommitted:  TODO.txt (Stage 2 steps 3-4)
+uncommitted:  Stage 2 step 5: schema.sql deleted, two comments (UserService, seed-demo), README, CLAUDE.md, TODO.txt (DEPLOY.txt is gitignored)
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
-done:         Phase 2 and Stage 1 complete (401 on expired login, config.js, JWT secrets, webhook, rate limiting, helmet + CORS, request logs removed), checkout 409, one shared enrollment request
+done:         Phase 2, Stage 1 (security without DB change) and Stage 2 (migrations: 001_initial + npm run migrate, local DB rebuilt as lumen_dev, schema.sql gone)
 in progress:  nothing
-waiting on you: nothing
-open finds:   local database is now lumen_dev (InnoDB, migrated). course_platform is the old MyISAM copy: keep until step 5 is done, its demo files were replaced by the seed. Backup with all files: Desktop/course-platform-backups/2026-11-10
-next step:    Stage 2 step 5 (retire schema.sql, update CLAUDE.md, DEPLOY.txt and README), once the owner says go
+waiting on you: commit step 5; decide whether to drop course_platform (old MyISAM copy, unused; backup proven: Desktop/course-platform-backups/2026-11-10)
+open finds:   Aiven's real sql_mode, real card payment on Stripe's page and live TRUST_PROXY_HOPS are still unverified (all need the live services)
+next step:    Stage 2b (server input validation + delete two dead CourseService functions), once the owner says go
 roadmap:      Phase 2 done -> security -> migrations -> refresh tokens -> reviews -> tests + CI -> pre-deploy -> deploy
 GATE:         nothing goes online before the security items are done
 
@@ -77,8 +77,7 @@ STAGE 1: security that needs no database change (DONE 2026-11-10: full re-run of
     [x] 6. helmet + CORS from CLIENT_URL (items "add helmet", "CORS origin"). index.js:38-41. check: every page still loads images and videos
     [x] 7. remove the per-request log at index.js:45-48 (item "logging", step 1)
 
-STAGE 2: schema + migrations (item "fix schema.sql")
-    schema.sql is already fixed and tested on a throwaway database
+STAGE 2: schema + migrations (item "fix schema.sql") (DONE 2026-11-10)
     [x] 1. server/migrations/001_initial.sql from schema.sql, without the DROP lines, reviews, comments and subscriptions (reviews and comments come back as 002 and 003; subscriptions are out of scope)
     [x] 2. small runner (npm run migrate) that records applied files in schema_migrations; running it twice does nothing the second time
     [x] 3. test on a throwaway database, never course_platform
@@ -87,7 +86,9 @@ STAGE 2: schema + migrations (item "fix schema.sql")
            needs from the owner first: DEMO_PASSWORD in server/.env and at least one .mp4 in server/scripts/seed-assets/.
            Local data that isn't demo data is lost in the rebuild (the backup keeps it): the owner confirms before this step
            found 2026-11-10: today's rows have no duplicates or orphans, so they fit 001's rules and could be copied across instead of lost
-    [ ] 5. retire schema.sql once 001 is proven (it drops every table), update CLAUDE.md and DEPLOY.txt
+    [x] 5. retire schema.sql once 001 is proven (it drops every table), update CLAUDE.md and DEPLOY.txt
+           proven 2026-11-10: schema.sql vs fresh migrate differ only in reviews/comments/subscriptions and is_preview (int -> tinyint(1));
+           lumen_dev matches a fresh migrate exactly; migrate + seed work from a copy without schema.sql. README and DEPLOY section 3 use npm run migrate
 
 STAGE 2b: server input validation (found 2026-11-10 in Stage 2 step 3). Must be done before deploy; the app works on strict MySQL, but bad input answers 500 instead of 400/404
     only fails on a strict server (loose MySQL cuts or changes the value silently): full_name, phone, website, skill and qualification title too long; bad issued_at;
@@ -100,7 +101,8 @@ STAGE 2b: server input validation (found 2026-11-10 in Stage 2 step 3). Must be 
 STAGE 3: refresh tokens can be revoked (item "refresh tokens"), as a migration
     decide first: option B, stored hashes + rotation + reuse detection (recommended: the better interview story), or option A, token_version (cheap)
 
-STAGE 4: course reviews + seller average (item "course reviews"), as a migration, moving the reviews table out of schema.sql
+STAGE 4: course reviews + seller average (item "course reviews"), as migration 002_reviews.sql
+    the old reviews (and comments) table design is in git: git show 6a6e0f7:server/db/schema.sql
     decide first: require a title on every lesson video, form + server? (recommended, small; the column stays NULL for thumbnails)
 
 STAGE 4b: comments per course (item "comments per course"), as its own migration. Owner's decision 2026-11-10: both reviews and comments go in before deploy
@@ -110,6 +112,8 @@ STAGE 5: tests + CI (items in "TESTS & CI"). Money path and authorization first,
 STAGE 6: before deploy
     check the payment when the buyer returns; replace the old thumbnail that shows internal hostnames; demo accounts on the login page;
     SEO + AI search basics; bundle splitting; README; everything in DEPLOY.txt section 2.0
+    README: the server/.env example is out of date (still JWT_SECRET, misses JWT_ACCESS/REFRESH_SECRET, STRIPE_*, CLIENT_URL, DB_PORT),
+      so the server refuses to boot with it; also mention npm run seed:demo
 
 STAGE 7: deploy (DEPLOY.txt). GATE: stages 1 and 3 must be done first
 
@@ -117,21 +121,8 @@ housekeeping: "lesson durations wrong" and "UI polish" step 2 below were done in
 
 --- PRIORITY (before going online) ---
 
-[ ] fix schema.sql: it fails on a fresh database
-    problem: server/db/schema.sql line 71 indexes course_media(course_id, position), but the column is order_index
-    1. change the index to (course_id, order_index)
-    2. test: run schema.sql on an empty local database (not course_platform!) and check every table is created
-    3. then: versioned migrations instead of one destructive file
-       - server/migrations/001_initial.sql (current schema), 002_..., etc.
-       - a small runner that records applied files in a schema_migrations table
-    why: DEPLOY.txt step 3 needs a schema that works, and every later change (is_preview, ...) needs a safe way onto the live DB
-    found 2026-11-07 (local DB, while testing the seed/cleanup scripts):
-    - every table is MyISAM (@@default_storage_engine=MyISAM): no foreign keys, no transactions, so no
-      ON DELETE CASCADE and BEGIN/ROLLBACK do nothing. Add ENGINE=InnoDB to every CREATE TABLE in 001_initial.sql
-      (Aiven defaults to InnoDB, but say it explicitly) and rebuild the local DB from it
-    - the live tables drifted from schema.sql: lesson_progress uses course_media_id (the code agrees, schema.sql
-      says media_id + course_id); enrollments has NO (user_id, course_id) unique key, so the webhook's
-      INSERT ... ON DUPLICATE KEY can't dedupe locally. 001_initial.sql must match the code, not the old file
+[x] fix schema.sql: replaced by server/migrations + npm run migrate (Stage 2, done 2026-11-10); schema.sql deleted.
+    the local database is lumen_dev (InnoDB, with the enrollments unique key the webhook relies on)
 
 [x] JWT secrets: one config, two secrets, no fallback
     problem: helpers/tokens.js AND controllers/AuthController.js:8 sign with JWT_SECRET || 'your_jwt_secret',

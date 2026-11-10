@@ -31,7 +31,7 @@ Every change comes with its reasoning: the trade-offs considered and why this op
 |---|---|
 | Frontend | React 19 + Vite 7, React Router 7, Redux Toolkit + RTK Query, Formik + Yup, Tailwind CSS v4, lucide-react, headlessui |
 | Backend | Node (ESM) + **Express 5**, mysql2 (raw SQL, no ORM), express-validator, jsonwebtoken, bcryptjs, multer, Stripe SDK |
-| DB | MySQL. Schema in `server/db/schema.sql` (drops and recreates every table — **destructive**) |
+| DB | MySQL (InnoDB, utf8mb4). Schema = numbered files in `server/migrations`, applied once each by `npm run migrate` (records them in `schema_migrations`) |
 | Payments | Stripe Checkout (`mode: "payment"`, USD) + webhook at `POST /api/payments/webhook` (raw body, mounted before `express.json()`) |
 
 ## Layout and conventions
@@ -52,6 +52,7 @@ server/
 - Path aliases: `@api @components @view @utils @store @hooks @assets` (vite.config.js + jsconfig.json). Use them; no `../../..`.
 - Keep the layering: **no SQL in controllers, no `req`/`res` in services**.
 - Every SQL query is parameterized (`?` placeholders). Never build SQL by string interpolation.
+- Schema changes go in a new numbered file in `server/migrations` (`002_reviews.sql`…). Never edit or delete an applied one: the runner refuses to start. There are no down migrations, and MySQL can't roll back table changes, so a file that fails halfway needs manual cleanup.
 - **Authorization lives on the server.** Any route that reads or changes a course, media item or enrollment must check ownership (`seller_id === req.user.id` or admin). Reuse `middleware/courseOwnership.js`; don't re-implement the check in a controller. Client-side route guards are UX, not security.
 - New routes are added to `routeConfig.jsx` with explicit roles.
 
@@ -60,6 +61,8 @@ server/
 ```bash
 # backend (port 3001)
 cd server && npm run dev
+cd server && npm run migrate     # apply new files in server/migrations; safe to rerun
+cd server && npm run seed:demo   # demo accounts + courses (needs DEMO_PASSWORD and .mp4 files in scripts/seed-assets)
 # frontend (port 5173)
 cd client && npm run dev
 cd client && npm run lint && npm run build
@@ -99,7 +102,7 @@ There are **no tests yet** (`server` test script is a stub).
 Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list is only the status.
 
 1. **Refresh tokens can't be revoked or rotated.** A stolen refresh cookie works for 7 days, and logout can't kill it. Fix: `token_version` (cheap) or stored hashed refresh tokens with rotation and reuse detection (better story). *(TODO)*
-2. **`schema.sql` fails on a fresh DB:** `schema.sql:71` indexes `course_media(course_id, position)`, but the column is `order_index`. Blocks DEPLOY.txt step 3. The schema also drops every table: add versioned migrations before deploy. *(TODO)*
+2. **Schema:** resolved in Stage 2 (2026-11-10). `schema.sql` is gone; `001_initial.sql` builds the same tables (minus reviews, comments and subscriptions) on InnoDB. Still open: bad input answers 500 instead of 400 on strict MySQL *(TODO: Stage 2b)*.
 3. **Hardening:** no database SSL yet *(DEPLOY.txt 2.1)*.
 4. **Hardcoded styling:** resolved in Phase 2 (2026-11-09). No arbitrary hex classes remain in `client/src`; colors live only in the theme files.
 5. **No tests and no CI.** *(TODO: TESTS & CI)*

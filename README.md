@@ -83,16 +83,7 @@ cd course-platform
 
 ### 2️⃣ Configure the Database
 
-Before running the app, you must create the required tables.
-
-1. Open **phpMyAdmin** or your preferred MySQL client.
-2. Create a new database called `course_platform` (or the name you set in `.env`).
-3. Import the `schema.sql` file located in the `server/db` folder.
-
-```bash
-# Example (using MySQL CLI)
-mysql -u root -p course_platform < server/db/schema.sql
-```
+Create an empty database called `course_platform` (or the name you set in `.env`) in phpMyAdmin or any MySQL client. Don't create tables by hand: `npm run migrate` builds them in step 5.
 
 ---
 
@@ -136,6 +127,7 @@ VITE_API_URL=http://localhost:3001
 **Backend (Express):**
 ```bash
 cd server
+npm run migrate   # creates or updates the tables; safe to run every time
 npm run dev
 ```
 
