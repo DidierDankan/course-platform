@@ -35,8 +35,15 @@ const portFrom = (name, fallback) => {
   return port;
 };
 
+const proxyHopsFrom = (name) => {
+  const hops = Number(process.env[name] ?? 0);
+  if (!Number.isInteger(hops) || hops < 0) fail(`${name} must be a whole number, 0 or more.`);
+  return hops;
+};
+
 const config = Object.freeze({
   port: portFrom("PORT", 3001),
+  trustProxyHops: proxyHopsFrom("TRUST_PROXY_HOPS"),
   isProduction: process.env.NODE_ENV === "production",
   clientUrl: process.env.CLIENT_URL,
   jwt: {

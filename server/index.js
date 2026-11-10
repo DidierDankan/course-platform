@@ -25,6 +25,8 @@ import { UploadError, MAX_FILE_SIZE_MB } from "./middleware/uploadMiddleware.js"
 
 const app = express();
 const PORT = config.port;
+app.set('trust proxy', config.trustProxyHops);
+
 
 app.use(cookieParser());
 
