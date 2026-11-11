@@ -126,14 +126,17 @@ class UserService {
     }
   }
 
+  // ON DUPLICATE KEY uses the column's own comparison (case, accents, trailing spaces), so
+  // "SQL" and "sql" are one skill. The first one sent is kept.
   async replaceUserSkills(userId, skills) {
     await this.replaceRows(
       "DELETE FROM user_skills WHERE user_id = ?",
       userId,
-      "INSERT INTO user_skills (user_id, skill) VALUES ?",
-      [...new Set(skills)].map((skill) => [userId, skill])
+      "INSERT INTO user_skills (user_id, skill) VALUES ? ON DUPLICATE KEY UPDATE skill = skill",
+      skills.map((skill) => [userId, skill])
     );
   }
+
 
   async replaceUserQualifications(userId, qualifications) {
     await this.replaceRows(

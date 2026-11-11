@@ -8,16 +8,18 @@ How these files fit together:
 =========================== NOW ===========================
 (handoff for the next session: REWRITE this block at the end of every session, never append; max ~12 lines)
 
-updated:      2026-11-10
+updated:      2026-11-11
 branch:       multi-design (commits reach GitHub on their own, not pushed from here: never rewrite history)
 RULE:         Claude never commits: leave changes uncommitted, the owner reviews and commits (CLAUDE.md)
-uncommitted:  Stage 2b step 2 (new server/validators/limits.js, not imported yet) + TODO.txt (DEPLOY.txt is gitignored)
+uncommitted:  Stage 2b step 3 (profileValidator.js, profile route/controller, UserService skills, client editHandler) + TODO.txt
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
-done:         Phase 2, Stage 1 (security without DB change) and Stage 2 (migrations: 001_initial + npm run migrate, local DB rebuilt as lumen_dev, schema.sql gone)
+done:         Phase 2, Stage 1, Stage 2 (migrations), Stage 2b steps 1-3
 in progress:  nothing
-waiting on you: commit 2b step 2; decide whether to drop course_platform (old MyISAM copy, unused; backup proven: Desktop/course-platform-backups/2026-11-10)
+watch out:    on Windows, stopping a dev-server task leaves nodemon's node index.js running and holding :3001; new servers then
+              "listen" but get no requests. Check `netstat -ano | grep ":3001 .*LISTENING"` before testing against :3001
+waiting on you: commit 2b step 3; decide whether to drop course_platform (old MyISAM copy, unused; backup: Desktop/course-platform-backups/2026-11-10)
 open finds:   Aiven's real sql_mode, real card payment on Stripe's page and live TRUST_PROXY_HOPS are still unverified (all need the live services)
-next step:    Stage 2b step 3 (profile validators, using LIMITS), once the owner says go. Owner edits, Claude tests with s2b-replay.mjs.
+next step:    Stage 2b step 4 (courses), once the owner says go. Owner edits, Claude tests with s2b-replay.mjs.
               Stage 1 scripts take the demo password as argv[2]; s1step5 uses up the login limit, so run it last and restart the server after
 roadmap:      Phase 2 done -> security -> migrations -> refresh tokens -> reviews -> tests + CI -> pre-deploy -> deploy
 GATE:         nothing goes online before the security items are done
@@ -108,7 +110,15 @@ STAGE 2b: server input validation (found 2026-11-10 in Stage 2 step 3). Must be 
            per mode. baseline: 8/8 valid controls OK, 19 of 21 bad inputs wrong (18 answer 500 on strict MySQL); seller page and enroll already fine.
            found while building it: bio and course description over 65,535 bytes -> 500 on strict (cut silently on loose); added to steps 3 and 4.
            the scratchpad goes away with the session: Stage 5 turns the replay into a real test
-    [ ] 3. profile: full_name, phone, website, bio, skills, qualifications (too long, empty, bad issued_at). Biggest group, about half the cases
+    [x] 3. profile: full_name, phone, website, bio, skills, qualifications (too long, empty, bad issued_at). Biggest group, about half the cases
+           done 2026-11-11 (owner edited): server/validators/profileValidator.js runs after multer (so validateRequest deletes a refused photo);
+           it parses the skills/qualifications JSON, so the controller's own JSON.parse is gone. Website and certificate must be http(s)
+           (javascript: was accepted). Skills "SQL" + "sql" answered 500 (case-insensitive unique key): now ON DUPLICATE KEY, the column's
+           own comparison decides. Profile form shows errors[0] like the course form.
+           checked: replay 23/33 (all 13 profile cases 400 in all three modes, 8 controls OK; the 10 left are steps 4-6); a refused save
+           with a photo leaves no file; browser: 300-char name -> form shows "Full name can be at most 255 characters", row unchanged;
+           Stage 1 checks all pass; client lint + build pass.
+           left for step 7: client Yup has no max for full_name/phone/bio, so only the server refuses them
     [ ] 4. courses: course description and lesson title/duration; /courses/all minDuration, maxDuration, sellerId must be numbers (today NaN reaches SQL);
            courseValidator's own MAX_TITLE_LENGTH moves to LIMITS.courseTitle;
            /courses/:id/public with a non-numeric id -> 400 (or 404, same as an unknown id: decide in the step)

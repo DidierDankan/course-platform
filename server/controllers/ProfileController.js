@@ -1,7 +1,5 @@
 // server/controllers/UserController.js
 import UserService from "../db/UserService.js";
-import path from "path";
-import { deleteFileIfExists } from "../utils/fileUtils.js";
 
 class UserController {
   async getProfile(req, res) {
@@ -29,16 +27,6 @@ class UserController {
       } = req.body;
 
       const profileImageFile = req.file;
-      let parsedSkills;
-      let parsedQualifi;
-
-      try {
-        if (typeof skills === "string") parsedSkills = JSON.parse(skills);
-        if (typeof qualifications === "string") parsedQualifi = JSON.parse(qualifications);
-      } catch {
-        if (profileImageFile) await deleteFileIfExists(profileImageFile.path);
-        return res.status(400).json({ message: "Invalid skills or qualifications" });
-      }
 
       const updates = {
         ...(full_name && { full_name }),
@@ -57,13 +45,14 @@ class UserController {
       await UserService.updateUserProfile(userId, updates);
 
       // Only lists that were actually sent are replaced, so a partial request can't wipe the others.
-      if (Array.isArray(parsedSkills)) {
-        await UserService.replaceUserSkills(userId, parsedSkills);
+      if (Array.isArray(skills)) {
+        await UserService.replaceUserSkills(userId, skills);
       }
 
-      if (Array.isArray(parsedQualifi)) {
-        await UserService.replaceUserQualifications(userId, parsedQualifi);
+      if (Array.isArray(qualifications)) {
+        await UserService.replaceUserQualifications(userId, qualifications);
       }
+
 
       res.json({ message: "Profile updated successfully" });
     } catch (err) {
