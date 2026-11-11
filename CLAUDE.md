@@ -101,7 +101,7 @@ There are **no tests yet** (`server` test script is a stub).
 
 Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list is only the status.
 
-1. **Refresh tokens can't be revoked or rotated.** A stolen refresh cookie works for 7 days, and logout can't kill it. Fix: `token_version` (cheap) or stored hashed refresh tokens with rotation and reuse detection (better story). *(TODO)*
+1. **Refresh tokens can't be revoked or rotated.** A stolen refresh cookie works for 7 days, and logout can't kill it. Fix chosen (2026-11-10): stored hashed refresh tokens with rotation and reuse detection. *(TODO: Stage 3)*
 2. **Schema:** resolved in Stage 2 (2026-11-10). `schema.sql` is gone; `001_initial.sql` builds the same tables (minus reviews, comments and subscriptions) on InnoDB. Still open: bad input answers 500 instead of 400 on strict MySQL *(TODO: Stage 2b)*.
 3. **Hardening:** no database SSL yet *(DEPLOY.txt 2.1)*.
 4. **Hardcoded styling:** resolved in Phase 2 (2026-11-09). No arbitrary hex classes remain in `client/src`; colors live only in the theme files.

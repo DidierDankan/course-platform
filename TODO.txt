@@ -11,13 +11,14 @@ How these files fit together:
 updated:      2026-11-10
 branch:       multi-design (commits reach GitHub on their own, not pushed from here: never rewrite history)
 RULE:         Claude never commits: leave changes uncommitted, the owner reviews and commits (CLAUDE.md)
-uncommitted:  Stage 2 step 5: schema.sql deleted, two comments (UserService, seed-demo), README, CLAUDE.md, TODO.txt (DEPLOY.txt is gitignored)
+uncommitted:  Stage 2b step 1 (CourseService.js: two dead functions deleted), plus CLAUDE.md + TODO.txt with the Stage 2b, 3 and 4 plans (DEPLOY.txt is gitignored)
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
 done:         Phase 2, Stage 1 (security without DB change) and Stage 2 (migrations: 001_initial + npm run migrate, local DB rebuilt as lumen_dev, schema.sql gone)
 in progress:  nothing
-waiting on you: commit step 5; decide whether to drop course_platform (old MyISAM copy, unused; backup proven: Desktop/course-platform-backups/2026-11-10)
+waiting on you: commit 2b step 1; decide whether to drop course_platform (old MyISAM copy, unused; backup proven: Desktop/course-platform-backups/2026-11-10)
 open finds:   Aiven's real sql_mode, real card payment on Stripe's page and live TRUST_PROXY_HOPS are still unverified (all need the live services)
-next step:    Stage 2b (server input validation + delete two dead CourseService functions), once the owner says go
+next step:    Stage 2b step 2 (validators/limits.js + strict-mode replay script), once the owner says go. Owner edits, Claude tests.
+              Stage 1 scripts take the demo password as argv[2]; s1step5 uses up the login limit, so run it last and restart the server after
 roadmap:      Phase 2 done -> security -> migrations -> refresh tokens -> reviews -> tests + CI -> pre-deploy -> deploy
 GATE:         nothing goes online before the security items are done
 
@@ -95,15 +96,76 @@ STAGE 2b: server input validation (found 2026-11-10 in Stage 2 step 3). Must be 
       huge lastPositionSeconds; lesson duration that isn't a number; lesson title over 255; email over 191
     fails on every server: empty skill or qualification title; progress on a lesson that doesn't exist; favorite on a course that doesn't exist;
       text in minDuration/maxDuration/sellerId on /courses/all (NaN reaches SQL); text id on /courses/:id/public
-    also delete dead code: CourseService.fetchCourseForWatching (never called, reads columns that don't exist) and deleteCourseThumbnail (never called)
-    check: every case answers 4xx in strict mode; confirm Aiven's real sql_mode when the database exists (both strict modes tested locally)
+    how: express-validator + middleware/validateRequest.js (today only authValidator and courseValidator exist); one step per route group,
+      each tested alone, commit message, then STOP. The owner makes the code edits in 2b; Claude tests and says exactly what to change
+    [x] 1. delete dead code: CourseService.fetchCourseForWatching (never called, reads columns that don't exist) and deleteCourseThumbnail (never called)
+           check: grep finds no callers, server boots, Stage 1 checks pass (done 2026-11-10, owner edited, all checks passed)
+    [ ] 2. server/validators/limits.js: column lengths taken from 001_initial.sql (email 191, full_name 255, phone 20, skill 100, ...), so validators
+           and the database can't disagree and there are no magic numbers. Plus a replay script (scratchpad, from the Stage 2 step 3 checks) that runs
+           all 19 cases on strict MySQL: before the fix it lists which ones answer 500
+    [ ] 3. profile: full_name, phone, website, skills, qualifications (too long, empty, bad issued_at). Biggest group, about half the cases
+    [ ] 4. courses: lesson title and duration; /courses/all minDuration, maxDuration, sellerId must be numbers (today NaN reaches SQL);
+           /courses/:id/public with a non-numeric id -> 400 (or 404, same as an unknown id: decide in the step)
+    [ ] 5. progress + favorites: huge lastPositionSeconds -> 400; a lesson or course that doesn't exist -> 404, not 500.
+           recommended: catch MySQL's "referenced row missing" error (ER_NO_REFERENCED_ROW_2) in one helper instead of a lookup first:
+           one query, and no gap where the row is deleted in between. cost: depends on a MySQL error code, kept in that one helper
+    [ ] 6. auth: email over 191 characters -> 400, in the existing authValidator
+    [ ] 7. full rerun: replay script on all three SQL modes (local, MySQL default strict, ANSI,TRADITIONAL) -> every case 4xx; Stage 1 checks;
+           in the browser, the profile and course forms show the server's 400 message instead of failing silently
+    later, when the Aiven database exists: confirm its real sql_mode (both strict modes are tested locally)
 
-STAGE 3: refresh tokens can be revoked (item "refresh tokens"), as a migration
-    decide first: option B, stored hashes + rotation + reuse detection (recommended: the better interview story), or option A, token_version (cheap)
+STAGE 3: refresh tokens can be revoked and rotated (item "refresh tokens"), as migration 002_refresh_tokens.sql
+    threat: a stolen refresh cookie works for 7 days and logout can't kill it. After: each refresh token works once, logout kills it
+            on the server, and replaying an old token logs that whole login out
+    found 2026-11-10: refresh (AuthController.js:111-127) trusts the role inside the token, never the database, so a deleted or demoted
+            user keeps refreshing for 7 days; it also sends iat/exp/type back as "user". Logout (AuthController.js:134) only clears cookies.
+            The client mutex (baseQueryWithReauth.js) only covers one tab: with rotation, two tabs refreshing at once look like theft
+    [ ] 0. decided 2026-11-10 by the owner: option B, stored hashes + rotation + reuse detection (not option A, token_version).
+           still open: refresh token = random 32 bytes (recommended: it is looked up in the database anyway, so a JWT adds nothing and
+           JWT_REFRESH_SECRET can go) or keep the JWT. Steps below assume random
+    [ ] 1. migration 002_refresh_tokens.sql: id, user_id (FK users, ON DELETE CASCADE), token_hash CHAR(64) UNIQUE (sha256 of the token:
+           a high-entropy token needs no bcrypt), family_id (one per login), expires_at, revoked_at NULL, replaced_by_id NULL, created_at,
+           INDEX (user_id). check: migrate on a throwaway DB, then lumen_dev; second run does nothing
+    [ ] 2. server/db/RefreshTokenService.js (SQL only) + helpers/tokens.js creates and hashes the token. Login stores it and sets the cookie
+           with path=/api/auth, so it is no longer sent on every request. check: login works, the row holds a hash, never the token
+    [ ] 3. /auth/refresh rotates in one transaction: find by hash (FOR UPDATE), expired or unknown -> 401, else revoke it, store the new one
+           (same family), set both cookies. Load the user from the database: deleted -> 401, role changes apply at the next refresh.
+           Answer only { id, email, role }. check: old cookie after a refresh -> 401; demote a user -> new role after refresh
+    [ ] 4. reuse detection: a token that is already revoked revokes its whole family -> 401. Grace window (e.g. 30 s, one constant) for a
+           token that was just replaced, so two tabs refreshing together don't log the user out. check: replay after the window kills the
+           family; two parallel refreshes both succeed
+    [ ] 5. logout revokes the family on the server (works even with an expired access token, it only needs the refresh cookie), then
+           clears the cookies. Expired rows of that user are deleted at login (no cron on Render's free plan). check: logout, then replay
+           the copied cookie -> 401
+    [ ] 6. full rerun: Stage 1 checks, login/refresh/logout in the browser, several tabs, a session over 15 min (expiresIn shortened locally).
+           Then update CLAUDE.md known issue 1 and the "Already done" list. Note: every user is logged out once when this ships
 
-STAGE 4: course reviews + seller average (item "course reviews"), as migration 002_reviews.sql
+STAGE 4: course reviews + seller average (item "course reviews"), as migration 003_reviews.sql
+    threat: anyone could inflate a course by posting ratings. Only the server decides who may review and computes every average;
+            nothing the client sends about averages is used
     the old reviews (and comments) table design is in git: git show 6a6e0f7:server/db/schema.sql
-    decide first: require a title on every lesson video, form + server? (recommended, small; the column stays NULL for thumbnails)
+    [ ] 0. decide: require a title on every lesson video, form + server? (recommended, small; the column stays NULL for thumbnails)
+    [ ] 1. migration 003_reviews.sql: reviews (id, course_id, user_id, rating TINYINT CHECK 1-5, body TEXT NULL, created_at, updated_at),
+           UNIQUE (user_id, course_id) = one review per student, INDEX (course_id), FKs ON DELETE CASCADE.
+           check: throwaway DB, then lumen_dev; rating 6 refused by the database too
+    [ ] 2. server write: PUT /api/courses/:id/reviews (validated with the 2b limits: rating integer 1-5, body max 1000 chars; upsert so a
+           student can change it; requires an enrollment; the owner is refused 403) and DELETE own review.
+           check: not enrolled -> 403, owner -> 403, rating 0 / 6 / abc -> 400, a second review updates instead of duplicating
+    [ ] 3. server read: GET /api/courses/:id/reviews, public + paginated; rating_avg and rating_count on course lists and the course page via
+           correlated subqueries like "popular" (a JOIN would multiply course_media rows and inflate total_duration).
+           check: averages correct by hand on seeded data, total_duration unchanged
+    [ ] 4. seller average on the instructor page = AVG over ALL reviews of their courses, so a course with 100 reviews counts more than
+           one with 1 (not an average of averages). check: by hand on seeded data
+    [ ] 5. sort "top_rated" in SORT_ORDER + "Top rated" in SORT_OPTIONS: damped score (reviews * avg + 5 * 3.5) / (reviews + 5), so one
+           5-star review can't outrank 200 reviews at 4.8. Constants in one place; "popular" stays enrollment count.
+           check: infinite scroll on top_rated repeats or skips nothing (needs a tie-breaker on id)
+    [ ] 6. client display: stars + count on CourseCard, CoursePreview and the instructor page; "no reviews yet" when empty; both themes,
+           tokens only. check: lint, build, screenshots in both themes
+    [ ] 7. client form on the watch page (only for enrolled students) + review list on CoursePreview; React escapes text, never
+           dangerouslySetInnerHTML; loading, empty and error states. check: write, edit, delete a review in the browser
+    [ ] 8. seed-demo: a few reviews from demo students; full rerun of Stage 1 checks and every main route
+    shortcut: on free courses a seller's second account could review their own course. Production: require some watch progress
+    note: comments stay as a separate feature (Stage 4b, its own migration 004): a review is one rating per student per course, comments are an open discussion
 
 STAGE 4b: comments per course (item "comments per course"), as its own migration. Owner's decision 2026-11-10: both reviews and comments go in before deploy
 
@@ -219,9 +281,7 @@ housekeeping: "lesson durations wrong" and "UI polish" step 2 below were done in
 
 [ ] refresh tokens can't be revoked or rotated
     problem: a stolen refresh cookie works for 7 days, and logout can't kill it
-    option A (cheap): users.token_version column; put it in the refresh token; bump it on logout / password change
-    option B (better story): store a hash of each refresh token, issue a new one on every /auth/refresh and
-                             delete the old one; reuse of an old token = theft -> revoke all of that user's tokens
+    owner chose option B (stored hashes + rotation + reuse detection) on 2026-11-10. Steps: STAGE 3 in the plan at the top
 
 [x] rate limiting on /auth/login and /auth/register
     1. npm install express-rate-limit in server/
@@ -546,25 +606,7 @@ housekeeping: "lesson durations wrong" and "UI polish" step 2 below were done in
 
 [ ] course reviews + seller average rating (requested 2026-11-08; build AFTER schema + migrations, BEFORE tests + CI)
     why after migrations: a new table needs a safe way onto the live DB. why before tests: its permission rules should be tested
-    threat: anyone could inflate a course by posting ratings. Only the server decides who may review and computes every average;
-            nothing the client sends about averages is used
-    1. migration: reviews (id, course_id, user_id, rating TINYINT 1-5, body TEXT NULL, created_at, updated_at),
-       UNIQUE (user_id, course_id) = one review per student, INDEX (course_id)
-    2. server: PUT /api/courses/:id/reviews (validated: rating integer 1-5, body max 1000 chars; upsert so a student can change
-       it; requires an enrollment; the owner is refused 403), DELETE own review, GET public + paginated
-    3. server: rating_avg and rating_count on course lists and the course page, via correlated subqueries like "popular"
-       (a JOIN would multiply course_media rows and inflate total_duration)
-    4. server: seller average on the instructor page = AVG over ALL reviews of their courses, so a course with 100 reviews
-       counts more than one with 1 (not an average of averages)
-    5. sort "top_rated" in SORT_ORDER + "Top rated" in SORT_OPTIONS: damped score (reviews * avg + 5 * 3.5) / (reviews + 5), so one
-       5-star review can't outrank 200 reviews at 4.8. Constants in one place. "popular" stays enrollment count
-    6. client: stars + count on CourseCard, CoursePreview and the instructor page; "no reviews yet" when empty; review form on the
-       watch page; list on CoursePreview; both themes, tokens only; React escapes text, never dangerouslySetInnerHTML
-    7. seed-demo: a few reviews from demo students
-    shortcut: on free courses a seller's second account could review their own course. Production: require some watch progress
-    note: comments stay as a separate feature (owner's decision 2026-11-10): a review is one rating per student per course, comments are an open discussion
-    verify: not enrolled -> 403, owner -> 403, rating 0 / 6 / abc -> 400, second review updates instead of duplicating, averages
-            correct by hand on seeded data, total_duration unchanged, top_rated paging repeats nothing
+    steps, threat model and checks: STAGE 4 in the plan at the top
 
 [ ] comments per course
     note: the table is created by this feature's migration, not by 001; add updated_at if edits are allowed, and an index for listing a course's comments newest first

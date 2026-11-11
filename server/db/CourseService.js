@@ -332,18 +332,6 @@ class CourseService {
     return media;
   }
 
-
-  async fetchCourseForWatching(courseId) {
-    const [rows] = await db.query(
-      `SELECT id, title, description, price, thumbnail_url, media_url
-      FROM courses
-      WHERE id = ?`,
-      [courseId]
-    );
-
-    return rows[0];
-  }
-
   async fetchCoursePublic(courseId) {
     const [[course]] = await db.query(
       `SELECT id, title, description, price, seller_id, is_subscription_only, created_at
@@ -447,32 +435,6 @@ class CourseService {
    */
   async deleteMediaById(mediaId) {
     await db.query("DELETE FROM course_media WHERE id = ?", [mediaId]);
-  }
-
-  /**
-   * Delete course Thumbnail on updateCourse
-   */
-  async deleteCourseThumbnail(courseId) {
-    const [rows] = await db.query(
-      "SELECT id, url FROM course_media WHERE course_id = ? AND type = 'image' LIMIT 1",
-      [courseId]
-    );
-
-    if (!rows.length) return;
-
-    const { id, url } = rows[0];
-
-    try {
-      const filePath = path.join(process.cwd(), url.replace(/^\//, ""));
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        console.log(`🗑 Deleted old thumbnail: ${filePath}`);
-      }
-    } catch (err) {
-      console.error("Failed to delete old thumbnail from disk:", err);
-    }
-
-    await db.query("DELETE FROM course_media WHERE id = ?", [id]);
   }
 
   async deleteAllCourseMedia(courseId) {
