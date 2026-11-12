@@ -21,5 +21,7 @@ export default defineConfig({
     // Every file shares one database, so files run one after another. Requests inside a file can still run in parallel.
     fileParallelism: false,
     testTimeout: 20000,
+    // Print a test's console output only when that test fails. The known 2b bugs log full SQL errors on every run.
+    silent: "passed-only",
   },
 });
