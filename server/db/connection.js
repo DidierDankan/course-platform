@@ -15,6 +15,10 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  // mysql2 turns an object value into SQL: `WHERE id = ?` with {"id": 1} becomes WHERE id = `id` = 1, which is
+  // true for every row (a known auth-bypass pattern in Node + MySQL apps). With this, an object that slips past a
+  // validator becomes the text '[object Object]' instead. Arrays (bulk VALUES ?) and Dates are not affected.
+  stringifyObjects: true,
 });
 
 // Each new connection gets the pinned SQL mode before it runs anything else (a connection runs its queries in order).

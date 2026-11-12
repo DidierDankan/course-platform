@@ -1,5 +1,6 @@
 // server/controllers/UserController.js
 import UserService from "../db/UserService.js";
+import { logError } from "../lib/logError.js";
 
 class UserController {
   async getProfile(req, res) {
@@ -9,7 +10,7 @@ class UserController {
 
       res.json(profile);
     } catch (err) {
-      console.error('Profile fetch error:', err);
+      logError("Profile fetch", err);
       res.status(500).json({ message: 'Error fetching profile' });
     }
   }
@@ -56,7 +57,7 @@ class UserController {
 
       res.json({ message: "Profile updated successfully" });
     } catch (err) {
-      console.error("Update profile error:", err);
+      logError("Update profile", err);
       res.status(500).json({ message: "Failed to update profile" });
     }
   }

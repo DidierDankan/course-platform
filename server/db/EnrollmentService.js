@@ -37,12 +37,18 @@ class EnrollmentService {
       throw httpError(409, "User is already enrolled in this course.");
     }
 
-    // 5) insert
-    await db.query(
-      `INSERT INTO enrollments (user_id, course_id, enrolled_at)
-      VALUES (?, ?, NOW())`,
-      [userId, courseId]
-    );
+    // 5) insert. The check above only gives a friendly answer; the unique key (user_id, course_id) is the real guard.
+    // Two clicks at once both pass the check, and the second insert hits the key: that is the same 409, not a 500.
+    try {
+      await db.query(
+        `INSERT INTO enrollments (user_id, course_id, enrolled_at)
+        VALUES (?, ?, NOW())`,
+        [userId, courseId]
+      );
+    } catch (err) {
+      if (err.code === "ER_DUP_ENTRY") throw httpError(409, "User is already enrolled in this course.");
+      throw err;
+    }
   }
 
   // EnrollmentService.js
@@ -109,6 +115,17 @@ class EnrollmentService {
       const seconds = Number.isFinite(Number(lastPositionSeconds))
         ? Math.max(0, Math.floor(Number(lastPositionSeconds)))
         : 0;
+
+      // The lesson must be a video of THIS course: otherwise a student enrolled in a free course could point their
+      // progress at any lesson id, including one from a paid course they never bought. FOR SHARE keeps the lesson
+      // from being deleted until commit, so the inserts below can't hit a missing row (no foreign-key 500).
+      if (mediaId) {
+        const [[lesson]] = await conn.query(
+          "SELECT id FROM course_media WHERE id = ? AND course_id = ? AND type = 'video' FOR SHARE",
+          [mediaId, courseId]
+        );
+        if (!lesson) throw httpError(404, "Lesson not found in this course.");
+      }
 
       // 1) Always update enrollment resume pointer
       await conn.query(

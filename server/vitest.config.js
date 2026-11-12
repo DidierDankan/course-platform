@@ -7,7 +7,11 @@ import path from "node:path";
 process.env.NODE_ENV = "test";
 process.env.DB_NAME = "lumen_test";
 // MySQL's default strict mode, so bad input fails here the way it would on a strict live server.
+// TEST_SQL_MODE runs the same suite in another mode (a test-only name, so a DB_SQL_MODE in .env can't change it):
+//   $env:TEST_SQL_MODE="NO_ENGINE_SUBSTITUTION"; npm test    (loose: what old local MySQL setups use)
+//   $env:TEST_SQL_MODE="ANSI,TRADITIONAL"; npm test          (strictest; "double quotes" become identifiers)
 process.env.DB_SQL_MODE =
+  process.env.TEST_SQL_MODE ||
   "ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION";
 // Uploads go to a throwaway folder; globalSetup empties it, so it must never be the real server/uploads.
 process.env.UPLOAD_DIR = path.join(os.tmpdir(), "lumen-test-uploads");

@@ -1,5 +1,6 @@
 // server/controllers/EnrollmentController.js
 import EnrollmentService from "../db/EnrollmentService.js";
+import { logError } from "../lib/logError.js";
 
 class EnrollmentController {
   constructor() {
@@ -12,13 +13,10 @@ class EnrollmentController {
   async enroll(req, res) {
     try {
       const userId = req.user.id;
-      const { course_id } = req.body;
+      // courseIdBody already checked course_id (a positive whole number).
+      const courseId = Number(req.body.course_id);
 
-      if (!course_id) {
-        return res.status(400).json({ ok: false, message: "Course ID is required." });
-      }
-
-      await EnrollmentService.createEnrollment({ userId, courseId: course_id });
+      await EnrollmentService.createEnrollment({ userId, courseId });
       return res.status(201).json({ ok: true, message: "Enrollment successful!" });
     } catch (err) {
       // Expected refusals carry a status (404, 400, 403, 409); anything else is a server error.
@@ -26,7 +24,7 @@ class EnrollmentController {
         return res.status(err.status).json({ ok: false, message: err.message });
       }
 
-      console.error("Enrollment error:", err);
+      logError("Enroll", err);
       return res.status(500).json({ ok: false, message: "Server error" });
     }
   }
@@ -37,7 +35,7 @@ class EnrollmentController {
       const enrollments = await EnrollmentService.getEnrollmentsByUser(userId);
       return res.json({ ok: true, enrollments });
     } catch (err) {
-      console.error("List enrollments error:", err);
+      logError("List enrollments", err);
       return res.status(500).json({ ok: false, message: "Server error" });
     }
   }
@@ -65,7 +63,11 @@ class EnrollmentController {
 
       return res.json({ ok: true, message: "Progress updated" });
     } catch (err) {
-      console.error("Update progress error:", err);
+      // Expected refusals carry a status (404: the lesson isn't part of this course); anything else is a server error.
+      if (err?.status) {
+        return res.status(err.status).json({ ok: false, message: err.message });
+      }
+      logError("Update progress", err);
       return res.status(500).json({ ok: false, message: "Server error" });
     }
   }

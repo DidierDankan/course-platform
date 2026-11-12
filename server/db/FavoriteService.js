@@ -22,12 +22,30 @@ class FavoriteService {
     return rows;
   }
 
+  // Returns false if the course doesn't exist (the controller answers 404). FOR SHARE keeps the course from being
+  // deleted until commit, so the insert can't fail on the foreign key (that was a 500). Adding a favorite twice is fine.
   async add({ userId, courseId }) {
-    await db.query(
-      `INSERT INTO favorites (user_id, course_id) VALUES (?, ?)
-       ON DUPLICATE KEY UPDATE favorited_at = NOW()`,
-      [userId, courseId]
-    );
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+      const [[course]] = await conn.query("SELECT id FROM courses WHERE id = ? FOR SHARE", [courseId]);
+      if (!course) {
+        await conn.rollback();
+        return false;
+      }
+      await conn.query(
+        `INSERT INTO favorites (user_id, course_id) VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE favorited_at = NOW()`,
+        [userId, courseId]
+      );
+      await conn.commit();
+      return true;
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
   }
 
   async remove({ userId, courseId }) {

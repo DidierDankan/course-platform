@@ -76,7 +76,8 @@ Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, STRIPE_SE
 ### Tests (`server/test/`)
 
 - Real MySQL, no mocks: `vitest.config.js` points the app at `lumen_test` in MySQL's default strict mode and at a temp upload folder; `globalSetup.js` rebuilds the database with the real migrate runner; `guard.js` refuses any database not ending in `_test` and any upload folder outside the OS temp folder.
-- Files: `smoke`, `validation` (Stage 2b bad input → 4xx), `auth` (tokens, roles, webhook signature, CORS, helmet), `rateLimit` (own file: the counters live in memory per app instance), `concurrency` (parallel requests, results counted with SQL).
+- Files: `smoke`, `validation` (bad input → 4xx, ids, list filters, lesson fields), `authInput` (register/login input; own file: the register limit counts every attempt), `auth` (tokens, roles, webhook signature, CORS, helmet), `rateLimit` (own file: the counters live in memory per app instance), `concurrency` (parallel requests, results counted with SQL), `errors` (no stack trace to clients, no data in logs), `leaks` (no email, hash or paid URL in answers that shouldn't have them).
+- Other SQL modes: `$env:TEST_SQL_MODE="ANSI,TRADITIONAL"; npm test` (or `NO_ENGINE_SUBSTITUTION` for loose). All three pass; run them after changing a query.
 - **Setup goes through the app's own routes or services, never a copied INSERT.** Exceptions: assertions about database state use plain SQL (independent of the code under test), and plumbing the app must not have (`resetTables`) stays in `test/`.
 - A known bug is a case with `knownBug: "<step>"`, run as `it.fails`: the suite stays green, and the case turns red once the fix lands, so the fixing change removes the marker. Only for failures that happen every run; a timing-dependent bug (e.g. a deadlock) gets fixed in the same change instead, or the suite turns flaky.
 - A green `npm test` doesn't prove the server boots (Vite resolves imports Node refuses, e.g. a missing `.js`), so "server boots" stays a separate check.
@@ -107,18 +108,24 @@ Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, STRIPE_SE
 - Uploads folder: one setting, `config.uploadDir` (`UPLOAD_DIR`, default `server/uploads` resolved from `config.js`, not the cwd). Deletes use `path.basename`, so a stored URL can't reach outside it.
 - Parallel profile saves don't deadlock: `UserService.replaceRows` locks the user's row (`SELECT … FOR UPDATE`) before its DELETE + INSERT. Proven by `test/concurrency.test.js`.
 - Test suite (Stage 2c, 2026-11-12): see "Tests" above. Parallel webhooks give one enrollment, parallel favorites one row, 30 parallel wrong logins exactly 10 × 401.
+- Server input validation (Stage 2b, 2026-11-12): every route checks its input before SQL. Ids: `validators/idParam.js` (`validId`), numbers: `validators/fields.js` (`idRule`, `secondsRule`, both refuse arrays: `isInt`/`isEmail` check each array item). Column sizes: `validators/limits.js`, mirrored for forms in `client/src/utils/form/limits.js`. List filters that only narrow (price, duration) are ignored when invalid; ids (`sellerId`) → 400. Lookups in a fixed map use `Object.hasOwn` (`sort=__proto__` used to reach the SQL).
+- mysql2 objects: the pool has `stringifyObjects: true`, so an object value is text, never `` `key` = value `` SQL. Don't write `SET ?` with an object; name the columns from a fixed list (`UserService.updateUserProfile`).
+- Progress can only point at a lesson of the enrolled course (404 otherwise). Free enrollment's duplicate key → 409.
+- Passwords over 72 bytes are refused at registration (bcrypt reads only 72); login accepts any length.
+- Errors: `server/lib/logError.js` is the only way to log a caught error (never `console.error(err)`: a mysql2 error carries the SQL with the user's values). `app.js` ends with a JSON 404 and an error handler that never sends a stack trace, whatever `NODE_ENV` is.
+- Public answers never contain a seller's email (`tutor_name` is the profile name or NULL).
 
 ## Known open issues (verified in code 2026-11-05 — re-check before relying on this)
 
 Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list is only the status.
 
 1. **Refresh tokens can't be revoked or rotated.** A stolen refresh cookie works for 7 days, and logout can't kill it. Fix chosen (2026-11-10): stored hashed refresh tokens with rotation and reuse detection. *(TODO: Stage 3)*
-2. **Schema:** resolved in Stage 2 (2026-11-10). `schema.sql` is gone; `001_initial.sql` builds the same tables (minus reviews, comments and subscriptions) on InnoDB. Still open: bad input answers 500 instead of 400 on strict MySQL, in 10 cases tracked as `knownBug` in `test/validation.test.js` *(TODO: Stage 2b steps 4-6)*.
+2. **Schema:** resolved in Stage 2 (2026-11-10). `schema.sql` is gone; `001_initial.sql` builds the same tables (minus reviews, comments and subscriptions) on InnoDB. Bad input answering 500 on strict MySQL: resolved in Stage 2b (2026-11-12), tested in all three SQL modes.
 3. **Hardening:** no database SSL yet *(DEPLOY.txt 2.1)*.
 4. **Hardcoded styling:** resolved in Phase 2 (2026-11-09). No arbitrary hex classes remain in `client/src`; colors live only in the theme files.
 5. **No CI.** Tests exist since Stage 2c (2026-11-12); still open: GitHub Actions running lint + build + `npm test`, plus the money-path and authorization tests *(TODO: Stage 5)*.
 6. **Enrollment depends only on the webhook.** On Render's free plan the server sleeps, so the webhook can arrive late and the buyer returns to `/payment/success` without access. Fix: the server retrieves the session from Stripe by `session_id` on return and enrolls through the same idempotent code as the webhook. This doesn't trust the redirect, because the server asks Stripe. *(TODO: PRIORITY "check the payment when the buyer returns")*
-7. **Error logs leak data.** Controllers log the raw mysql2 error, whose `err.sql` holds the filled-in values (a failed register logged the bcrypt hash and email). Fix: one `logError` helper that never logs `err.sql`, `err.sqlMessage` or the body. Must be done before deploy *(TODO: FINDING 2026-11-12; DEPLOY.txt 2.0)*.
+7. **Error logs leak data:** resolved 2026-11-12 (`lib/logError.js`, final error handler in `app.js`). Still open from that sweep, decided not to patch: login timing hints whether an email exists (register's 409 already says so by design; the real fix is email verification), and `updateCourse` is not one transaction *(TODO: LEAK SWEEP 2026-11-12)*.
 
 ## Design system
 

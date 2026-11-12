@@ -1,4 +1,5 @@
 import PublicService from "../db/PublicService.js";
+import { logError } from "../lib/logError.js";
 
 class PublicController {
   async getSellerPublic(req, res) {
@@ -28,7 +29,7 @@ class PublicController {
         courses,
       });
     } catch (err) {
-      console.error("getSellerPublic error:", err);
+      logError("Seller public page", err);
       return res.status(500).json({ ok: false, message: "Server error" });
     }
   }

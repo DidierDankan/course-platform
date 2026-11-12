@@ -73,6 +73,18 @@ describe("favorites", () => {
   });
 });
 
+describe("free enrollment", () => {
+  it("the same free course enrolled 10 times at once -> one row, one 201, the rest 409 (no 500)", async () => {
+    const course = await makeCourse(sellerCookie);
+    const responses = await atOnce(10, () =>
+      request(app).post("/api/enrollments").set("Cookie", studentCookie).send({ course_id: course.id }));
+
+    expect(statusCounts(responses)).toEqual({ 201: 1, 409: 9 });
+    const [rows] = await db.query("SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?", [student.id, course.id]);
+    expect(rows).toHaveLength(1);
+  });
+});
+
 describe("login limit under a flood", () => {
   it("30 wrong logins at once -> exactly 10 answer 401, the other 20 answer 429", async () => {
     const responses = await atOnce(30, () =>

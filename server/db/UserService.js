@@ -5,6 +5,9 @@ import path from 'path'
 import { deleteFileIfExists } from '../utils/fileUtils.js';
 import config from '../config.js';
 
+// user_profiles columns the profile form may set (user_id comes from the session, never from the form).
+const PROFILE_COLUMNS = ["full_name", "bio", "phone", "website", "profile_image"];
+
 class UserService {
   async findByEmail(email) {
     const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
@@ -97,17 +100,20 @@ class UserService {
     );
   }
 
+  // Columns are named from this fixed list, never from the keys of `updates`, so a field the controller didn't put
+  // there can't reach the table. (This used `SET ?` with the object, which needs mysql2's object expansion; the pool
+  // now turns objects into text instead, see connection.js.)
   async updateUserProfile(userId, updates) {
-    if (!Object.keys(updates).length) return; // nothing to update
+    const columns = PROFILE_COLUMNS.filter((column) => updates[column] !== undefined);
+    if (!columns.length) return; // nothing to update
 
-    const insertData = { user_id: userId, ...updates };
-
-    const sql = `
-      INSERT INTO user_profiles SET ?
-      ON DUPLICATE KEY UPDATE ?
-    `;
-
-    await db.query(sql, [insertData, updates]);
+    const placeholders = columns.map(() => "?").join(", ");
+    const assignments = columns.map((column) => `${column} = VALUES(${column})`).join(", ");
+    await db.query(
+      `INSERT INTO user_profiles (user_id, ${columns.join(", ")}) VALUES (?, ${placeholders})
+       ON DUPLICATE KEY UPDATE ${assignments}`,
+      [userId, ...columns.map((column) => updates[column])]
+    );
   }
 
   // The form always sends the whole list, so the list is replaced: anything removed there goes

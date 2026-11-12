@@ -2,6 +2,7 @@ import CourseService from "../db/CourseService.js";
 import EnrollmentService from "../db/EnrollmentService.js";
 import { parsePagination } from "../lib/pagination.js";
 import { nonNegativeOrUndefined } from "../lib/queryNumbers.js";
+import { logError } from "../lib/logError.js";
 
 class CourseController {
 
@@ -14,22 +15,24 @@ class CourseController {
     try {
       const { limit, offset } = parsePagination(req.query);
 
+      // Filters that only narrow the list are ignored when they aren't a number >= 0, so a stale or hand-edited
+      // shared link still shows a list. sellerId is an id, so courseListValidation already refused a bad one with 400.
       const filters = {
         q: req.query.q || "",
         minPrice: nonNegativeOrUndefined(req.query.minPrice),
         maxPrice: nonNegativeOrUndefined(req.query.maxPrice),
         free: req.query.free,
-        minDuration: req.query.minDuration,
-        maxDuration: req.query.maxDuration,
+        minDuration: nonNegativeOrUndefined(req.query.minDuration),
+        maxDuration: nonNegativeOrUndefined(req.query.maxDuration),
         tutor: req.query.tutor,
-        sellerId: req.query.sellerId,
+        sellerId: req.query.sellerId === undefined ? undefined : Number(req.query.sellerId),
         sort: req.query.sort || "newest",
       };
 
       const result = await CourseService.fetchAllCourses(limit, offset, filters);
       res.json(result);
     } catch (err) {
-      console.error("❌ Error fetching public courses:", err);
+      logError("List public courses", err);
       res.status(500).json({ message: "Failed to fetch courses" });
     }
   }
@@ -42,7 +45,7 @@ class CourseController {
       const courses = await CourseService.fetchCoursesWithThumbnails(sellerId);
       res.json(courses);
     } catch (err) {
-      console.error("Error fetching courses:", err);
+      logError("List own courses", err);
       res.status(500).json({ message: "Server error" });
     }
   }
@@ -66,16 +69,9 @@ class CourseController {
         await CourseService.insertCourseMedia(courseId, req.files.thumbnail[0]);
       }
 
-      // 3️⃣ Insert Videos (with meta)
+      // 3️⃣ Insert Videos. courseValidation already parsed and checked the lessons (req.body.meta), in upload order.
       if (req.files?.videos?.length) {
-        const rawMeta = req.body.meta || [];
-        const metaArray = Array.isArray(rawMeta) ? rawMeta : [rawMeta];
-
-        const metas = metaArray.map((m) => {
-          try { return JSON.parse(m); } catch { return {}; }
-        });
-
-        await CourseService.insertCourseVideos(courseId, req.files.videos, metas);
+        await CourseService.insertCourseVideos(courseId, req.files.videos, req.body.meta ?? []);
       }
 
       // 4️⃣ Fetch the full course (optional but useful for client)
@@ -86,7 +82,7 @@ class CourseController {
         course: newCourse,
       });
     } catch (err) {
-      console.error("Error adding course:", err);
+      logError("Add course", err);
       res.status(500).json({ message: "Failed to create course" });
     }
   }
@@ -95,23 +91,12 @@ class CourseController {
     try {
       const { id } = req.params;
 
-      // 🔎 Debugging + parsing helpers
-      const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+      // courseValidation already parsed and checked the three lists. multer stores the client's "meta[]",
+      // "existingVideos[]" and "deletedVideos[]" fields under the names without brackets.
+      const metas = req.body.meta ?? [];
+      const existingVideos = req.body.existingVideos ?? [];
+      const deleteIds = (req.body.deletedVideos ?? []).map(Number);
 
-      // Handle both "existingVideos[]" and "existingVideos"
-      const existingRaw = toArray(req.body["existingVideos[]"] || req.body.existingVideos);
-      const deletesRaw  = toArray(req.body["deletedVideos[]"] || req.body.deletedVideos);
-      const metaRaw     = toArray(req.body["meta[]"] || req.body.meta);
-
-      let metas = [];
-      let existingVideos = [];
-      let deleteIds = [];
-
-      try { metas = metaRaw.map((s) => JSON.parse(s)); } catch (e) { console.warn("⚠️ meta[] JSON parse failed:", e); }
-      try { existingVideos = existingRaw.map((s) => JSON.parse(s)); } catch (e) { console.warn("⚠️ existingVideos[] JSON parse failed:", e); }
-      try { deleteIds = deletesRaw.map((s) => Number(s)); } catch (e) { console.warn("⚠️ deletedVideos[] cast failed:", e); }
-
-      // 🟢 Now continue with your real update logic
       const { title, description, price } = req.body;
       await CourseService.updateCourseById(id, { title, description, price });
 
@@ -126,8 +111,9 @@ class CourseController {
         await CourseService.insertCourseVideos(id, files, metas);
       }
 
-      // Handle updates
-      const updateResults = await Promise.all(
+      // Edits and deletions are scoped to this course in the service (WHERE id = ? AND course_id = ?),
+      // so an id from another seller's course changes nothing.
+      await Promise.all(
         existingVideos.map((v) =>
           CourseService.updateVideoMeta(v.id, id, {
             title: v.title,
@@ -137,15 +123,12 @@ class CourseController {
         )
       );
 
-      // Handle deletions
-      const deleteResults = await Promise.all(
-        deleteIds.map((vid) => CourseService.deleteMediaByIdWithFile(vid, id))
-      );
+      await Promise.all(deleteIds.map((vid) => CourseService.deleteMediaByIdWithFile(vid, id)));
 
       const updatedCourse = await CourseService.fetchCourseById(id);
       res.json({ message: "Course updated successfully", course: updatedCourse });
     } catch (err) {
-      console.error("Error updating course:", err);
+      logError("Update course", err);
       res.status(500).json({ message: "Failed to update course" });
     }
   }
@@ -157,7 +140,7 @@ class CourseController {
       if (!data) return res.status(404).json({ ok: false, message: "Course not found" });
       return res.json({ ok: true, course: data });
     } catch (err) {
-      console.error("getPublicCourse error:", err);
+      logError("Public course", err);
       return res.status(500).json({ ok: false, message: "Server error" });
     }
   }
@@ -197,7 +180,7 @@ class CourseController {
 
       res.json({ message: "Course and media deleted successfully" });
     } catch (err) {
-      console.error("Error deleting course:", err);
+      logError("Delete course", err);
       res.status(500).json({ message: "Failed to delete course" });
     }
   }
@@ -222,7 +205,7 @@ class CourseController {
 
       return res.json({ ok: true, ...watchData, enrollment: enrollment || null });
     } catch (err) {
-      console.error("watch error:", err);
+      logError("Watch course", err);
       return res.status(500).json({ ok: false, message: "Server error" });
     }
   }

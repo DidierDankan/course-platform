@@ -6,6 +6,7 @@ import path from "path";
 import { verifyAccessToken } from "../helpers/tokens.js";
 import CourseService from "../db/CourseService.js";
 import EnrollmentService from "../db/EnrollmentService.js";
+import { logError } from "../lib/logError.js";
 
 const VIDEO_EXTENSIONS = new Set([".mp4", ".webm", ".mov", ".m4v", ".mkv", ".ogv"]);
 
@@ -54,7 +55,7 @@ export const protectVideos = async (req, res, next) => {
     res.set("Cache-Control", "private, no-store");
     return next();
   } catch (err) {
-    console.error("protectVideos error:", err);
+    logError("protectVideos", err);
     return res.status(500).end();
   }
 };

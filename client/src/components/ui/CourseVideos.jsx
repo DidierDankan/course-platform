@@ -3,6 +3,7 @@ import { AlertTriangle, Film, Plus } from "lucide-react";
 import Modal from "@components/ui/Modal";
 import FormField from "@components/ui/Form/FormField";
 import useObjectUrl from "@hooks/useObjectUrl";
+import { LIMITS } from "@utils/form/limits";
 
 const CourseVideos = ({ videos, onAdd, onRemove }) => {
   const [selectedIndex, setSelectedIndex] = useState(null);
@@ -101,8 +102,14 @@ const CourseVideos = ({ videos, onAdd, onRemove }) => {
         {selectedVideo && (
           <div className="seller-form">
             {videoUrl && <video key={videoUrl} src={videoUrl} controls className="watch-video video-preview" />}
-            <FormField name={`videos[${selectedIndex}].title`} label="Lesson title" />
-            <FormField name={`videos[${selectedIndex}].description`} label="Lesson description" as="textarea" rows={3} />
+            <FormField name={`videos[${selectedIndex}].title`} label="Lesson title" maxLength={LIMITS.lessonTitle} />
+            <FormField
+              name={`videos[${selectedIndex}].description`}
+              label="Lesson description"
+              as="textarea"
+              rows={3}
+              maxLength={LIMITS.lessonDescription}
+            />
           </div>
         )}
       </Modal>

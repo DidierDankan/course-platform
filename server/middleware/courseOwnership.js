@@ -2,6 +2,7 @@
 // authorizeRoles("seller") only proves the user IS a seller. These checks prove the
 // course (or video) belongs to THEM. Admins can manage everything.
 import CourseService from "../db/CourseService.js";
+import { logError } from "../lib/logError.js";
 
 const canManage = (user, sellerId) =>
   user?.role === "admin" || Number(user?.id) === Number(sellerId);
@@ -19,7 +20,7 @@ export const requireCourseOwner = async (req, res, next) => {
     }
     return next();
   } catch (err) {
-    console.error("requireCourseOwner error:", err);
+    logError("requireCourseOwner", err);
     return res.status(500).json({ message: "Server error" });
   }
 };
@@ -36,7 +37,7 @@ export const requireMediaOwner = async (req, res, next) => {
     }
     return next();
   } catch (err) {
-    console.error("requireMediaOwner error:", err);
+    logError("requireMediaOwner", err);
     return res.status(500).json({ message: "Server error" });
   }
 };

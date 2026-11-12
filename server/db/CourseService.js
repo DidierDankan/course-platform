@@ -2,6 +2,7 @@ import db from "./connection.js";
 import fs from "fs";
 import path from "path";
 import config from "../config.js";
+import { logError } from "../lib/logError.js";
 
 const UPLOADS_DIR = config.uploadDir;
 
@@ -67,40 +68,38 @@ class CourseService {
       }
     }
 
-    // Tutor
-    if (sellerId) {
+    // Tutor. sellerId is already a checked whole number (courseListValidation) or undefined.
+    if (sellerId !== undefined) {
       where.push(`c.seller_id = ?`);
-      params.push(Number(sellerId));
+      params.push(sellerId);
     } else if (tutor) {
       where.push(`up.full_name LIKE ?`);
       params.push(`%${tutor}%`);
     }
 
-    // Duration filters (seconds) using your aggregated SUM(video.duration)
-    // NOTE: your DB currently uses `course_media.duration` (int) in some places.
-    // This query uses m.duration (same as your existing fetchAllCourses).
+    // Duration filters (seconds) on the summed lesson durations. The controller passes a number >= 0 or undefined.
     const durationHaving = [];
     const havingParams = [];
-    if (minDuration !== undefined && minDuration !== null && minDuration !== "") {
+    if (minDuration !== undefined) {
       durationHaving.push(`SUM(CASE WHEN m.type = 'video' THEN m.duration END) >= ?`);
-      havingParams.push(Number(minDuration));
+      havingParams.push(minDuration);
     }
-    if (maxDuration !== undefined && maxDuration !== null && maxDuration !== "") {
+    if (maxDuration !== undefined) {
       durationHaving.push(`SUM(CASE WHEN m.type = 'video' THEN m.duration END) <= ?`);
-      havingParams.push(Number(maxDuration));
+      havingParams.push(maxDuration);
     }
 
-    // Sorting: the request only picks a key; the SQL comes from this fixed map.
-    const orderBy = SORT_ORDER[sort] ?? SORT_ORDER.newest;
+    // Sorting: the request only picks a key; the SQL comes from this fixed map. Object.hasOwn, not SORT_ORDER[sort]:
+    // "__proto__" or "constructor" would otherwise find Object's own properties and put "[object Object]" in the SQL.
+    const orderBy = Object.hasOwn(SORT_ORDER, sort) ? SORT_ORDER[sort] : SORT_ORDER.newest;
 
     const sql = `
       SELECT 
         c.id, c.title, c.description, c.price, c.created_at, c.seller_id,
-        COALESCE(up.full_name, u.email) AS tutor_name,
+        up.full_name AS tutor_name, -- NULL without a profile name (the card shows "Instructor"); never the email, this list is public
         MAX(CASE WHEN m.type = 'image' THEN m.url END) AS thumbnail_url,
         COALESCE(SUM(CASE WHEN m.type = 'video' THEN m.duration END), 0) AS total_duration
       FROM courses c
-      LEFT JOIN users u ON u.id = c.seller_id
       LEFT JOIN user_profiles up ON up.user_id = c.seller_id
       LEFT JOIN course_media m ON m.course_id = c.id
       ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
@@ -157,7 +156,7 @@ class CourseService {
       try {
         videos = row.videos ? JSON.parse(row.videos) : [];
       } catch (err) {
-        console.error("JSON parse error for videos:", err);
+        logError("Parse course videos JSON", err);
       }
 
       // ✅ remove nulls that JSON_ARRAYAGG can insert

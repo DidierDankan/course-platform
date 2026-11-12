@@ -7,12 +7,12 @@ import { authenticate } from "../middleware/authMiddleware.js";
 import { authorizeRoles } from "../middleware/authMiddleware.js";
 import { requireCourseOwner, requireMediaOwner } from "../middleware/courseOwnership.js";
 import validateRequest from "../middleware/validateRequest.js";
-import { courseValidation } from "../validators/courseValidator.js";
+import { courseListValidation, courseValidation } from "../validators/courseValidator.js";
 import { validId } from "../validators/idParam.js";
 
 const router = express.Router();
 
-router.get('/all', CourseController.getAllCourses);
+router.get('/all', courseListValidation, validateRequest, CourseController.getAllCourses);
 router.get("/:id/public", validId("id"), CourseController.getPublicCourse);
 
 // ✅ Require authentication for everything in this router

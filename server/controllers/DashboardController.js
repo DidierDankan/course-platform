@@ -1,5 +1,6 @@
 // server/controllers/DashboardController.js
 import DashboardService from "../db/DashboardService.js";
+import { logError } from "../lib/logError.js";
 
 class DashboardController {
   constructor() {
@@ -18,7 +19,7 @@ class DashboardController {
 
       return res.json({ ok: true, ...dashboard });
     } catch (err) {
-      console.error("DashboardController.getMyDashboard error:", err);
+      logError("Dashboard", err);
       return res.status(500).json({ ok: false, message: "Server error" });
     }
   }

@@ -157,6 +157,9 @@ What the suite proves:
 - **Auth:** expired, forged, unsigned or swapped tokens answer 401; a wrong role answers 403; unsigned or tampered Stripe webhooks answer 400; CORS only allows the client's origin; security headers are present.
 - **Rate limits:** the 11th wrong login and the 6th registration in the window answer 429.
 - **Concurrency:** 20 identical webhooks at once create one enrollment, 10 identical favorites create one row, 20 parallel profile saves never deadlock.
+- **Leaks:** public pages never show a seller's email, paid lesson files are only addressed to people who may watch them, no answer carries a password hash, and errors reach the client as short JSON (never a stack trace) and the logs without the SQL values inside them.
+
+The suite also runs in MySQL's loose and ANSI modes (`TEST_SQL_MODE`), so the app doesn't depend on one server's settings.
 
 Why a real database instead of mocks: the bugs found so far were MySQL behaviour (strict mode, case-insensitive unique keys, foreign keys, gap-lock deadlocks), which a mock can't reproduce. Known bugs that aren't fixed yet are kept in the suite as expected failures (`it.fails`), so the suite stays green and flags each one the moment it gets fixed.
 

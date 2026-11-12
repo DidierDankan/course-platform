@@ -4,6 +4,7 @@ import EnrollmentService from "../db/EnrollmentService.js";
 import { stripe } from "../lib/stripe.js";
 import { CURRENCY } from "../lib/currency.js";
 import { APP_NAME } from "../lib/brand.js";
+import { logError } from "../lib/logError.js";
 const CLIENT_URL = config.clientUrl;
 const PAYMENT_PAID = "paid";
 class PaymentController {
@@ -75,7 +76,7 @@ class PaymentController {
 
       return res.json({ ok: true, url: session.url });
     } catch (err) {
-      console.error("createCheckoutSession error:", err);
+      logError("Create checkout session", err);
       return res.status(500).json({ ok: false, message: "Server error" });
     }
   }
@@ -123,7 +124,7 @@ class PaymentController {
 
       return res.json({ received: true });
     } catch (err) {
-      console.error("Webhook handler error:", err);
+      logError("Webhook handler", err);
       return res.status(500).send("Webhook handler failed");
     }
   }

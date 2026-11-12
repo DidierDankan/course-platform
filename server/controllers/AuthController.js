@@ -1,6 +1,7 @@
 import config from '../config.js';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../helpers/tokens.js';
 import UserService from '../db/UserService.js';
+import { logError } from '../lib/logError.js';
 
 class AuthController {
   async register(req, res) {
@@ -48,7 +49,7 @@ class AuthController {
         },
       });
     } catch (err) {
-      console.error("❌ Register error:", err);
+      logError("Register", err);
       return res.status(500).json({ message: "Server error." });
     }
   }
@@ -95,7 +96,7 @@ class AuthController {
         },
       });
     } catch (err) {
-      console.error("Login error:", err);
+      logError("Login", err);
       return res.status(500).json({ message: "Server error." });
     }
   }
@@ -126,7 +127,7 @@ class AuthController {
         user: decoded,
       });
     } catch (err) {
-      console.error("Refresh error:", err);
+      logError("Refresh", err);
       return res.status(401).json({ message: "Invalid or expired refresh token" });
     }
   }
