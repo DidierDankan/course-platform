@@ -94,8 +94,28 @@ describe("courses and lists: bad input -> 400 (or 404 for an id)", () => {
     { name: "description 70,000 characters", want: [400], knownBug: "2b step 4", send: () => createCourse({ description: TOO_BIG_FOR_TEXT }) },
     { name: "list: duration filter is text", want: [400], knownBug: "2b step 4", send: () => request(app).get("/api/courses/all?minDuration=abc&maxDuration=def") },
     { name: "list: seller filter is text", want: [400], knownBug: "2b step 4", send: () => request(app).get("/api/courses/all?sellerId=abc") },
-    { name: "public course: id is text", want: [400, 404], knownBug: "2b step 4", send: () => request(app).get("/api/courses/abc/public") },
+    { name: "public course: id is text", want: [400], send: () => request(app).get("/api/courses/abc/public") },
     { name: "seller page: id is text", want: [400, 404], send: () => request(app).get("/api/public/sellers/abc") },
+  ]);
+});
+
+describe("course ids: anything but a positive whole number -> 400, before any query", () => {
+  const asSeller = (req) => req.set("Cookie", ctx.sellerCookie);
+  runCases([
+    { name: "public course: id is a decimal", want: [400], send: () => request(app).get("/api/courses/1.5/public") },
+    { name: "public course: id is 0", want: [400], send: () => request(app).get("/api/courses/0/public") },
+    { name: "public course: id larger than INT", want: [400], send: () => request(app).get("/api/courses/99999999999/public") },
+    { name: "media list: id is text", want: [400], send: () => asSeller(request(app).get("/api/courses/abc/media")) },
+    { name: "watch: id is text", want: [400], send: () => asSeller(request(app).get("/api/courses/abc/watch")) },
+    { name: "edit course: id is text", want: [400], send: () => asSeller(request(app).put("/api/courses/abc")).field("title", "T").field("description", "d").field("price", "0") },
+    { name: "delete course: id is text", want: [400], send: () => asSeller(request(app).delete("/api/courses/abc")) },
+    { name: "delete lesson: id is text", want: [400], send: () => asSeller(request(app).delete("/api/courses/media/abc")) },
+    { name: "a student editing with a text id still gets 403, not 400", want: [403], send: () => request(app).put("/api/courses/abc").set("Cookie", ctx.studentCookie) },
+    { name: "CONTROL: owner reads the media list", want: [200], send: () => asSeller(request(app).get(`/api/courses/${ctx.courseId}/media`)) },
+    { name: "CONTROL: owner deletes a real lesson", want: [200], send: async () => {
+        const course = await makeCourse(ctx.sellerCookie); // its own course: the shared fixture's lesson is used by other tests
+        return asSeller(request(app).delete(`/api/courses/media/${course.videoId}`));
+      } },
   ]);
 });
 
