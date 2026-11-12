@@ -25,15 +25,15 @@ export async function login(user) {
 // A tiny MP4 header: enough for multer's file-type check (the server never decodes the video).
 export const VIDEO = Buffer.from("00000018667479706d703432", "hex");
 
-// A free course with one video lesson, through the real POST /api/courses (multer, validator, CourseService).
-// Returns the course id and the lesson's media id, read back through the owner-only media route.
-export async function makeCourse(sellerCookie) {
+// A course with one video lesson (free unless a price is given), through the real POST /api/courses (multer, validator,
+// CourseService). Returns the course id and the lesson's media id, read back through the owner-only media route.
+export async function makeCourse(sellerCookie, { price = "0" } = {}) {
   const created = await request(app)
     .post("/api/courses")
     .set("Cookie", sellerCookie)
     .field("title", "Test course")
     .field("description", "Test description")
-    .field("price", "0")
+    .field("price", price)
     .field("meta", JSON.stringify({ title: "Lesson 1", description: "d", duration: 60 }))
     .attach("videos", VIDEO, { filename: "lesson.mp4", contentType: "video/mp4" });
   if (created.status !== 201) throw new Error(`makeCourse failed: ${created.status} ${JSON.stringify(created.body)}`);

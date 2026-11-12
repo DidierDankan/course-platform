@@ -112,10 +112,14 @@ class UserService {
 
   // The form always sends the whole list, so the list is replaced: anything removed there goes
   // away here too, in one transaction, so a failed insert keeps the old list.
+  // The user's row is locked first, so two saves for the same user queue up. Without it, each DELETE takes a gap lock
+  // and then waits to INSERT into the other's gap: MySQL kills one with ER_LOCK_DEADLOCK (8-10 of 20 parallel saves
+  // answered 500 in test/concurrency.test.js). Different users lock different rows, so they never wait for each other.
   async replaceRows(deleteSql, userId, insertSql, rows) {
     const conn = await db.getConnection();
     try {
       await conn.beginTransaction();
+      await conn.query("SELECT id FROM users WHERE id = ? FOR UPDATE", [userId]);
       await conn.query(deleteSql, [userId]);
       if (rows.length) await conn.query(insertSql, [rows]);
       await conn.commit();
