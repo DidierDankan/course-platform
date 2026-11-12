@@ -17,4 +17,17 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 
+// Each new connection gets the pinned SQL mode before it runs anything else (a connection runs its queries in order).
+// If the SET fails, the connection is destroyed: whatever query was queued behind it then fails loudly instead of
+// running under the server's default (possibly looser) mode, and the pool opens a fresh connection next time.
+if (config.db.sqlMode) {
+  pool.on("connection", (conn) => {
+    conn.query("SET SESSION sql_mode = ?", [config.db.sqlMode], (err) => {
+      if (!err) return;
+      console.error(`Could not set sql_mode, dropping the connection: ${err.message}`);
+      conn.destroy();
+    });
+  });
+}
+
 export default pool;

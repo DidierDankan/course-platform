@@ -56,6 +56,7 @@ const config = Object.freeze({
     user: process.env.DB_USER,
     password: process.env.DB_PASS ?? "", // WAMP's root user has no password
     name: process.env.DB_NAME,
+    sqlMode: process.env.DB_SQL_MODE || null, // optional: pins the SQL mode (tests use strict; production can match Aiven)
   },
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY,
