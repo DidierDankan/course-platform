@@ -3,11 +3,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import config from "../config.js";
 
 const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const SERVER_DIR = path.resolve(SCRIPTS_DIR, "..");
 // Same folder the server serves at /uploads (CourseService and multer write there).
-export const UPLOADS_DIR = path.join(SERVER_DIR, "uploads");
+export const UPLOADS_DIR = config.uploadDir;
 export const UPLOADS_URL_PREFIX = "/uploads/";
 
 export class ScriptStop extends Error {}

@@ -3,6 +3,7 @@ import db from '../db/connection.js';
 import bcrypt from 'bcryptjs';
 import path from 'path'
 import { deleteFileIfExists } from '../utils/fileUtils.js';
+import config from '../config.js';
 
 class UserService {
   async findByEmail(email) {
@@ -86,7 +87,7 @@ class UserService {
     const oldImage = await UserService.getProfileImage(userId);
     if (!oldImage) return;
 
-    const oldPath = path.join(process.cwd(), "uploads", oldImage);
+    const oldPath = path.join(config.uploadDir, path.basename(oldImage));
     await deleteFileIfExists(oldPath);
 
     // Optionally clear DB column

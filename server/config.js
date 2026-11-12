@@ -1,4 +1,8 @@
 import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 // Every other file gets its settings from here, so .env is loaded once, before anything reads it.
 dotenv.config();
@@ -46,6 +50,8 @@ const config = Object.freeze({
   trustProxyHops: proxyHopsFrom("TRUST_PROXY_HOPS"),
   isProduction: process.env.NODE_ENV === "production",
   clientUrl: process.env.CLIENT_URL,
+  // Where uploaded files are stored. A relative UPLOAD_DIR is read from server/, never from the folder the process started in.
+  uploadDir: path.resolve(SERVER_DIR, process.env.UPLOAD_DIR || "uploads"),
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET,
     refreshSecret: process.env.JWT_REFRESH_SECRET,

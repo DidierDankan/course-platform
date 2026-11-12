@@ -8,20 +8,20 @@ How these files fit together:
 =========================== NOW ===========================
 (handoff for the next session: REWRITE this block at the end of every session, never append; max ~12 lines)
 
-updated:      2026-11-11
+updated:      2026-11-12
 branch:       multi-design (commits reach GitHub on their own, not pushed from here: never rewrite history)
 RULE:         Claude never commits: leave changes uncommitted, the owner reviews and commits (CLAUDE.md)
-uncommitted:  Stage 2b step 3 (profileValidator.js, profile route/controller, UserService skills, client editHandler) + TODO.txt
+uncommitted:  Stage 2c step 3a (one uploads folder setting: config.uploadDir, UPLOAD_DIR) + DEPLOY.txt 2.2 note + TODO.txt
 last commit:  git log -1 (this file is tracked now, so it can't name its own commit)
-done:         Phase 2, Stage 1, Stage 2 (migrations), Stage 2b steps 1-3
+done:         Phase 2, Stage 1, Stage 2 (migrations), Stage 2b steps 1-3, Stage 2c steps 1-2 (npm test: 3 smoke tests green)
 in progress:  nothing
-watch out:    on Windows, stopping a dev-server task leaves nodemon's node index.js running and holding :3001; new servers then
-              "listen" but get no requests. Check `netstat -ano | grep ":3001 .*LISTENING"` before testing against :3001
-waiting on you: commit 2b step 3; decide whether to drop course_platform (old MyISAM copy, unused; backup: Desktop/course-platform-backups/2026-11-10)
+watch out:    on Windows, stopping a dev-server task leaves nodemon's node index.js running and holding :3001; check
+              `netstat -ano | grep ":3001 .*LISTENING"` before testing against :3001. npm test drops and rebuilds lumen_test every run;
+              run it from a C:\ (capital) path: from c:\ Vitest loads twice and says "failed to find the current suite"
+waiting on you: commit 2c step 3a; decide whether to drop course_platform (old MyISAM copy; backup 2026-11-10)
 open finds:   Aiven's real sql_mode, real card payment on Stripe's page and live TRUST_PROXY_HOPS are still unverified (all need the live services)
-next step:    Stage 2b step 4 (courses), once the owner says go. Owner edits, Claude tests with s2b-replay.mjs.
-              Stage 1 scripts take the demo password as argv[2]; s1step5 uses up the login limit, so run it last and restart the server after
-roadmap:      Phase 2 done -> security -> migrations -> refresh tokens -> reviews -> tests + CI -> pre-deploy -> deploy
+next step:    Stage 2c step 3b (helpers makeCourse/enroll + test/validation.test.js, 33 cases, known bugs as it.fails). Then 2c steps 4-5.
+roadmap:      Phase 2 done -> security -> migrations -> tests (2c) -> 2b step 4 -> refresh tokens -> reviews -> CI -> pre-deploy -> deploy
 GATE:         nothing goes online before the security items are done
 
 =========================== DONE ===========================
@@ -129,6 +129,47 @@ STAGE 2b: server input validation (found 2026-11-10 in Stage 2 step 3). Must be 
     [ ] 7. full rerun: replay script on all three SQL modes (local, MySQL default strict, ANSI,TRADITIONAL) -> every case 4xx; Stage 1 checks;
            in the browser, the profile and course forms show the server's 400 message instead of failing silently
     later, when the Aiven database exists: confirm its real sql_mode (both strict modes are tested locally)
+    from step 4 on (owner's decision 2026-11-11): a step is done when its cases in tests/validation.test.js pass (Stage 2c), not when a script is rerun
+
+STAGE 2c: real tests before 2b step 4 (owner's decision 2026-11-11). Bucket: Do (tests on security and the money path are high signal)
+    why now: steps 3-7 of 2b and Stage 3 each needed a manual replay run; a test suite replaces that and most of Stage 5
+    tools: Vitest (runs ESM as-is; Jest's ESM support is still experimental) + Supertest (calls the app without opening a port), against a
+      real MySQL database lumen_test, not mocks: the bugs found so far are MySQL behaviour (strict mode, case-insensitive unique keys,
+      foreign keys), which a mock can't reproduce
+    rule (owner's decision 2026-11-12): test setup goes through the app's own routes or services, never a copied simpler INSERT, so the
+      tests run the real queries. Exceptions: assertions about database state count rows with plain SQL (independent of the code under
+      test), and plumbing the app must not have (resetTables, backdating) stays raw SQL in test/. First use: makeUser -> UserService.createUser
+    [x] 1. split server/index.js: app.js builds and exports the Express app (index.js:27-78 today); index.js only checks the database and
+           listens (index.js:80-93). check: npm run dev boots, Stage 1 checks still pass (done 2026-11-12, owner ran both)
+    [x] 2. test setup: devDependencies vitest + supertest; "test": "vitest run" replaces package.json:8. A global setup drops and rebuilds
+           lumen_test with the migrate runner, so it always matches 001+. Guard: tests refuse to run unless DB_NAME ends in _test (they
+           delete rows). Decide in the step: how tests get strict SQL mode (an optional DB_SQL_MODE setting in connection.js, also useful to
+           match Aiven later, or a test-only hook), and where test uploads go (cleaned up by the tests, or an UPLOAD_DIR setting)
+           done 2026-11-12: decided DB_SQL_MODE (config.js db.sqlMode, set per pooled connection in connection.js); vitest.config.js pins
+           DB_NAME=lumen_test + MySQL's default strict mode; test/globalSetup.js drops/creates lumen_test and runs scripts/migrate.js;
+           test/guard.js refuses any DB_NAME not ending in _test; test/smoke.test.js (3 tests). check: npm test green twice in a row,
+           lumen_dev row counts unchanged, npm run dev boots. Upload location NOT decided yet: no test uploads files so far; decide in
+           step 3/5 the first time a test needs one
+    [x] 3a. one uploads folder setting (decided 2026-11-12): six places built the path from process.cwd() in their own way (app.js:52,
+           uploadMiddleware.js:30, CourseService.js:5 and :24, UserService.js:89, scripts/lib.js:10), so tests would write into the real
+           server/uploads. Now config.uploadDir (UPLOAD_DIR, default server/uploads resolved from config.js, not the cwd) is the only source;
+           vitest.config.js points it at <os tmp>/lumen-test-uploads, globalSetup empties and recreates it, and guard.js refuses any upload
+           folder outside the OS temp folder (the setup deletes it). check: npm test, npm run dev boots, a video still plays in the browser
+           done 2026-11-12: npm test green twice, temp folder removed after each run, server/uploads unchanged, npm run dev boots, Home
+           thumbnails and courses load (same static route as videos). Found on the way: an import without ".js" passes in Vitest (Vite
+           adds the extension) but crashes node index.js, so "server boots" stays a separate check until a server lint rule exists (Stage 5)
+    [ ] 3b. test/validation.test.js: the 33 replay cases (8 valid controls + bad inputs), run in strict mode. The 10 that still fail are
+           red on purpose; 2b steps 4-7 turn them green one route group at a time
+    [ ] 4. tests/auth.test.js: the Stage 1 checks: expired access token -> 401, refresh token used as access token (and the reverse) -> 401,
+           no cookie -> 401, wrong role -> 403, 11th failed login -> 429 JSON, unsigned webhook -> 400, CORS only answers CLIENT_URL,
+           helmet headers present. The rate limiter keeps its count in memory, so it gets its own file (Vitest isolates files)
+    [ ] 5. tests/concurrency.test.js ("flood"): many requests at once that must stay correct: the same signed webhook 20 times at once ->
+           1 enrollment and 1 payment; 20 profile saves at once -> no 500 and one consistent skills list (replaceRows can deadlock);
+           30 wrong logins at once -> exactly 10 answer 401 and the rest 429; the same favorite added 10 times at once -> one row
+    [ ] 6. Maybe bucket, owner decides: npm run load (autocannon) against the LOCAL server only, prints requests/s, p95 latency and error
+           rate for /api/courses/all and login. Never against Render or Aiven: their free plans would measure the plan, not the code. Not in CI
+    [ ] 7. done when: npm test on a fresh lumen_test passes everything except the 10 known validation cases; CLAUDE.md (commands, "no tests
+           yet") and README updated; the scratchpad replay and Stage 1 scripts are retired
 
 STAGE 3: refresh tokens can be revoked and rotated (item "refresh tokens"), as migration 002_refresh_tokens.sql
     threat: a stolen refresh cookie works for 7 days and logout can't kill it. After: each refresh token works once, logout kills it
@@ -136,6 +177,8 @@ STAGE 3: refresh tokens can be revoked and rotated (item "refresh tokens"), as m
     found 2026-11-10: refresh (AuthController.js:111-127) trusts the role inside the token, never the database, so a deleted or demoted
             user keeps refreshing for 7 days; it also sends iat/exp/type back as "user". Logout (AuthController.js:134) only clears cookies.
             The client mutex (baseQueryWithReauth.js) only covers one tab: with rotation, two tabs refreshing at once look like theft
+    written test-first (2026-11-11): tests in tests/auth.test.js before the code: a refresh token works once, a reused one is refused
+            and ends that login, logout revokes it on the server
     [ ] 0. decided 2026-11-10 by the owner: option B, stored hashes + rotation + reuse detection (not option A, token_version).
            still open: refresh token = random 32 bytes (recommended: it is looked up in the database anyway, so a JWT adds nothing and
            JWT_REFRESH_SECRET can go) or keep the JWT. Steps below assume random
@@ -185,7 +228,9 @@ STAGE 4: course reviews + seller average (item "course reviews"), as migration 0
 
 STAGE 4b: comments per course (item "comments per course"), as its own migration. Owner's decision 2026-11-10: both reviews and comments go in before deploy
 
-STAGE 5: tests + CI (items in "TESTS & CI"). Money path and authorization first, including reviews and the course validators
+STAGE 5: tests + CI (items in "TESTS & CI"). Smaller since Stage 2c (2026-11-11), which already covers validation, auth and concurrency:
+    the money path (checkout session -> signed webhook -> enrollment; the same webhook twice), authorization (seller A can't edit or delete
+    seller B's course or media; a student can't watch a paid video), reviews, then GitHub Actions: lint + build + npm test on every push
 
 STAGE 6: before deploy
     check the payment when the buyer returns; replace the old thumbnail that shows internal hostnames; demo accounts on the login page;

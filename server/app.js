@@ -1,8 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-
-import path from 'path';
 import cookieParser from 'cookie-parser';
 import config from './config.js';
 
@@ -49,7 +47,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/public", publicRoutes);
-app.use('/uploads', protectVideos, express.static(path.join(process.cwd(), 'uploads')));
+app.use('/uploads', protectVideos, express.static(config.uploadDir));
 
 
 app.get('/', (req, res) => {

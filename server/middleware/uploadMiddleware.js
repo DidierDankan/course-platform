@@ -1,5 +1,6 @@
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
+import config from '../config.js';
 
 // Allowed file types per form field. The saved extension comes from this list,
 // never from the uploader's file name, so "page.html" can't be stored as a web page.
@@ -27,7 +28,7 @@ export class UploadError extends Error {}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // ✅ must exist
+    cb(null, config.uploadDir); // ✅ must exist: created by the seed script locally, by test/globalSetup.js in tests
   },
   filename: (req, file, cb) => {
     const ext = FIELD_TYPES[file.fieldname][file.mimetype]; // already checked in fileFilter

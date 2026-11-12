@@ -1,8 +1,9 @@
 import db from "./connection.js";
 import fs from "fs";
 import path from "path";
+import config from "../config.js";
 
-const UPLOADS_DIR = path.join(process.cwd(), "uploads");
+const UPLOADS_DIR = config.uploadDir;
 
 // Whitelist: ?sort= value -> fixed ORDER BY. The request value never reaches the SQL.
 // c.id DESC breaks ties so paging never repeats or skips a course.
@@ -21,7 +22,7 @@ const SORT_ORDER = Object.freeze({
 const removeStoredFile = (url) => {
   if (!url) return;
   try {
-    fs.unlinkSync(path.join(process.cwd(), url.replace(/^\//, "")));
+    fs.unlinkSync(path.join(UPLOADS_DIR, path.basename(url)));
   } catch {
     /* nothing to remove */
   }
