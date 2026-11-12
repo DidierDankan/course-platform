@@ -63,15 +63,23 @@ server/
 cd server && npm run dev
 cd server && npm run migrate     # apply new files in server/migrations; safe to rerun
 cd server && npm run seed:demo   # demo accounts + courses (needs DEMO_PASSWORD and .mp4 files in scripts/seed-assets)
+cd server && npm test            # Vitest + Supertest; rebuilds lumen_test each run. Windows: PowerShell from a C:\ (capital) path
+cd server && npm run load        # local-only load test (list + login); start the server first with npm start. Not in CI
 # frontend (port 5173)
 cd client && npm run dev
 cd client && npm run lint && npm run build
 # Stripe webhooks locally
 stripe listen --forward-to http://localhost:3001/api/payments/webhook
 ```
-Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, CLIENT_URL, optional TRUST_PROXY_HOPS), `client/.env` (VITE_API_URL). `server/config.js` validates them at boot; DEPLOY.txt section 4 lists the live set. Both are gitignored. **Never print, commit or hardcode secrets.**
+Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, CLIENT_URL, optional TRUST_PROXY_HOPS, DB_SQL_MODE, UPLOAD_DIR), `client/.env` (VITE_API_URL). `server/config.js` validates them at boot; DEPLOY.txt section 4 lists the live set. Both are gitignored. **Never print, commit or hardcode secrets.**
 
-There are **no tests yet** (`server` test script is a stub).
+### Tests (`server/test/`)
+
+- Real MySQL, no mocks: `vitest.config.js` points the app at `lumen_test` in MySQL's default strict mode and at a temp upload folder; `globalSetup.js` rebuilds the database with the real migrate runner; `guard.js` refuses any database not ending in `_test` and any upload folder outside the OS temp folder.
+- Files: `smoke`, `validation` (Stage 2b bad input → 4xx), `auth` (tokens, roles, webhook signature, CORS, helmet), `rateLimit` (own file: the counters live in memory per app instance), `concurrency` (parallel requests, results counted with SQL).
+- **Setup goes through the app's own routes or services, never a copied INSERT.** Exceptions: assertions about database state use plain SQL (independent of the code under test), and plumbing the app must not have (`resetTables`) stays in `test/`.
+- A known bug is a case with `knownBug: "<step>"`, run as `it.fails`: the suite stays green, and the case turns red once the fix lands, so the fixing change removes the marker. Only for failures that happen every run; a timing-dependent bug (e.g. a deadlock) gets fixed in the same change instead, or the suite turns flaky.
+- A green `npm test` doesn't prove the server boots (Vite resolves imports Node refuses, e.g. a missing `.js`), so "server boots" stays a separate check.
 
 ---
 
@@ -96,17 +104,21 @@ There are **no tests yet** (`server` test script is a stub).
 - Currency: **USD everywhere** (`server/lib/currency.js` ↔ `client/src/utils/currency/index.js`, `formatPrice`).
 - Client API base comes from `VITE_API_URL` everywhere (no localhost fallbacks). `jsconfig.json` uses `./src/...` paths, no `baseUrl`.
 - Owner/admin can watch their own course without an enrollment (no progress saved); progress PATCH requires an enrollment.
+- Uploads folder: one setting, `config.uploadDir` (`UPLOAD_DIR`, default `server/uploads` resolved from `config.js`, not the cwd). Deletes use `path.basename`, so a stored URL can't reach outside it.
+- Parallel profile saves don't deadlock: `UserService.replaceRows` locks the user's row (`SELECT … FOR UPDATE`) before its DELETE + INSERT. Proven by `test/concurrency.test.js`.
+- Test suite (Stage 2c, 2026-11-12): see "Tests" above. Parallel webhooks give one enrollment, parallel favorites one row, 30 parallel wrong logins exactly 10 × 401.
 
 ## Known open issues (verified in code 2026-11-05 — re-check before relying on this)
 
 Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list is only the status.
 
 1. **Refresh tokens can't be revoked or rotated.** A stolen refresh cookie works for 7 days, and logout can't kill it. Fix chosen (2026-11-10): stored hashed refresh tokens with rotation and reuse detection. *(TODO: Stage 3)*
-2. **Schema:** resolved in Stage 2 (2026-11-10). `schema.sql` is gone; `001_initial.sql` builds the same tables (minus reviews, comments and subscriptions) on InnoDB. Still open: bad input answers 500 instead of 400 on strict MySQL *(TODO: Stage 2b)*.
+2. **Schema:** resolved in Stage 2 (2026-11-10). `schema.sql` is gone; `001_initial.sql` builds the same tables (minus reviews, comments and subscriptions) on InnoDB. Still open: bad input answers 500 instead of 400 on strict MySQL, in 10 cases tracked as `knownBug` in `test/validation.test.js` *(TODO: Stage 2b steps 4-6)*.
 3. **Hardening:** no database SSL yet *(DEPLOY.txt 2.1)*.
 4. **Hardcoded styling:** resolved in Phase 2 (2026-11-09). No arbitrary hex classes remain in `client/src`; colors live only in the theme files.
-5. **No tests and no CI.** *(TODO: TESTS & CI)*
+5. **No CI.** Tests exist since Stage 2c (2026-11-12); still open: GitHub Actions running lint + build + `npm test`, plus the money-path and authorization tests *(TODO: Stage 5)*.
 6. **Enrollment depends only on the webhook.** On Render's free plan the server sleeps, so the webhook can arrive late and the buyer returns to `/payment/success` without access. Fix: the server retrieves the session from Stripe by `session_id` on return and enrolls through the same idempotent code as the webhook. This doesn't trust the redirect, because the server asks Stripe. *(TODO: PRIORITY "check the payment when the buyer returns")*
+7. **Error logs leak data.** Controllers log the raw mysql2 error, whose `err.sql` holds the filled-in values (a failed register logged the bcrypt hash and email). Fix: one `logError` helper that never logs `err.sql`, `err.sqlMessage` or the body. Must be done before deploy *(TODO: FINDING 2026-11-12; DEPLOY.txt 2.0)*.
 
 ## Design system
 
@@ -155,6 +167,6 @@ Before starting any task, place it in one of these buckets and say which one.
 1. The code follows the layering and conventions above, and there are no new hardcoded secrets, colors or URLs.
 2. Server-side authorization is checked for every new or changed endpoint.
 3. Errors are handled with the right status codes (400 validation, 401 unauthenticated, 403 forbidden, 404, 409 conflict) and nothing internal leaks to the client.
-4. `npm run lint` and `npm run build` pass in `client`, the server boots, and the relevant tests pass (once tests exist).
+4. `npm run lint` and `npm run build` pass in `client`, the server boots, and `npm test` passes in `server` (a fixed bug removes its `knownBug` marker; a new endpoint gets its cases).
 5. A short explanation of what changed, why, and how to verify it, plus any trade-off I should know about.
 6. Tracking is updated: the TODO item is ticked or moved to DONE, a suggested commit message says why + what's next (I do the committing), and the `NOW` block in TODO.txt is rewritten before the session ends.

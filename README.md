@@ -141,6 +141,29 @@ Then visit: **[http://localhost:5173](http://localhost:5173)**
 
 ---
 
+## 🧪 Tests
+
+```bash
+cd server
+npm test          # Vitest + Supertest against a real MySQL test database
+npm run load      # optional: local load test (start the server first with npm start)
+```
+
+`npm test` drops and rebuilds a database called `lumen_test` with the real migrations, then runs the API through Supertest (no port, no mocks). It uses the same MySQL user as `server/.env` and refuses to run on any database whose name doesn't end in `_test`.
+
+What the suite proves:
+
+- **Validation:** bad input (too long, wrong type, missing ids) answers 4xx, never 500, under MySQL's strict mode.
+- **Auth:** expired, forged, unsigned or swapped tokens answer 401; a wrong role answers 403; unsigned or tampered Stripe webhooks answer 400; CORS only allows the client's origin; security headers are present.
+- **Rate limits:** the 11th wrong login and the 6th registration in the window answer 429.
+- **Concurrency:** 20 identical webhooks at once create one enrollment, 10 identical favorites create one row, 20 parallel profile saves never deadlock.
+
+Why a real database instead of mocks: the bugs found so far were MySQL behaviour (strict mode, case-insensitive unique keys, foreign keys, gap-lock deadlocks), which a mock can't reproduce. Known bugs that aren't fixed yet are kept in the suite as expected failures (`it.fails`), so the suite stays green and flags each one the moment it gets fixed.
+
+On Windows, run the tests from PowerShell with the path starting with a capital `C:\`; from a lowercase `c:\` path Vitest loads twice and fails with "failed to find the current suite".
+
+---
+
 ## 🛠️ Development Notes
 
 Profile images are stored in `/server/uploads/` and served at `/uploads/filename.png`
