@@ -21,6 +21,7 @@ import {
   refuseProductionUnlessForced,
   removeUploadFile,
   runScript,
+  DEMO_STUDENT_EMAIL
 } from "./lib.js";
 
 const SCRIPT = "seed-demo";
@@ -33,6 +34,7 @@ const BCRYPT_ROUNDS = 10; // same cost as UserService.createUser
 const LESSONS_PER_COURSE = 2;
 const STUDENT_PROGRESS = 50; // 1 of 2 lessons completed, matching how the server computes progress
 
+
 // .test is a reserved TLD: these addresses can never belong to a real person.
 const SELLER = {
   email: "demo-instructor@lumen.test",
@@ -41,7 +43,7 @@ const SELLER = {
   bio: "Photographer and ceramicist. I teach the slow, hands-on version of every craft.",
   qualification: { title: "BA Fine Arts", institution: "Lumen Demo Academy" },
 };
-const STUDENT = { email: "demo-student@lumen.test", role: "user", fullName: "Sam Rivera" };
+const STUDENT = { email: DEMO_STUDENT_EMAIL, role: "user", fullName: "Sam Rivera" };
 
 // Titles, copy and prices from the reference designs (design/*/src/App.tsx). Thumbnails are the
 // cinematic contact-sheet tiles: one image per course, like a seller would upload.

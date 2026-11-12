@@ -10,6 +10,8 @@ export const SERVER_DIR = path.resolve(SCRIPTS_DIR, "..");
 // Same folder the server serves at /uploads (CourseService and multer write there).
 export const UPLOADS_DIR = config.uploadDir;
 export const UPLOADS_URL_PREFIX = "/uploads/";
+// The demo student created by seed-demo.js; load.js logs in as this account.
+export const DEMO_STUDENT_EMAIL = "demo-student@lumen.test";
 
 export class ScriptStop extends Error {}
 
@@ -43,7 +45,7 @@ export async function removeUploadFile(url) {
   }
 }
 
-// Runs main(), prints ScriptStop messages without a stack trace, always closes the DB pool.
+// Runs main(), prints ScriptStop messages without a stack trace, and closes the DB pool if one was given.
 export async function runScript(main, pool) {
   try {
     await main();
@@ -55,6 +57,6 @@ export async function runScript(main, pool) {
     }
     process.exitCode = 1;
   } finally {
-    await pool.end();
+    await pool?.end();
   }
 }
