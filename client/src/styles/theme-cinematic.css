@@ -294,6 +294,7 @@
   --lm-action-size: 11px;
   --lm-action-transform: none;
 
-  /* course preview: the bars around a video that does not fill the frame */
-  --lm-player-bg: var(--lm-bg);
+  /* charts (seller dashboard): the lime accent is 13.7:1 on the surface; gridlines are the quiet 1px line (1.29:1) */
+  --lm-chart-mark: var(--lm-accent);
+  --lm-chart-grid: var(--lm-line);
 }

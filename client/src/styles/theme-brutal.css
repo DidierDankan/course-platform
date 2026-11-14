@@ -299,4 +299,10 @@
 
   /* course preview: the bars around a video that does not fill the frame */
   --lm-player-bg: var(--lm-ink);
+
+  /* charts (seller dashboard). The mark is a darker step of accent-2: #ff5a36 is 2.93:1 on the cream surface, under
+     the 3:1 WCAG asks of chart marks; #e84a27 is 3.65:1 and passes the dataviz palette checks. The accent yellow
+     (#ffd23f) is far too light to read as data. Gridlines are a quiet hairline (1.41:1), never the black outline. */
+  --lm-chart-mark: #e84a27;
+  --lm-chart-grid: var(--lm-loading-bg);
 }

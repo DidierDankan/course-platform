@@ -1,0 +1,170 @@
+/*
+ * Dashboard charts. Every value comes from a --lm-* variable: the one data color is --lm-chart-mark, gridlines are
+ * --lm-chart-grid (both per theme, see the theme files). Text never wears the data color: values and labels use ink
+ * and muted.
+ */
+@layer components {
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .seller-stats {
+    display: grid;
+    gap: 18px;
+  }
+  .seller-stats .stat-grid {
+    margin: 0;
+  }
+  .chart-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .chart-panel h3 {
+    margin: 0 0 4px;
+    font-family: var(--lm-font-display);
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .chart-panel > p {
+    margin: 0 0 14px;
+    color: var(--lm-muted);
+    font-size: 13px;
+  }
+
+  /* ---------- Monthly chart ---------- */
+  .chart {
+    margin: 0;
+  }
+  .chart-plot {
+    position: relative;
+    width: 100%;
+    min-height: 200px;
+    border-radius: var(--lm-radius-input);
+    touch-action: pan-y; /* a swipe across the chart still scrolls the page */
+  }
+  .chart-plot:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 4px;
+  }
+  .chart-plot svg {
+    display: block;
+    overflow: visible;
+  }
+  .chart-tick {
+    fill: var(--lm-muted);
+    font-family: var(--lm-font-mono);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .chart-value {
+    fill: var(--lm-ink);
+    font-family: var(--lm-font-body);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .chart-grid {
+    stroke: var(--lm-chart-grid);
+    stroke-width: 1;
+  }
+  .chart-mark {
+    fill: var(--lm-chart-mark);
+  }
+  .chart-line {
+    fill: none;
+    stroke: var(--lm-chart-mark);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .chart-area {
+    fill: var(--lm-chart-mark);
+    opacity: 0.1;
+  }
+  .chart-dot {
+    fill: var(--lm-chart-mark);
+    stroke: var(--lm-surface); /* the surface ring keeps the dot legible where it sits on the line */
+    stroke-width: 2;
+  }
+  .chart-crosshair {
+    stroke: var(--lm-muted);
+    stroke-width: 1;
+  }
+  .chart-hit {
+    fill: transparent;
+  }
+  .chart-tooltip {
+    position: absolute;
+    z-index: 2;
+    transform: translate(-50%, calc(-100% - 12px));
+    padding: 6px 10px;
+    color: var(--lm-ink);
+    white-space: nowrap;
+    pointer-events: none;
+    background: var(--lm-surface-2);
+    border: var(--lm-border-w) solid var(--lm-line);
+    border-radius: var(--lm-radius-input);
+    box-shadow: var(--lm-shadow-control);
+  }
+  .chart-tooltip strong {
+    display: block;
+    font-size: 14px;
+  }
+  .chart-tooltip span {
+    color: var(--lm-muted);
+    font-size: 11px;
+  }
+
+  /* ---------- Ranked bars ---------- */
+  .ranked-bars {
+    display: grid;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .ranked-bar-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 14px;
+  }
+  .ranked-bar-title {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+  .ranked-bar-value {
+    flex-shrink: 0;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .ranked-bar-track {
+    margin-top: 6px;
+  }
+  .ranked-bar-fill {
+    min-width: 4px;
+    height: 12px;
+    background: var(--lm-chart-mark);
+    border-radius: 0 4px 4px 0; /* square at the baseline, rounded at the data end */
+  }
+  .ranked-bar-detail {
+    margin-top: 4px;
+    color: var(--lm-muted);
+    font-size: 12px;
+  }
+
+  @media (max-width: 900px) {
+    .chart-pair {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}

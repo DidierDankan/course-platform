@@ -6,6 +6,7 @@ import QualificationsAccordion from "@components/ui/QualificationsAccordion";
 import SkillTags from "@components/ui/SkillTags";
 import ProfileImg from "@components/ui/ProfileImg";
 import { ensureHttp } from "@utils/url";
+import SellerStats from "./SellerStats";
 
 const normalizeSkills = (skills) => {
   if (Array.isArray(skills)) return skills;
@@ -58,8 +59,10 @@ const Welcome = () => {
       <header className="page-heading">
         <span className="section-index">Welcome back</span>
         <h1>{profile?.full_name || "Your profile"}</h1>
-        <p>Your teaching profile, as you&apos;ve set it up.</p>
+        <p>Your teaching numbers and profile, as you&apos;ve set it up.</p>
       </header>
+
+      <SellerStats />
 
       <section className="panel profile-card" aria-label="Profile">
         <ProfileImg />

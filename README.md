@@ -31,6 +31,10 @@ A **full-stack video-course marketplace** built with **React (Vite)**, **Node.js
   - Secure registration & login  
   - Role-based access (`admin`, `seller`, `user`)  
 
+- 📈 **Seller dashboard**
+  - Students and revenue per month for the last 12 months, and the courses with the most students
+  - Hand-built, accessible SVG charts on the design tokens (both themes, keyboard and screen-reader friendly)
+
 - 🧑‍💻 **User Profiles**  
   - Editable profiles with **image upload**  
   - Skills (tags) & qualifications (structured data)  

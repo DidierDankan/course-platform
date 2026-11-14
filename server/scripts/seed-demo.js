@@ -23,6 +23,7 @@ import {
   runScript,
   DEMO_STUDENT_EMAIL
 } from "./lib.js";
+import { DEMO_LEARNERS, HISTORY_MONTHS, learnerEmail, salesHistory } from "./demoHistory.js";
 
 const SCRIPT = "seed-demo";
 const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -272,6 +273,30 @@ async function main() {
       courseIds[FAVORITE_COURSE],
     ]);
 
+    // Sales history: the rows checkout + the webhook write (a paid payment and its enrollment), dated in the past.
+    const learnerIds = [];
+    for (let n = 1; n <= DEMO_LEARNERS; n += 1) {
+      learnerIds.push(await upsertUser(conn, { email: learnerEmail(n), role: "user", fullName: `Demo learner ${n}` }, passwordHash));
+    }
+    const sales = salesHistory();
+    for (const sale of sales) {
+      const userId = learnerIds[sale.learner];
+      const course = COURSES[sale.course];
+      const courseId = courseIds[sale.course];
+      const when = Math.floor(sale.at.getTime() / 1000);
+      await conn.query(
+        `INSERT INTO payments (user_id, course_id, status, amount, stripe_session_id, payment_date)
+         VALUES (?, ?, 'paid', ?, ?, FROM_UNIXTIME(?))
+         ON DUPLICATE KEY UPDATE status = 'paid', amount = VALUES(amount), payment_date = VALUES(payment_date)`,
+        [userId, courseId, course.price, `cs_demo_${userId}_${courseId}`, when]
+      );
+      await conn.query(
+        `INSERT INTO enrollments (user_id, course_id, enrolled_at) VALUES (?, ?, FROM_UNIXTIME(?))
+         ON DUPLICATE KEY UPDATE enrolled_at = VALUES(enrolled_at)`,
+        [userId, courseId, when]
+      );
+    }
+
     await conn.commit();
   } catch (err) {
     await conn.rollback();
@@ -282,7 +307,10 @@ async function main() {
   }
   await Promise.all(replaced.map(removeUploadFile));
 
-  console.log(`${SCRIPT}: done. ${COURSES.length} courses, ${COURSES.length * LESSONS_PER_COURSE} lessons.`);
+  console.log(
+    `${SCRIPT}: done. ${COURSES.length} courses, ${COURSES.length * LESSONS_PER_COURSE} lessons, ` +
+      `${salesHistory().length} past sales to ${DEMO_LEARNERS} demo learners (last ${HISTORY_MONTHS} months).`
+  );
   console.log(`  instructor: ${SELLER.email}`);
   console.log(`  student:    ${STUDENT.email}`);
   console.log(`  password:   the DEMO_PASSWORD you set`);

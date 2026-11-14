@@ -19,6 +19,7 @@
  *              --lm-shadow-disabled, --lm-shadow-loading
  * Motion:      --lm-press-transform, --lm-ghost-hover-transform, --lm-card-hover-transform,
  *              --lm-speed, --lm-speed-card, --lm-tilt-label, --lm-tilt-toast
+ * Charts:      --lm-chart-mark (the one data color), --lm-chart-grid (gridlines and axis)
  * Components:  see the "component tokens" block at the end of each theme file.
  */
 

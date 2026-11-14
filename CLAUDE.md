@@ -86,6 +86,8 @@ Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, STRIPE_SE
 
 ## Task tracking: TODO.txt and DEPLOY.txt
 
+- **Both files are local only** (`.gitignore`, owner's decision 2026-11-14): never stage, commit or push them, and never list them among a commit's files. Their history before that date is still in git; it holds plans only, no secrets.
+
 - **`TODO.txt`** is the source of truth for what's done and what's open, with step-by-step plans. Read it before proposing work, and update it (move items to DONE, add new findings) as part of finishing a task.
 - **`DEPLOY.txt`** is the chosen deploy plan: **Vercel** (client, with `/api` and `/uploads` rewrites so it's one site and cookies work) → **Render** (Express) → **Aiven** (MySQL, SSL, non-3306 port) → **Supabase Storage** (media; videos via short-lived signed URLs behind the `protectVideos` checks). Stripe stays in **test mode**. Its section 2.0 lists the TODO items that must be done before deploying.
 - One home per fact: steps live in TODO.txt, deploy-only code changes live in DEPLOY.txt section 2 (TODO points there), and this file keeps only rules and a short status. When something changes, update all three in the same task. If TODO and DEPLOY disagree, **DEPLOY.txt wins** and TODO gets fixed.
@@ -114,6 +116,8 @@ Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, STRIPE_SE
 - Passwords over 72 bytes are refused at registration (bcrypt reads only 72); login accepts any length.
 - Errors: `server/lib/logError.js` is the only way to log a caught error (never `console.error(err)`: a mysql2 error carries the SQL with the user's values). `app.js` ends with a JSON 404 and an error handler that never sends a stack trace, whatever `NODE_ENV` is.
 - Public answers never contain a seller's email (`tutor_name` is the profile name or NULL).
+- Course saves are all-or-nothing (2026-11-14): `CourseService.createCourse` / `updateCourse` / `deleteCourse` / `deleteLesson` each run in one transaction (`db/transaction.js` `withTransaction`). Files are removed only after the commit; on a rollback, this request's uploads are removed. A new multi-query write uses `withTransaction`, never separate pool queries.
+- Seller dashboard stats (2026-11-14): `GET /api/dashboard/seller/stats` → `SellerStatsService` (own courses only, last 12 UTC months, students free + paid, paid revenue, top 5 by students). Charts are hand-built SVG in `components/ui/charts/` on `--lm-chart-mark` / `--lm-chart-grid` (colors checked with the dataviz validator), with a hidden data table and keyboard focus. The demo seed adds a year of sales (`scripts/demoHistory.js`).
 
 ## Known open issues (verified in code 2026-11-05 — re-check before relying on this)
 
