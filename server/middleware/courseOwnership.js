@@ -25,7 +25,7 @@ export const requireCourseOwner = async (req, res, next) => {
   }
 };
 
-// Media id comes from req.params.mediaId.
+// Media id comes from req.params.mediaId. Sets res.locals.mediaCourseId for the handler.
 export const requireMediaOwner = async (req, res, next) => {
   try {
     const owner = await CourseService.fetchMediaOwner(Number(req.params.mediaId));
@@ -35,6 +35,7 @@ export const requireMediaOwner = async (req, res, next) => {
     if (!canManage(req.user, owner.seller_id)) {
       return res.status(403).json({ message: "You can only manage your own courses" });
     }
+    res.locals.mediaCourseId = owner.course_id; // the handler deletes within this course, without a second lookup
     return next();
   } catch (err) {
     logError("requireMediaOwner", err);

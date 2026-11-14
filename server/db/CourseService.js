@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import config from "../config.js";
 import { logError } from "../lib/logError.js";
+import { deleteFileIfExists } from "../utils/fileUtils.js";
+import { withTransaction } from "./transaction.js";
 
 const UPLOADS_DIR = config.uploadDir;
 
@@ -19,7 +21,8 @@ const SORT_ORDER = Object.freeze({
     "(SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) DESC, c.created_at DESC, c.id DESC",
 });
 
-// Best effort: the database row is what matters, and a file that's already gone is fine.
+// Best effort, and only ever AFTER the database change is committed: the row is what matters, and a file that's already
+// gone is fine. Removing the file first would leave a lesson pointing at a missing video if the delete then failed.
 const removeStoredFile = (url) => {
   if (!url) return;
   try {
@@ -28,6 +31,9 @@ const removeStoredFile = (url) => {
     /* nothing to remove */
   }
 };
+
+// multer saved this request's files before the controller ran; when the save rolls back, nothing points at them.
+const removeUploads = (files) => Promise.all(files.filter(Boolean).map((file) => deleteFileIfExists(file.path)));
 
 class CourseService {
 
@@ -171,21 +177,18 @@ class CourseService {
     });
   }
   
-  /**
-   * Insert a new course and return the new courseId
-   */
-  async insertCourse({ title, description, price, sellerId }) {
-    const [result] = await db.query(
+  // ---- Writes. Each step takes `q`: the pool by default, or the transaction's connection, so that a whole save runs as
+  // one unit. The save methods further down decide which steps run together; controllers only call those. ----
+
+  async insertCourse({ title, description, price, sellerId }, q = db) {
+    const [result] = await q.query(
       "INSERT INTO courses (title, description, price, seller_id) VALUES (?, ?, ?, ?)",
       [title, description, price, sellerId]
     );
     return result.insertId;
   }
 
-  /**
-   * update an existing course by id
-   */
-  async updateCourseById(id, { title, description, price }) {
+  async updateCourseById(id, { title, description, price }, q = db) {
     const fields = [];
     const vals = [];
     if (title !== undefined) { fields.push("title = ?"); vals.push(title); }
@@ -193,12 +196,12 @@ class CourseService {
     if (price !== undefined) { fields.push("price = ?"); vals.push(price); }
     if (!fields.length) return 0;
     vals.push(id);
-    const [result] = await db.query(`UPDATE courses SET ${fields.join(", ")} WHERE id = ?`, vals);
+    const [result] = await q.query(`UPDATE courses SET ${fields.join(", ")} WHERE id = ?`, vals);
     return result.affectedRows;
   }
 
   // Only touches the row if it belongs to courseId, so a video id from another course is ignored.
-  async updateVideoMeta(id, courseId, { title, description, duration }) {
+  async updateVideoMeta(id, courseId, { title, description, duration }, q = db) {
     const fields = [];
     const vals = [];
 
@@ -209,7 +212,7 @@ class CourseService {
     if (!fields.length) return 0;
 
     vals.push(id, courseId);
-    const [result] = await db.query(
+    const [result] = await q.query(
       `UPDATE course_media SET ${fields.join(", ")} WHERE id = ? AND course_id = ?`,
       vals
     );
@@ -218,23 +221,31 @@ class CourseService {
 
   // Points the existing row at the new file in one statement, so the course always has exactly one
   // thumbnail (lists show MAX(url), so a leftover image could be the one displayed).
-  async replaceCourseThumbnail(courseId, file) {
-    const [images] = await db.query(
-      "SELECT id, url FROM course_media WHERE course_id = ? AND type = 'image' ORDER BY id",
+  // Returns the urls no longer used (the old image, any extras); the caller removes those files after commit.
+  async replaceCourseThumbnail(courseId, file, q = db) {
+    const [images] = await q.query(
+      "SELECT id, url FROM course_media WHERE course_id = ? AND type = 'image' ORDER BY id FOR UPDATE",
       [courseId]
     );
-    if (!images.length) return this.insertCourseMedia(courseId, file);
+    if (!images.length) {
+      await this.insertCourseMedia(courseId, file, {}, q);
+      return [];
+    }
 
     const [current, ...extras] = images;
-    await db.query("UPDATE course_media SET url = ?, uploaded_at = NOW() WHERE id = ?", [
+    await q.query("UPDATE course_media SET url = ?, uploaded_at = NOW() WHERE id = ?", [
       `/uploads/${file.filename}`,
       current.id,
     ]);
-    removeStoredFile(current.url);
-    await Promise.all(extras.map(({ id }) => this.deleteMediaByIdWithFile(id, courseId)));
+    const unused = [current.url];
+    for (const { id } of extras) {
+      const url = await this.deleteMediaRow(id, courseId, q);
+      if (url) unused.push(url);
+    }
+    return unused;
   }
 
-  async insertCourseMedia(courseId, file, meta = {}) {
+  async insertCourseMedia(courseId, file, meta = {}, q = db) {
     const { title = null, description = null, duration = null } = meta;
 
     // ✅ Normalize type based on mimetype
@@ -243,7 +254,7 @@ class CourseService {
     else if (file.mimetype.startsWith("video/")) type = "video";
     else if (file.mimetype === "application/pdf") type = "pdf";
 
-    await db.query(
+    await q.query(
       `INSERT INTO course_media (course_id, type, url, uploaded_at, title, description, duration)
       VALUES (?, ?, ?, NOW(), ?, ?, ?)`,
       [
@@ -256,14 +267,10 @@ class CourseService {
       ]
     );
   }
-  
-  /**
-   * Insert a media file for a course
-   */
-  // CourseService.js
-  async insertCourseVideos(courseId, files, metaArray = []) {
-    // Find current max order_index for this course's videos
-    const [[r]] = await db.query(
+
+  // New lessons go after the existing ones (order_index continues from the current maximum).
+  async insertCourseVideos(courseId, files, metaArray = [], q = db) {
+    const [[r]] = await q.query(
       `SELECT COALESCE(MAX(order_index), -1) AS maxOrder
       FROM course_media
       WHERE course_id = ? AND type = 'video'`,
@@ -272,13 +279,12 @@ class CourseService {
 
     let next = Number(r.maxOrder) + 1;
 
-    // Insert sequentially (or build a bulk insert)
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const meta = metaArray[i] || {};
       const { title = null, description = null, duration = null } = meta;
 
-      await db.query(
+      await q.query(
         `INSERT INTO course_media (course_id, type, url, uploaded_at, title, description, duration, order_index)
         VALUES (?, 'video', ?, NOW(), ?, ?, ?, ?)`,
         [
@@ -293,6 +299,84 @@ class CourseService {
 
       next += 1;
     }
+  }
+
+  // Deletes one media row of courseId and returns its url (null if it isn't there or belongs to another course).
+  // The FILE stays: the caller removes it once the transaction has committed.
+  async deleteMediaRow(mediaId, courseId, q = db) {
+    const [[row]] = await q.query(
+      "SELECT url FROM course_media WHERE id = ? AND course_id = ? FOR UPDATE",
+      [mediaId, courseId]
+    );
+    if (!row) return null;
+    await q.query("DELETE FROM course_media WHERE id = ? AND course_id = ?", [mediaId, courseId]);
+    return row.url;
+  }
+
+  async deleteCourseRow(courseId, q = db) {
+    await q.query("DELETE FROM courses WHERE id = ?", [courseId]);
+  }
+
+  // ---- Saves: each one is all-or-nothing. A failure rolls the database back and removes this request's uploads;
+  // files that are no longer used are removed only after the commit. ----
+
+  // Returns the new course id.
+  async createCourse({ sellerId, title, description, price, thumbnail, videos = [], lessons = [] }) {
+    try {
+      return await withTransaction(async (conn) => {
+        const courseId = await this.insertCourse({ title, description, price, sellerId }, conn);
+        if (thumbnail) await this.insertCourseMedia(courseId, thumbnail, {}, conn);
+        if (videos.length) await this.insertCourseVideos(courseId, videos, lessons, conn);
+        return courseId;
+      });
+    } catch (err) {
+      await removeUploads([thumbnail, ...videos]);
+      throw err;
+    }
+  }
+
+  // lessonEdits: [{ id, title, description, duration }]; deletedLessonIds: [id]. Ids of another course are ignored.
+  async updateCourse(
+    courseId,
+    { title, description, price, thumbnail, videos = [], lessons = [], lessonEdits = [], deletedLessonIds = [] }
+  ) {
+    let unusedUrls;
+    try {
+      unusedUrls = await withTransaction(async (conn) => {
+        const unused = [];
+        await this.updateCourseById(courseId, { title, description, price }, conn);
+        if (thumbnail) unused.push(...(await this.replaceCourseThumbnail(courseId, thumbnail, conn)));
+        if (videos.length) await this.insertCourseVideos(courseId, videos, lessons, conn);
+        for (const edit of lessonEdits) await this.updateVideoMeta(edit.id, courseId, edit, conn);
+        for (const id of deletedLessonIds) {
+          const url = await this.deleteMediaRow(id, courseId, conn);
+          if (url) unused.push(url);
+        }
+        return unused;
+      });
+    } catch (err) {
+      await removeUploads([thumbnail, ...videos]);
+      throw err;
+    }
+    unusedUrls.forEach(removeStoredFile);
+  }
+
+  // Deletes the course and its media rows; enrollments, favorites and payments go with it (ON DELETE CASCADE).
+  async deleteCourse(courseId) {
+    const urls = await withTransaction(async (conn) => {
+      const [rows] = await conn.query("SELECT url FROM course_media WHERE course_id = ? FOR UPDATE", [courseId]);
+      await conn.query("DELETE FROM course_media WHERE course_id = ?", [courseId]);
+      await this.deleteCourseRow(courseId, conn);
+      return rows.map((row) => row.url);
+    });
+    urls.forEach(removeStoredFile);
+  }
+
+  // Deletes one lesson (or image) of courseId. Returns false if it wasn't there.
+  async deleteLesson(mediaId, courseId) {
+    const url = await withTransaction((conn) => this.deleteMediaRow(mediaId, courseId, conn));
+    removeStoredFile(url);
+    return url !== null;
   }
 
   async fetchCourseById(courseId) {
@@ -418,71 +502,6 @@ class CourseService {
     );
     return row;
   }
-
-  /**
-   * Fetch single media URL (useful before deleting file from disk)
-   */
-  async fetchMediaById(mediaId) {
-    const [[media]] = await db.query(
-      "SELECT url FROM course_media WHERE id = ?",
-      [mediaId]
-    );
-    return media;
-  }
-  
-  /**
-   * Delete a media entry by ID
-   */
-  async deleteMediaById(mediaId) {
-    await db.query("DELETE FROM course_media WHERE id = ?", [mediaId]);
-  }
-
-  async deleteAllCourseMedia(courseId) {
-    // 1️⃣ Get all media rows for this course
-    const [mediaRows] = await db.query(
-      "SELECT id, url FROM course_media WHERE course_id = ?",
-      [courseId]
-    );
-
-    // 2️⃣ Delete physical files (if they exist on disk)
-    for (const row of mediaRows) {
-      if (row.url) {
-        const filePath = path.join(UPLOADS_DIR, path.basename(row.url));
-        fs.unlink(filePath, (err) => {
-          if (err) {
-            console.warn(`⚠️ Could not delete file ${filePath}:`, err.message);
-          }
-        });
-      }
-    }
-
-    // 3️⃣ Delete DB rows
-    await db.query("DELETE FROM course_media WHERE course_id = ?", [courseId]);
-
-    return mediaRows.length;
-  }
-
-  async deleteCourseById(courseId) {
-    await db.query("DELETE FROM courses WHERE id = ?", [courseId]);
-  }
-
-  // Only deletes the row (and its file) if it belongs to courseId.
-  async deleteMediaByIdWithFile(mediaId, courseId) {
-    const [[row]] = await db.query(
-      "SELECT url FROM course_media WHERE id = ? AND course_id = ?",
-      [mediaId, courseId]
-    );
-    if (!row) return 0;
-
-    removeStoredFile(row.url);
-
-    const [result] = await db.query(
-      "DELETE FROM course_media WHERE id = ? AND course_id = ?",
-      [mediaId, courseId]
-    );
-    return result.affectedRows; // 👈 important
-  }
-
 }
 
 export default new CourseService();

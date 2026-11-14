@@ -50,37 +50,24 @@ class CourseController {
     }
   }
 
+  // Each save below is one call: CourseService runs it as a single transaction, removes this request's uploads if it
+  // fails, and removes files that are no longer used only after the commit. courseValidation already parsed and checked
+  // the lists; multer stores the client's "meta[]", "existingVideos[]" and "deletedVideos[]" without the brackets.
   async addCourse(req, res) {
     try {
-      const sellerId = req.user.id;
       const { title, description, price } = req.body;
-
-      // 1️⃣ Insert course
-      const courseId = await CourseService.insertCourse({
+      const courseId = await CourseService.createCourse({
+        sellerId: req.user.id,
         title,
         description,
         price,
-        sellerId,
+        thumbnail: req.files?.thumbnail?.[0],
+        videos: req.files?.videos ?? [],
+        lessons: req.body.meta ?? [],
       });
 
-
-      // 2️⃣ Insert Thumbnail (if provided)
-      if (req.files?.thumbnail?.length) {
-        await CourseService.insertCourseMedia(courseId, req.files.thumbnail[0]);
-      }
-
-      // 3️⃣ Insert Videos. courseValidation already parsed and checked the lessons (req.body.meta), in upload order.
-      if (req.files?.videos?.length) {
-        await CourseService.insertCourseVideos(courseId, req.files.videos, req.body.meta ?? []);
-      }
-
-      // 4️⃣ Fetch the full course (optional but useful for client)
       const newCourse = await CourseService.fetchCourseById(courseId);
-
-      res.status(201).json({
-        message: "Course created successfully",
-        course: newCourse,
-      });
+      res.status(201).json({ message: "Course created successfully", course: newCourse });
     } catch (err) {
       logError("Add course", err);
       res.status(500).json({ message: "Failed to create course" });
@@ -90,40 +77,18 @@ class CourseController {
   async updateCourse(req, res) {
     try {
       const { id } = req.params;
-
-      // courseValidation already parsed and checked the three lists. multer stores the client's "meta[]",
-      // "existingVideos[]" and "deletedVideos[]" fields under the names without brackets.
-      const metas = req.body.meta ?? [];
-      const existingVideos = req.body.existingVideos ?? [];
-      const deleteIds = (req.body.deletedVideos ?? []).map(Number);
-
       const { title, description, price } = req.body;
-      await CourseService.updateCourseById(id, { title, description, price });
-
-      const newThumbnail = req.files?.thumbnail?.[0];
-      if (newThumbnail) {
-        await CourseService.replaceCourseThumbnail(id, newThumbnail);
-      }
-
-      // Handle new video inserts
-      const files = req.files?.videos || [];
-      if (files.length) {
-        await CourseService.insertCourseVideos(id, files, metas);
-      }
-
-      // Edits and deletions are scoped to this course in the service (WHERE id = ? AND course_id = ?),
-      // so an id from another seller's course changes nothing.
-      await Promise.all(
-        existingVideos.map((v) =>
-          CourseService.updateVideoMeta(v.id, id, {
-            title: v.title,
-            description: v.description,
-            duration: v.duration,
-          })
-        )
-      );
-
-      await Promise.all(deleteIds.map((vid) => CourseService.deleteMediaByIdWithFile(vid, id)));
+      // Lesson ids are scoped to this course in the service, so an id from another seller's course changes nothing.
+      await CourseService.updateCourse(id, {
+        title,
+        description,
+        price,
+        thumbnail: req.files?.thumbnail?.[0],
+        videos: req.files?.videos ?? [],
+        lessons: req.body.meta ?? [],
+        lessonEdits: req.body.existingVideos ?? [],
+        deletedLessonIds: (req.body.deletedVideos ?? []).map(Number),
+      });
 
       const updatedCourse = await CourseService.fetchCourseById(id);
       res.json({ message: "Course updated successfully", course: updatedCourse });
@@ -150,34 +115,26 @@ class CourseController {
       const media = await CourseService.fetchCourseMedia(req.params.id);
       res.json(media);
     } catch (err) {
+      logError("Course media", err);
       res.status(500).json({ message: "Failed to fetch media" });
     }
   }
 
+  // requireMediaOwner already looked up which course the lesson belongs to (res.locals.mediaCourseId).
   async deleteMedia(req, res) {
     try {
-      const media = await CourseService.fetchMediaById(req.params.mediaId);
-      if (!media) return res.status(404).json({ message: "Media not found" });
-
-      // Optionally unlink from disk using fs.unlinkSync(media.url)
-
-      await CourseService.deleteMediaById(req.params.mediaId);
+      const deleted = await CourseService.deleteLesson(Number(req.params.mediaId), res.locals.mediaCourseId);
+      if (!deleted) return res.status(404).json({ message: "Media not found" });
       res.json({ message: "Media deleted" });
     } catch (err) {
+      logError("Delete media", err);
       res.status(500).json({ message: "Failed to delete media" });
     }
   }
 
   async deleteCourse(req, res) {
     try {
-      const { id } = req.params;
-
-      // delete media first
-      await CourseService.deleteAllCourseMedia(id);
-
-      // then delete the course itself
-      await CourseService.deleteCourseById(id);
-
+      await CourseService.deleteCourse(Number(req.params.id));
       res.json({ message: "Course and media deleted successfully" });
     } catch (err) {
       logError("Delete course", err);

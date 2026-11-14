@@ -24,6 +24,11 @@ export async function login(user) {
 
 // A tiny MP4 header: enough for multer's file-type check (the server never decodes the video).
 export const VIDEO = Buffer.from("00000018667479706d703432", "hex");
+// A 1x1 PNG, for thumbnails.
+export const IMAGE = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+  "base64"
+);
 
 // A course with one video lesson (free unless a price is given), through the real POST /api/courses (multer, validator,
 // CourseService). Returns the course id and the lesson's media id, read back through the owner-only media route.
