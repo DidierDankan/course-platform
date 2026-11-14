@@ -12,7 +12,6 @@ const REQUIRED = [
   "DB_USER",
   "DB_NAME",
   "JWT_ACCESS_SECRET",
-  "JWT_REFRESH_SECRET",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
   "CLIENT_URL",
@@ -26,9 +25,6 @@ const fail = (message) => {
 
 const missing = REQUIRED.filter((name) => !process.env[name]);
 if (missing.length) fail(`missing ${missing.join(", ")}. Add them to server/.env.`);
-if (process.env.JWT_ACCESS_SECRET === process.env.JWT_REFRESH_SECRET) {
-  fail("JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be different.");
-}
 
 
 const portFrom = (name, fallback) => {
@@ -54,7 +50,6 @@ const config = Object.freeze({
   uploadDir: path.resolve(SERVER_DIR, process.env.UPLOAD_DIR || "uploads"),
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET,
-    refreshSecret: process.env.JWT_REFRESH_SECRET,
   },
   db: {
     host: process.env.DB_HOST,

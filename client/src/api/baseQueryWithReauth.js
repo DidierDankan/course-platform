@@ -18,7 +18,8 @@ export const baseQueryWithReauth = async (args, api, extraOptions) => {
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
       try {
-        const refreshResult = await baseQuery('/auth/refresh', api, extraOptions);
+        // POST: a refresh rotates the stored refresh token (server/db/RefreshTokenService.js).
+        const refreshResult = await baseQuery({ url: '/auth/refresh', method: 'POST' }, api, extraOptions);
 
         if (refreshResult.data) {
           api.dispatch(setCredentials(refreshResult.data));

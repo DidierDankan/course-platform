@@ -72,18 +72,18 @@ describe("access token", () => {
 
 describe("refresh token", () => {
   it("a valid refresh token gets a new access token (control)", async () => {
-    const res = await request(app).get("/api/auth/refresh").set("Cookie", `refreshToken=${refresh}`);
+    const res = await request(app).post("/api/auth/refresh").set("Cookie", `refreshToken=${refresh}`);
     expect(res.status).toBe(200);
     expect(res.headers["set-cookie"].some((cookie) => cookie.startsWith("token="))).toBe(true);
   });
 
   it("access token used as a refresh token -> 401", async () => {
-    const res = await request(app).get("/api/auth/refresh").set("Cookie", `refreshToken=${access}`);
+    const res = await request(app).post("/api/auth/refresh").set("Cookie", `refreshToken=${access}`);
     expect(res.status).toBe(401);
   });
 
   it("no refresh cookie -> 401", async () => {
-    const res = await request(app).get("/api/auth/refresh");
+    const res = await request(app).post("/api/auth/refresh");
     expect(res.status).toBe(401);
   });
 });

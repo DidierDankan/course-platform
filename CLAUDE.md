@@ -71,7 +71,7 @@ cd client && npm run lint && npm run build
 # Stripe webhooks locally
 stripe listen --forward-to http://localhost:3001/api/payments/webhook
 ```
-Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, CLIENT_URL, optional TRUST_PROXY_HOPS, DB_SQL_MODE, UPLOAD_DIR), `client/.env` (VITE_API_URL). `server/config.js` validates them at boot; DEPLOY.txt section 4 lists the live set. Both are gitignored. **Never print, commit or hardcode secrets.**
+Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, CLIENT_URL, optional TRUST_PROXY_HOPS, DB_SQL_MODE, UPLOAD_DIR), `client/.env` (VITE_API_URL). `server/config.js` validates them at boot; DEPLOY.txt section 4 lists the live set. Both are gitignored. **Never print, commit or hardcode secrets.**
 
 ### Tests (`server/test/`)
 
@@ -100,7 +100,8 @@ Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, STRIPE_SE
 - Paid videos gated by `server/middleware/protectVideos.js` (owner / admin / enrolled / `is_preview`), `Cache-Control: private, no-store`, unknown video files → 404.
 - Uploads: MIME whitelist → server-chosen extension, 200 MB cap, `nosniff`, multer errors → 400.
 - Stripe: checkout → verified webhook → idempotent enrollment (`INSERT … ON DUPLICATE KEY`), only when `payment_status === "paid"`. Free-only `POST /api/enrollments`. Can't buy your own course; checkout answers 409 if you already own it.
-- Auth tokens: only `helpers/tokens.js` signs or verifies them, with separate access and refresh secrets, a `type` claim and a pinned algorithm. Missing, invalid or expired → 401; 403 only for authenticated but not allowed. `server/config.js` stops the server if a required variable is missing.
+- Auth tokens: the access token is a 15-minute JWT (only `helpers/tokens.js` signs or verifies it; `type` claim, pinned algorithm). Missing, invalid or expired → 401; 403 only for authenticated but not allowed. `server/config.js` stops the server if a required variable is missing.
+- Refresh tokens (Stage 3, 2026-11-14): 32 random bytes in an HttpOnly cookie at `Path=/api/auth`, stored only as SHA-256 in `refresh_tokens` (migration 002). Each works once (`POST /api/auth/refresh` rotates it in one locked transaction); a replaced token replayed after a 30 s grace window revokes its whole family (one login); logout revokes the family on the server. The user's role is read from the database at every refresh. Logic in `db/RefreshTokenService.js`; tests in `test/refreshTokens.test.js`.
 - Login and register are rate limited per IP (`server/middleware/rateLimitMiddleware.js`), 429 with a readable message. Counters are in memory (one server only). `TRUST_PROXY_HOPS` has to be measured on the live site.
 - Helmet sets security headers on every answer (`same-site` resource policy, so local ports can share media). CORS origin comes from `CLIENT_URL`. Helmet's CSP only covers what Express serves; a CSP for the pages would go in `vercel.json`.
 - Sellers can only edit or delete their own courses and media. `getCourses` scopes to `req.user.id` unless admin.
@@ -123,7 +124,7 @@ Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, STRIPE_SE
 
 Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list is only the status.
 
-1. **Refresh tokens can't be revoked or rotated.** A stolen refresh cookie works for 7 days, and logout can't kill it. Fix chosen (2026-11-10): stored hashed refresh tokens with rotation and reuse detection. *(TODO: Stage 3)*
+1. **Refresh tokens:** resolved in Stage 3 (2026-11-14), see "Already done". Left: the owner's browser check (several tabs, a session over 15 minutes) *(TODO: Stage 3 step 6)*.
 2. **Schema:** resolved in Stage 2 (2026-11-10). `schema.sql` is gone; `001_initial.sql` builds the same tables (minus reviews, comments and subscriptions) on InnoDB. Bad input answering 500 on strict MySQL: resolved in Stage 2b (2026-11-12), tested in all three SQL modes.
 3. **Hardening:** no database SSL yet *(DEPLOY.txt 2.1)*.
 4. **Hardcoded styling:** resolved in Phase 2 (2026-11-09). No arbitrary hex classes remain in `client/src`; colors live only in the theme files.

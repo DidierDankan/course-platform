@@ -12,8 +12,8 @@ router.post('/register', registerLimiter, registerValidation, validateRequest, A
 router.post('/login', loginLimiter, loginValidation, validateRequest, AuthController.login);
 router.post('/logout', AuthController.logout);
 
-// Protected route
-router.get('/refresh', AuthController.refresh);
+// Session: refresh rotates the stored token, so it is POST (a GET with side effects is reachable cross-site).
+router.post('/refresh', AuthController.refresh);
 router.get('/me', authenticate, AuthController.me);
 
 export default router;
