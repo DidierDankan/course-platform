@@ -20,7 +20,12 @@ export const LIMITS = {
   qualificationInstitution: 100, // qualifications.institution VARCHAR(100)
   qualificationDescription: TEXT_CHARS, // qualifications.description TEXT
   certificateUrl: TEXT_CHARS, // qualifications.certificate_url TEXT
+  reviewBody: 1000, // reviews.body VARCHAR(1000)
 };
+
+// A review's rating (reviews.rating, CHECK 1-5 in migration 003).
+export const RATING_MIN = 1;
+export const RATING_MAX = 5;
 
 // Largest value of a signed INT column (ids, duration, last_position_seconds).
 export const INT_MAX = 2147483647;

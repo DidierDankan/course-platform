@@ -1,4 +1,5 @@
 import db from "./connection.js";
+import { ratingColumns, withRating } from "./ratings.js";
 
 class PublicService {
   async getSellerPublic(sellerId) {
@@ -7,7 +8,10 @@ class PublicService {
       SELECT
         u.id,
         up.full_name,
-        up.profile_image
+        up.profile_image,
+        -- over ALL reviews of the seller's courses: a course with 100 reviews weighs more than one with 1
+        (SELECT ROUND(AVG(r.rating), 2) FROM reviews r JOIN courses rc ON rc.id = r.course_id WHERE rc.seller_id = u.id) AS rating_avg,
+        (SELECT COUNT(*) FROM reviews r JOIN courses rc ON rc.id = r.course_id WHERE rc.seller_id = u.id) AS rating_count
       FROM users u
       LEFT JOIN user_profiles up ON up.user_id = u.id
       WHERE u.id = ? AND u.role IN ('seller','admin')
@@ -16,7 +20,7 @@ class PublicService {
       [sellerId]
     );
 
-    return row || null;
+    return row ? withRating(row) : null;
   }
 
   async getSellerPrivate(sellerId) {
@@ -67,7 +71,8 @@ class PublicService {
         c.price,
         c.created_at,
         MAX(CASE WHEN m.type = 'image' THEN m.url END) AS thumbnail_url,
-        SUM(CASE WHEN m.type = 'video' THEN COALESCE(m.duration,0) ELSE 0 END) AS total_duration
+        SUM(CASE WHEN m.type = 'video' THEN COALESCE(m.duration,0) ELSE 0 END) AS total_duration,
+        ${ratingColumns("c")}
       FROM courses c
       LEFT JOIN course_media m ON m.course_id = c.id
       WHERE c.seller_id = ?
@@ -77,7 +82,7 @@ class PublicService {
       [sellerId]
     );
 
-    return rows;
+    return rows.map(withRating);
   }
 }
 

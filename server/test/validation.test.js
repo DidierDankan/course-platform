@@ -132,6 +132,9 @@ describe("course and lesson fields: bad input -> 400", () => {
     { name: "CONTROL: lesson with a decimal duration (what browsers send)", want: [201], send: () => createWith([JSON.stringify({ title: "L", description: "", duration: 12.345 })]) },
     { name: "CONTROL: edit a saved lesson", want: [200], send: () => editWith({ existingVideos: [JSON.stringify({ id: ctx.videoId, title: "Lesson 1", description: "", duration: 60 })] }) },
     { name: "new lesson is not JSON (was saved without its title)", want: [400], send: () => createWith(["{not json"]) },
+    // Stage 4 step 0 (2026-11-14): every lesson needs a title (reviews and the player list lessons by title)
+    { name: "new lesson without a title", want: [400], send: () => createWith([JSON.stringify({ description: "", duration: 10 })]) },
+    { name: "saved lesson edited to a blank title", want: [400], send: () => editWith({ existingVideos: [JSON.stringify({ id: ctx.videoId, title: "   " })] }) },
     { name: "new lesson duration is negative", want: [400], send: () => createWith([JSON.stringify({ title: "L", duration: -5 })]) },
     { name: "new lesson duration larger than INT", want: [400], send: () => createWith([JSON.stringify({ title: "L", duration: 1e12 })]) },
     { name: "new lesson is a list, not an object", want: [400], send: () => createWith([JSON.stringify(["L"])]) },

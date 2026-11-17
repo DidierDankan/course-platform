@@ -22,17 +22,19 @@ const parseJsonList = (value) =>
     }
   });
 
-// Title, description and duration of one lesson. Empty is fine (the form sends "" and null); too long, not text,
-// or a duration that isn't a number of seconds the INT column can hold is a 400. Decimals are fine: browsers report
-// 12.345 seconds and MySQL rounds them.
+// Title, description and duration of one lesson. Every lesson needs a title (Stage 4 step 0: the player, the course
+// page and reviews list lessons by name). An empty description is fine (the form sends ""); too long, not text, or a
+// duration that isn't a number of seconds the INT column can hold is a 400. Decimals are fine: browsers report 12.345
+// seconds and MySQL rounds them.
 const lessonFields = (list) => [
   body(`${list}.*`).isObject().withMessage("Each lesson must be an object"),
   body(`${list}.*.title`)
-    .optional({ values: "null" })
     .isString()
-    .withMessage("A lesson title must be text")
+    .withMessage("Each lesson needs a title")
     .bail()
     .trim()
+    .notEmpty()
+    .withMessage("Each lesson needs a title")
     .isLength({ max: LIMITS.lessonTitle })
     .withMessage(`A lesson title can be at most ${LIMITS.lessonTitle} characters`),
   body(`${list}.*.description`)

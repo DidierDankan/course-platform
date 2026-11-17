@@ -1,0 +1,132 @@
+/*
+ * Ratings and reviews. Tokens only. A star is decoration next to the number (the number and the words carry the
+ * value), filled with the accent and outlined in the theme's line colour so it reads on both surfaces.
+ */
+@layer components {
+  .rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--lm-ink);
+    font-size: 13px;
+  }
+  .rating > span {
+    color: var(--lm-muted);
+  }
+  .rating-empty {
+    color: var(--lm-muted);
+  }
+  .page-heading .rating {
+    margin-top: 12px;
+  }
+  .card-body .rating {
+    margin-top: 6px;
+    font-size: 12px;
+  }
+  .rating-star,
+  .review-stars .is-on,
+  .star-input .is-on svg {
+    fill: var(--lm-accent);
+    stroke: var(--lm-line-strong);
+  }
+  .review-stars svg,
+  .star-input svg {
+    fill: none;
+    stroke: var(--lm-muted);
+  }
+
+  /* ---------- Review list (course page) ---------- */
+  .review-list {
+    display: grid;
+    gap: 18px;
+    margin: 0 0 18px;
+    padding: 0;
+    list-style: none;
+  }
+  .review + .review {
+    padding-top: 18px;
+    border-top: var(--lm-border-w) solid var(--lm-line);
+  }
+  .review-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+  }
+  .review-head time {
+    color: var(--lm-muted);
+    font-size: 12px;
+  }
+  .review-stars {
+    display: inline-flex;
+    gap: 2px;
+  }
+  .review-body {
+    margin: 8px 0 0;
+    color: var(--lm-ink);
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+    white-space: pre-line; /* the student's line breaks, as plain text */
+  }
+  .review-empty {
+    margin: 0;
+    color: var(--lm-muted);
+    font-size: 14px;
+  }
+
+  /* ---------- Review form (watch page) ---------- */
+  .review-form {
+    display: grid;
+    gap: 14px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: var(--lm-border-w) solid var(--lm-line);
+  }
+  .review-form h2 {
+    margin: 0;
+    font-family: var(--lm-font-display);
+    font-size: 18px;
+  }
+  .star-input {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .star-input legend {
+    margin-bottom: 6px;
+  }
+  .star-input-row {
+    display: flex;
+    gap: 4px;
+  }
+  .star-input label {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    border-radius: var(--lm-radius-input);
+  }
+  .star-input label:has(input:focus-visible) {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 1px;
+  }
+  .star-input:disabled label {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  .review-form-note {
+    margin: 0;
+    color: var(--lm-muted);
+    font-size: 13px;
+  }
+  .review-form-note.is-error {
+    color: var(--lm-danger);
+  }
+  .review-form-actions {
+    display: flex;
+    gap: 10px;
+  }
+}

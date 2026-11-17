@@ -31,6 +31,10 @@ A **full-stack video-course marketplace** built with **React (Vite)**, **Node.js
   - Secure registration & login  
   - Role-based access (`admin`, `seller`, `user`)  
 
+- ⭐ **Course reviews**
+  - One rating per enrolled student per course (never the course's own instructor), averages computed on the server
+  - "Top rated" uses a damped average, so one 5-star review can't outrank hundreds at 4.8
+
 - 📈 **Seller dashboard**
   - Students and revenue per month for the last 12 months, and the courses with the most students
   - Hand-built, accessible SVG charts on the design tokens (both themes, keyboard and screen-reader friendly)

@@ -1,7 +1,7 @@
 // The demo seed's sales plan (scripts/demoHistory.js): what the seller dashboard shows on the live demo.
 import { describe, expect, it } from "vitest";
 import { statsWindow } from "../db/SellerStatsService.js";
-import { DEMO_LEARNERS, salesHistory } from "../scripts/demoHistory.js";
+import { DEMO_LEARNERS, reviewPlan, salesHistory } from "../scripts/demoHistory.js";
 
 const monthOf = (date) => date.toISOString().slice(0, 7);
 
@@ -34,5 +34,18 @@ describe.each([
 
   it("is the same every run", () => {
     expect(salesHistory(now)).toEqual(sales);
+  });
+
+  it("reviews: only by a buyer of that course, rating 1-5, once per pair, never in the future", () => {
+    const reviews = reviewPlan(sales, now);
+    const bought = new Set(sales.map((s) => `${s.learner}:${s.course}`));
+    expect(reviews.length).toBeGreaterThan(0);
+    for (const r of reviews) {
+      expect(bought.has(`${r.learner}:${r.course}`)).toBe(true);
+      expect(Number.isInteger(r.rating) && r.rating >= 1 && r.rating <= 5).toBe(true);
+      expect(r.at.getTime()).toBeLessThanOrEqual(now.getTime());
+      expect(r.body === null || r.body.length <= 1000).toBe(true);
+    }
+    expect(new Set(reviews.map((r) => `${r.learner}:${r.course}`)).size).toBe(reviews.length);
   });
 });

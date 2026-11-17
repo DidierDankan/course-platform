@@ -9,11 +9,15 @@ import { requireCourseOwner, requireMediaOwner } from "../middleware/courseOwner
 import validateRequest from "../middleware/validateRequest.js";
 import { courseListValidation, courseValidation } from "../validators/courseValidator.js";
 import { validId } from "../validators/idParam.js";
+import ReviewController from "../controllers/ReviewController.js";
+import { reviewValidation } from "../validators/reviewValidator.js";
 
 const router = express.Router();
 
 router.get('/all', courseListValidation, validateRequest, CourseController.getAllCourses);
 router.get("/:id/public", validId("id"), CourseController.getPublicCourse);
+// Reviews are public to read (page and limit are clamped like the course lists)
+router.get("/:id/reviews", validId("id"), ReviewController.list);
 
 // ✅ Require authentication for everything in this router
 router.use(authenticate);
@@ -52,5 +56,10 @@ router.delete("/:id", authorizeRoles("admin", "seller"), validId("id"), requireC
 router.delete("/media/:mediaId", authorizeRoles("admin", "seller"), validId("mediaId"), requireMediaOwner, CourseController.deleteMedia);
 
 router.get("/:id/watch", validId("id"), CourseController.watch);
+
+// Writing a review: enrolled students only, never the owner (checked in ReviewService)
+router.get("/:id/reviews/mine", validId("id"), ReviewController.mine);
+router.put("/:id/reviews", reviewValidation, validateRequest, ReviewController.save);
+router.delete("/:id/reviews", validId("id"), ReviewController.remove);
 
 export default router;

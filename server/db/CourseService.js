@@ -5,6 +5,7 @@ import config from "../config.js";
 import { logError } from "../lib/logError.js";
 import { deleteFileIfExists } from "../utils/fileUtils.js";
 import { withTransaction } from "./transaction.js";
+import { dampedRatingSql, ratingColumns, withRating } from "./ratings.js";
 
 const UPLOADS_DIR = config.uploadDir;
 
@@ -19,6 +20,8 @@ const SORT_ORDER = Object.freeze({
   duration_desc: "total_duration DESC, c.created_at DESC, c.id DESC",
   popular:
     "(SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) DESC, c.created_at DESC, c.id DESC",
+  // damped average (db/ratings.js): one 5-star review can't outrank many 4.8s
+  top_rated: `${dampedRatingSql("c")} DESC, c.created_at DESC, c.id DESC`,
 });
 
 // Best effort, and only ever AFTER the database change is committed: the row is what matters, and a file that's already
@@ -104,7 +107,8 @@ class CourseService {
         c.id, c.title, c.description, c.price, c.created_at, c.seller_id,
         up.full_name AS tutor_name, -- NULL without a profile name (the card shows "Instructor"); never the email, this list is public
         MAX(CASE WHEN m.type = 'image' THEN m.url END) AS thumbnail_url,
-        COALESCE(SUM(CASE WHEN m.type = 'video' THEN m.duration END), 0) AS total_duration
+        COALESCE(SUM(CASE WHEN m.type = 'video' THEN m.duration END), 0) AS total_duration,
+        ${ratingColumns("c")}
       FROM courses c
       LEFT JOIN user_profiles up ON up.user_id = c.seller_id
       LEFT JOIN course_media m ON m.course_id = c.id
@@ -117,7 +121,7 @@ class CourseService {
 
     const finalParams = [...params, ...havingParams, Number(limit), Number(offset)];
     const [rows] = await db.query(sql, finalParams);
-    return rows;
+    return rows.map(withRating);
   }
 
   async fetchCoursesWithThumbnails(sellerId = null) {
@@ -417,13 +421,15 @@ class CourseService {
   }
 
   async fetchCoursePublic(courseId) {
-    const [[course]] = await db.query(
-      `SELECT id, title, description, price, seller_id, is_subscription_only, created_at
-      FROM courses
-      WHERE id = ?`,
+    const [[row]] = await db.query(
+      `SELECT c.id, c.title, c.description, c.price, c.seller_id, c.is_subscription_only, c.created_at,
+              ${ratingColumns("c")}
+      FROM courses c
+      WHERE c.id = ?`,
       [courseId]
     );
-    if (!course) return null;
+    if (!row) return null;
+    const course = withRating(row);
 
     const [media] = await db.query(
       `SELECT id, type, title, description, order_index, duration,

@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { Lock, Play, Clock } from "lucide-react";
 import CourseCTA from "@components/ui/CourseCTA";
 import { useGetPublicCourseQuery } from "@api/modules/courseApi";
+import Rating from "@components/ui/Rating";
+import CourseReviews from "./CourseReviews";
 import FavoriteButton from "@components/ui/FavoriteButton";
 import { formatDuration } from "@utils/duration";
 
@@ -101,6 +103,7 @@ export default function CoursePreview() {
         <span className="section-index">Course preview</span>
         <h1>{course.title}</h1>
         <p>{course.description || "No description provided."}</p>
+        <Rating average={course.rating_avg} count={course.rating_count} emptyText="No reviews yet" />
       </header>
 
       <div className="preview-actions">
@@ -160,6 +163,8 @@ export default function CoursePreview() {
           )}
         </div>
       </section>
+
+      <CourseReviews courseId={course.id} />
     </main>
   );
 }

@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowRight, ExternalLink, Lock } from "lucide-react";
 import { useGetSellerPublicQuery } from "@api/modules/publicApi";
 import CourseCard from "@components/ui/CourseCard";
+import Rating from "@components/ui/Rating";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const FALLBACK_NAME = "Instructor";
@@ -165,6 +166,8 @@ const SellerPublic = () => {
         <span className="section-index">Instructor</span>
         <h1>{name}</h1>
         <p>Browse courses and learn from this instructor.</p>
+        {/* over every review of every course, so a course with many reviews weighs more */}
+        <Rating average={seller.rating_avg} count={seller.rating_count} emptyText="No reviews yet" />
       </header>
 
       <section className="panel instructor-profile" aria-label="Instructor profile">

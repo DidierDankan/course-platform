@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Play } from "lucide-react";
 import CourseCTA from "@components/ui/CourseCTA";
 import FavoriteButton from "@components/ui/FavoriteButton";
+import Rating from "@components/ui/Rating";
 import { formatPrice } from "@utils/currency";
 import { formatDuration } from "@utils/duration";
 
@@ -52,6 +53,7 @@ const CourseCard = ({ course }) => {
           course.tutor_name && <span className="instructor">By {course.tutor_name}</span>
         )}
         <p>{course.description}</p>
+        <Rating average={course.rating_avg} count={course.rating_count} compact />
         <div className="card-meta">
           <span>{formatDuration(course.total_duration)}</span>
           <span>Self-paced</span>

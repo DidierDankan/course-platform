@@ -23,7 +23,7 @@ import {
   runScript,
   DEMO_STUDENT_EMAIL
 } from "./lib.js";
-import { DEMO_LEARNERS, HISTORY_MONTHS, learnerEmail, salesHistory } from "./demoHistory.js";
+import { DEMO_LEARNERS, HISTORY_MONTHS, learnerEmail, reviewPlan, salesHistory } from "./demoHistory.js";
 
 const SCRIPT = "seed-demo";
 const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -297,6 +297,18 @@ async function main() {
       );
     }
 
+    // Reviews from some of those buyers (Stage 4), dated a few days after the purchase.
+    const reviews = reviewPlan(sales);
+    for (const r of reviews) {
+      const when = Math.floor(r.at.getTime() / 1000);
+      await conn.query(
+        `INSERT INTO reviews (course_id, user_id, rating, body, created_at, updated_at)
+         VALUES (?, ?, ?, ?, FROM_UNIXTIME(?), FROM_UNIXTIME(?))
+         ON DUPLICATE KEY UPDATE rating = VALUES(rating), body = VALUES(body), created_at = VALUES(created_at), updated_at = VALUES(updated_at)`,
+        [courseIds[r.course], learnerIds[r.learner], r.rating, r.body, when, when]
+      );
+    }
+
     await conn.commit();
   } catch (err) {
     await conn.rollback();
@@ -309,7 +321,8 @@ async function main() {
 
   console.log(
     `${SCRIPT}: done. ${COURSES.length} courses, ${COURSES.length * LESSONS_PER_COURSE} lessons, ` +
-      `${salesHistory().length} past sales to ${DEMO_LEARNERS} demo learners (last ${HISTORY_MONTHS} months).`
+      `${salesHistory().length} past sales to ${DEMO_LEARNERS} demo learners (last ${HISTORY_MONTHS} months), ` +
+      `${reviewPlan(salesHistory()).length} reviews.`
   );
   console.log(`  instructor: ${SELLER.email}`);
   console.log(`  student:    ${STUDENT.email}`);

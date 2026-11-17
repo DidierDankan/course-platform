@@ -32,3 +32,29 @@ export function salesHistory(now = new Date()) {
   }
   return sales;
 }
+
+// Reviews for the demo (Stage 4): every other sale gets one, a few days after the purchase (never after now).
+// Mostly positive with some lower ones, so averages and "Top rated" look real rather than all 5.0.
+const REVIEW_RATINGS = [5, 4, 5, 3, 4, 5, 2, 4];
+const REVIEW_BODIES = [
+  "Clear, calm and practical. I finished the first project in a weekend.",
+  "Good pacing. I wanted a bit more detail in the second lesson.",
+  null,
+  "Exactly the level I needed: no fluff, lots of doing.",
+  "Nice production. Some steps went too fast for a beginner.",
+  null,
+];
+const REVIEW_DELAY_DAYS = 3;
+
+// [{ learner, course, rating, body, at }] for a salesHistory() result.
+export function reviewPlan(sales, now = new Date()) {
+  return sales
+    .filter((_, i) => i % 2 === 0)
+    .map((sale, i) => ({
+      learner: sale.learner,
+      course: sale.course,
+      rating: REVIEW_RATINGS[i % REVIEW_RATINGS.length],
+      body: REVIEW_BODIES[i % REVIEW_BODIES.length],
+      at: new Date(Math.min(sale.at.getTime() + REVIEW_DELAY_DAYS * 86_400_000, now.getTime())),
+    }));
+}

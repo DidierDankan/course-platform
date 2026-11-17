@@ -19,7 +19,11 @@ export const LIMITS = Object.freeze({
   qualificationInstitution: 100,
   qualificationDescription: TEXT_CHARS,
   certificateUrl: TEXT_CHARS,
+  reviewBody: 1000,
 });
+
+// A review's rating (server: validators/limits.js, CHECK in migration 003).
+export const RATING_MAX = 5;
 
 // bcrypt reads only the first 72 bytes of a password, so the server refuses longer ones at registration.
 export const PASSWORD_MAX_BYTES = 72;
