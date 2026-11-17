@@ -3,8 +3,7 @@
  * Values live in theme-brutal.css and theme-cinematic.css (under [data-theme="..."]).
  * Components (components.css) and Tailwind utilities only ever read these variables.
  *
- * Prefix --lm- ("Lumen") so the new set can't collide with the legacy --color-* variables
- * in index.css, which current pages still use until they are migrated.
+ * Prefix --lm- ("Lumen"): the legacy --color-* variables are gone since Phase 2 (2026-11-09); every page reads these.
  *
  * Core:        --lm-bg, --lm-surface, --lm-surface-2, --lm-ink, --lm-muted, --lm-line, --lm-line-strong,
  *              --lm-accent, --lm-accent-hover, --lm-on-accent, --lm-accent-2, --lm-success, --lm-danger,

@@ -7,6 +7,22 @@ import { APP_NAME } from "../lib/brand.js";
 import { logError } from "../lib/logError.js";
 const CLIENT_URL = config.clientUrl;
 const PAYMENT_PAID = "paid";
+
+// Who bought what, from a Checkout Session. Checkout writes both ids into the session's metadata (and the PaymentIntent's
+// as a fallback). Returns null when they're missing or not numbers.
+async function purchaseOf(session) {
+  let userId = Number(session.metadata?.user_id);
+  let courseId = Number(session.metadata?.course_id);
+  if ((!userId || !courseId) && session.payment_intent) {
+    const pi = await stripe.paymentIntents.retrieve(session.payment_intent);
+    userId = Number(pi.metadata?.user_id);
+    courseId = Number(pi.metadata?.course_id);
+  }
+  return Number.isInteger(userId) && userId > 0 && Number.isInteger(courseId) && courseId > 0 ? { userId, courseId } : null;
+}
+
+const isUnknownToStripe = (err) => err?.code === "resource_missing" || err?.statusCode === 404;
+
 class PaymentController {
   // POST /api/payments/checkout
   async createCheckoutSession(req, res) {
@@ -103,29 +119,49 @@ class PaymentController {
         // "completed" means the buyer finished Checkout, not that the money arrived.
         if (session.payment_status !== PAYMENT_PAID) return res.json({ received: true });
 
-        // session.payment_intent exists for payment mode
-        let userId = Number(session.metadata?.user_id);
-        let courseId = Number(session.metadata?.course_id);
-
-        if ((!userId || !courseId) && session.payment_intent) {
-          const pi = await stripe.paymentIntents.retrieve(session.payment_intent);
-          userId = Number(pi.metadata?.user_id);
-          courseId = Number(pi.metadata?.course_id);
-        }
-
-        if (!Number.isFinite(userId) || !Number.isFinite(courseId)) {
-          console.error("❌ userId/courseId invalid", { userId, courseId });
+        const purchase = await purchaseOf(session);
+        if (!purchase) {
+          console.error("Webhook: checkout session without a valid user_id / course_id", { session: session.id });
           return res.status(400).send("Invalid metadata");
         }
-
-        await PaymentService.markPaymentPaid({ userId, courseId, sessionId: session.id });
-        await PaymentService.createEnrollmentIfNeeded({ userId, courseId });
+        // The same function the buyer's return (/confirm) uses: whichever arrives second changes nothing.
+        await PaymentService.recordPaidPurchase({ ...purchase, sessionId: session.id });
       }
 
       return res.json({ received: true });
     } catch (err) {
       logError("Webhook handler", err);
       return res.status(500).send("Webhook handler failed");
+    }
+  }
+
+  // POST /api/payments/confirm { session_id }: the buyer is back from Stripe. Render's free server may have been asleep
+  // when the webhook came (Stripe then retries minutes later), so the purchase is also recorded here.
+  // Threat: the browser could send any id. It's only a key: the session is read FROM STRIPE, it must belong to this
+  // user (403 otherwise: nobody can claim another buyer's purchase) and be paid (409 while it isn't).
+  async confirmPayment(req, res) {
+    try {
+      let session;
+      try {
+        session = await stripe.checkout.sessions.retrieve(req.body.session_id);
+      } catch (err) {
+        if (isUnknownToStripe(err)) return res.status(404).json({ ok: false, message: "Payment not found." });
+        throw err;
+      }
+
+      const purchase = await purchaseOf(session);
+      if (!purchase || purchase.userId !== Number(req.user.id)) {
+        return res.status(403).json({ ok: false, message: "This payment belongs to another account." });
+      }
+      if (session.payment_status !== PAYMENT_PAID) {
+        return res.status(409).json({ ok: false, message: "Your payment is still being processed." });
+      }
+
+      await PaymentService.recordPaidPurchase({ ...purchase, sessionId: session.id });
+      return res.json({ ok: true, courseId: purchase.courseId });
+    } catch (err) {
+      logError("Confirm payment", err);
+      return res.status(500).json({ ok: false, message: "Server error" });
     }
   }
 }

@@ -1,4 +1,5 @@
 import db from "./connection.js";
+import { withTransaction } from "./transaction.js";
 import { stripe } from "../lib/stripe.js";
 
 class PaymentService {
@@ -45,8 +46,8 @@ class PaymentService {
     );
   }
 
-  async markPaymentPaid({ userId, courseId, sessionId }) {
-    await db.query(
+  async markPaymentPaid({ userId, courseId, sessionId }, q = db) {
+    await q.query(
       `UPDATE payments
        SET status='paid', payment_date=NOW(), stripe_session_id=COALESCE(stripe_session_id, ?)
        WHERE user_id=? AND course_id=?`,
@@ -54,13 +55,24 @@ class PaymentService {
     );
   }
 
-  async createEnrollmentIfNeeded({ userId, courseId }) {
-    await db.query(
+  async createEnrollmentIfNeeded({ userId, courseId }, q = db) {
+    await q.query(
       `INSERT INTO enrollments (user_id, course_id, progress, completed, last_position_seconds, enrolled_at, updated_at)
        VALUES (?, ?, 0, 0, 0, NOW(), NOW())
        ON DUPLICATE KEY UPDATE updated_at=NOW()`,
       [userId, courseId]
     );
+  }
+
+  // The ONE way a paid Stripe Checkout becomes a purchase, used by the webhook and by the buyer's return (/confirm), in
+  // whatever order they arrive: the payment is marked paid and the enrollment created in one transaction, and both
+  // statements are idempotent (UPDATE of the same row, INSERT ... ON DUPLICATE KEY), so the second caller changes
+  // nothing. Callers must only pass a session Stripe itself reported as paid.
+  async recordPaidPurchase({ userId, courseId, sessionId }) {
+    await withTransaction(async (conn) => {
+      await this.markPaymentPaid({ userId, courseId, sessionId }, conn);
+      await this.createEnrollmentIfNeeded({ userId, courseId }, conn);
+    });
   }
 }
 
