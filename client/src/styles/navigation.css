@@ -66,4 +66,9 @@
     outline: 2px solid var(--lm-focus);
     outline-offset: 4px;
   }
+
+  /* While a lazy page downloads: keep roughly a page of height so the footer doesn't jump up and back down */
+  .page-loading-fallback {
+    min-height: 60vh;
+  }
 }

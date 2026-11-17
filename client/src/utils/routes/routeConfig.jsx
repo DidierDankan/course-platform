@@ -1,20 +1,25 @@
-import Register from '@view/auth/Register';
-import Login from '@view/auth/Login';
-import Welcome from '@view/profile/Welcome';
-import Edit from '@view/profile/Edit';
-import PortfolioPage from '@view/profile/Porfolio';
-import Notifications from '@view/profile/Notifications';
-import RequireProfileCompletion from '@components/ui/RequireProfileCompletion';
-import UserWelcome from '@view/user/Welcome'
-import WatchCourse from '@view/user/WhatchCourse';
-import PaymentSuccess from '@view/payment/PaymentSuccess';
-import PaymentCancel from '@view/payment/PaymentCancel';
-import CoursePreview from '@view/courses/CoursePreview';
-import BrowseCourses from '@view/courses/BrowseCourses';
-import MyCourses from '@view/user/MyCourses';
-import SellerPublic from '@view/public/SellerPublic';
-import FavoritesPage from '@view/user/Favorites';
-import StyleGuide from '@view/public/StyleGuide';
+import { lazy } from "react";
+import RequireProfileCompletion from "@components/ui/RequireProfileCompletion";
+
+// Every page is its own chunk, downloaded the first time someone opens it (App.jsx shows one fallback meanwhile), so the
+// first visit doesn't download every page, Formik, Yup, the charts and the carousel. Home is not here: it's imported
+// directly in App.jsx because it's the landing page, and a lazy Home would add a round trip before its hero shows.
+const Register = lazy(() => import("@view/auth/Register"));
+const Login = lazy(() => import("@view/auth/Login"));
+const Welcome = lazy(() => import("@view/profile/Welcome"));
+const Edit = lazy(() => import("@view/profile/Edit"));
+const PortfolioPage = lazy(() => import("@view/profile/Porfolio"));
+const Notifications = lazy(() => import("@view/profile/Notifications"));
+const UserWelcome = lazy(() => import("@view/user/Welcome"));
+const WatchCourse = lazy(() => import("@view/user/WhatchCourse"));
+const PaymentSuccess = lazy(() => import("@view/payment/PaymentSuccess"));
+const PaymentCancel = lazy(() => import("@view/payment/PaymentCancel"));
+const CoursePreview = lazy(() => import("@view/courses/CoursePreview"));
+const BrowseCourses = lazy(() => import("@view/courses/BrowseCourses"));
+const MyCourses = lazy(() => import("@view/user/MyCourses"));
+const SellerPublic = lazy(() => import("@view/public/SellerPublic"));
+const FavoritesPage = lazy(() => import("@view/user/Favorites"));
+const StyleGuide = lazy(() => import("@view/public/StyleGuide"));
 
 export const routes = [
   {

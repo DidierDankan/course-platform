@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { routes } from "@utils/routes/routeConfig.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -9,6 +10,7 @@ import ProfileGate from "@view/layout/ProfileGate";
 import HomePage from "@view/HomePage";
 import Header from "@components/ui/Header";
 import Footer from "@components/ui/Footer";
+import PageLoadingFallback from "@components/ui/PageLoadingFallback";
 
 export default function App() {
   return (
@@ -18,6 +20,8 @@ export default function App() {
         <Header />
 
         <RouteErrorBoundary>
+        {/* Pages are lazy (routeConfig.jsx): one fallback while a page's code downloads; header and footer stay */}
+        <Suspense fallback={<PageLoadingFallback />}>
         <Routes>
           {/* 🌍 Public pages */}
           <Route path="/" element={<HomePage />} />
@@ -49,6 +53,7 @@ export default function App() {
             );
           })}
         </Routes>
+        </Suspense>
         </RouteErrorBoundary>
         <Footer />
       </AuthGate>
