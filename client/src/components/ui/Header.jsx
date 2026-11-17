@@ -6,6 +6,7 @@ import { useLogoutMutation } from "@api/modules/authApi";
 import { logout as logoutAction } from "@store/slices/authSlice";
 import { useTheme } from "@hooks/useTheme";
 import Logo from "@components/ui/Logo";
+import NotificationsLink from "@components/ui/NotificationsLink";
 import { apiSlice } from "@api/apiSlice";
 // Role -> header links. Server-side checks protect the pages; this only decides what to show.
 const ROLE_LINKS = {
@@ -77,6 +78,9 @@ const Header = () => {
               {label}
             </NavLink>
           ))}
+
+          {/* sellers and admins are told about reviews and comments on their courses */}
+          {isAuthenticated && (user?.role === "seller" || user?.role === "admin") && <NotificationsLink onClick={close} />}
 
           <ThemeToggle />
 

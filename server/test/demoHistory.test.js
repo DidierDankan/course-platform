@@ -1,7 +1,7 @@
 // The demo seed's sales plan (scripts/demoHistory.js): what the seller dashboard shows on the live demo.
 import { describe, expect, it } from "vitest";
 import { statsWindow } from "../db/SellerStatsService.js";
-import { DEMO_LEARNERS, reviewPlan, salesHistory } from "../scripts/demoHistory.js";
+import { DEMO_LEARNERS, commentPlan, reviewPlan, salesHistory } from "../scripts/demoHistory.js";
 
 const monthOf = (date) => date.toISOString().slice(0, 7);
 
@@ -47,5 +47,19 @@ describe.each([
       expect(r.body === null || r.body.length <= 1000).toBe(true);
     }
     expect(new Set(reviews.map((r) => `${r.learner}:${r.course}`)).size).toBe(reviews.length);
+  });
+
+  it("comments: only by a buyer of that course, never in the future; the instructor answers after the question", () => {
+    const { comments, answer } = commentPlan(sales, now);
+    const bought = new Set(sales.map((s) => `${s.learner}:${s.course}`));
+    expect(comments.length).toBeGreaterThan(0);
+    for (const c of comments) {
+      expect(bought.has(`${c.learner}:${c.course}`)).toBe(true);
+      expect(c.at.getTime()).toBeLessThanOrEqual(now.getTime());
+      expect(c.body.length).toBeGreaterThan(0);
+    }
+    expect(answer.course).toBe(comments[0].course);
+    expect(answer.at.getTime()).toBeGreaterThanOrEqual(comments[0].at.getTime());
+    expect(answer.at.getTime()).toBeLessThanOrEqual(now.getTime());
   });
 });

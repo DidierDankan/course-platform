@@ -6,6 +6,7 @@ import { useUpdateProgressMutation } from "@api/modules/enrollmentApi";
 import { ListVideo } from "lucide-react";
 import { formatDuration } from "@utils/duration";
 import ReviewForm from "./ReviewForm";
+import CourseComments from "./CourseComments";
 
 const API_ORIGIN = import.meta.env.VITE_API_URL;
 
@@ -181,6 +182,9 @@ export default function WatchCourse() {
 
         {/* only enrolled students review; the owner and admins watch without an enrollment */}
         {enrollment && <ReviewForm courseId={course.id} />}
+
+        {/* everyone who can open this page may join the discussion (the server checks again) */}
+        <CourseComments courseId={course.id} />
       </section>
 
       <aside className="panel" aria-label="Lessons">

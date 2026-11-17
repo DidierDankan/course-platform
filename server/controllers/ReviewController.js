@@ -1,16 +1,9 @@
 // server/controllers/ReviewController.js
 import ReviewService from "../db/ReviewService.js";
 import { parsePagination } from "../lib/pagination.js";
-import { logError } from "../lib/logError.js";
+import { answerError } from "../lib/answerError.js";
 
 const REVIEWS_PAGE_SIZE = 10;
-
-// Expected refusals carry a status (403 / 404); anything else is a server error.
-const answerError = (res, context, err) => {
-  if (err?.status) return res.status(err.status).json({ message: err.message });
-  logError(context, err);
-  return res.status(500).json({ message: "Server error" });
-};
 
 class ReviewController {
   // GET /api/courses/:id/reviews (public)

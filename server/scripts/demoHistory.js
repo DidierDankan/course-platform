@@ -58,3 +58,36 @@ export function reviewPlan(sales, now = new Date()) {
       at: new Date(Math.min(sale.at.getTime() + REVIEW_DELAY_DAYS * 86_400_000, now.getTime())),
     }));
 }
+
+// Discussion for the demo (Stage 4b): a few buyers ask something a day after buying; the instructor answers the first.
+const COMMENT_BODIES = [
+  "Which materials would you recommend for a complete beginner?",
+  "Loved the second lesson. Is there a follow-up course planned?",
+  "Small tip for others: pause at 3:40 and try it yourself first.",
+  "How long did it take you to get comfortable with this?",
+];
+export const INSTRUCTOR_ANSWER = "Great question: start simple and cheap. I list my exact kit in the first lesson's notes.";
+const COMMENT_DELAY_DAYS = 1;
+const ANSWER_DELAY_HOURS = 2;
+
+// [{ learner, course, body, at }] plus { answer: { course, body, at } } for the instructor's reply to the first one.
+export function commentPlan(sales, now = new Date()) {
+  const clamp = (ms) => new Date(Math.min(ms, now.getTime()));
+  const comments = sales
+    .filter((_, i) => i % 7 === 3)
+    .slice(0, COMMENT_BODIES.length)
+    .map((sale, i) => ({
+      learner: sale.learner,
+      course: sale.course,
+      body: COMMENT_BODIES[i],
+      at: clamp(sale.at.getTime() + COMMENT_DELAY_DAYS * 86_400_000),
+    }));
+  const first = comments[0];
+  const answer = first
+    ? { course: first.course, body: INSTRUCTOR_ANSWER, at: clamp(first.at.getTime() + ANSWER_DELAY_HOURS * 3_600_000) }
+    : null;
+  return { comments, answer };
+}
+
+// How many of the instructor's newest notifications the demo leaves unread, so the header badge has a number.
+export const UNREAD_DEMO_NOTIFICATIONS = 3;

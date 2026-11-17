@@ -20,6 +20,7 @@ export const LIMITS = Object.freeze({
   qualificationDescription: TEXT_CHARS,
   certificateUrl: TEXT_CHARS,
   reviewBody: 1000,
+  commentBody: 2000,
 });
 
 // A review's rating (server: validators/limits.js, CHECK in migration 003).

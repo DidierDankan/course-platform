@@ -11,6 +11,9 @@ import { courseListValidation, courseValidation } from "../validators/courseVali
 import { validId } from "../validators/idParam.js";
 import ReviewController from "../controllers/ReviewController.js";
 import { reviewValidation } from "../validators/reviewValidator.js";
+import CommentController from "../controllers/CommentController.js";
+import { commentValidation } from "../validators/commentValidator.js";
+import { authenticateOptional } from "../middleware/authOptional.js";
 
 const router = express.Router();
 
@@ -18,6 +21,8 @@ router.get('/all', courseListValidation, validateRequest, CourseController.getAl
 router.get("/:id/public", validId("id"), CourseController.getPublicCourse);
 // Reviews are public to read (page and limit are clamped like the course lists)
 router.get("/:id/reviews", validId("id"), ReviewController.list);
+// Comments too; signed in, each one says whether the viewer may delete it
+router.get("/:id/comments", validId("id"), authenticateOptional, CommentController.list);
 
 // ✅ Require authentication for everything in this router
 router.use(authenticate);
@@ -61,5 +66,9 @@ router.get("/:id/watch", validId("id"), CourseController.watch);
 router.get("/:id/reviews/mine", validId("id"), ReviewController.mine);
 router.put("/:id/reviews", reviewValidation, validateRequest, ReviewController.save);
 router.delete("/:id/reviews", validId("id"), ReviewController.remove);
+
+// Comments: enrolled students, the owner and admins post; the author, the owner or an admin deletes (CommentService)
+router.post("/:id/comments", commentValidation, validateRequest, CommentController.create);
+router.delete("/comments/:commentId", validId("commentId"), CommentController.remove);
 
 export default router;

@@ -21,6 +21,7 @@ export const LIMITS = {
   qualificationDescription: TEXT_CHARS, // qualifications.description TEXT
   certificateUrl: TEXT_CHARS, // qualifications.certificate_url TEXT
   reviewBody: 1000, // reviews.body VARCHAR(1000)
+  commentBody: 2000, // comments.body VARCHAR(2000)
 };
 
 // A review's rating (reviews.rating, CHECK 1-5 in migration 003).

@@ -3,6 +3,7 @@ import Login from '@view/auth/Login';
 import Welcome from '@view/profile/Welcome';
 import Edit from '@view/profile/Edit';
 import PortfolioPage from '@view/profile/Porfolio';
+import Notifications from '@view/profile/Notifications';
 import RequireProfileCompletion from '@components/ui/RequireProfileCompletion';
 import UserWelcome from '@view/user/Welcome'
 import WatchCourse from '@view/user/WhatchCourse';
@@ -60,6 +61,11 @@ export const routes = [
         <Welcome />
       </RequireProfileCompletion>
     ),
+    roles: ['admin', 'seller'],
+  },
+  {
+    path: '/profile/notifications',
+    element: <Notifications />,
     roles: ['admin', 'seller'],
   },
   {

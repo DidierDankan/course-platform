@@ -4,6 +4,6 @@ import { baseQueryWithReauth } from './baseQueryWithReauth';
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['User', 'Course', 'Payment', 'Comment', 'Enrollments', 'Dashboard',"Courses", "Media", "Favorites", "SellerStats", "Reviews"],
+  tagTypes: ['User', 'Course', 'Payment', 'Comment', 'Enrollments', 'Dashboard',"Courses", "Media", "Favorites", "SellerStats", "Reviews", "Comments", "Notifications"],
   endpoints: () => ({}), // features will inject endpoints
 });

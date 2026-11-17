@@ -23,7 +23,15 @@ import {
   runScript,
   DEMO_STUDENT_EMAIL
 } from "./lib.js";
-import { DEMO_LEARNERS, HISTORY_MONTHS, learnerEmail, reviewPlan, salesHistory } from "./demoHistory.js";
+import {
+  DEMO_LEARNERS,
+  HISTORY_MONTHS,
+  UNREAD_DEMO_NOTIFICATIONS,
+  commentPlan,
+  learnerEmail,
+  reviewPlan,
+  salesHistory,
+} from "./demoHistory.js";
 
 const SCRIPT = "seed-demo";
 const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -309,6 +317,42 @@ async function main() {
       );
     }
 
+    // Discussion (Stage 4b) and the instructor's notifications (Stage 4c). Neither has a unique key to upsert on, so the
+    // rows this seed wrote last time are replaced: only demo authors on demo courses are touched.
+    await conn.query("DELETE FROM comments WHERE course_id IN (?) AND user_id IN (?)", [courseIds, [...learnerIds, sellerId]]);
+    await conn.query("DELETE FROM notifications WHERE user_id = ? AND actor_id IN (?)", [sellerId, learnerIds]);
+
+    const events = []; // what the instructor is told about, like the app does inside each save
+    for (const r of reviews) {
+      const [[row]] = await conn.query("SELECT id FROM reviews WHERE user_id = ? AND course_id = ?", [learnerIds[r.learner], courseIds[r.course]]);
+      events.push({ type: "review", course: r.course, sourceId: row.id, actorId: learnerIds[r.learner], at: r.at });
+    }
+    const discussion = commentPlan(sales);
+    for (const c of discussion.comments) {
+      const [res] = await conn.query(
+        "INSERT INTO comments (course_id, user_id, body, created_at) VALUES (?, ?, ?, FROM_UNIXTIME(?))",
+        [courseIds[c.course], learnerIds[c.learner], c.body, Math.floor(c.at.getTime() / 1000)]
+      );
+      events.push({ type: "comment", course: c.course, sourceId: res.insertId, actorId: learnerIds[c.learner], at: c.at });
+    }
+    if (discussion.answer) {
+      await conn.query("INSERT INTO comments (course_id, user_id, body, created_at) VALUES (?, ?, ?, FROM_UNIXTIME(?))", [
+        courseIds[discussion.answer.course],
+        sellerId,
+        discussion.answer.body,
+        Math.floor(discussion.answer.at.getTime() / 1000),
+      ]); // the instructor's own comment notifies no one
+    }
+    events.sort((a, b) => b.at - a.at);
+    for (const [i, e] of events.entries()) {
+      const when = Math.floor(e.at.getTime() / 1000);
+      await conn.query(
+        `INSERT INTO notifications (user_id, type, course_id, source_id, actor_id, created_at, read_at)
+         VALUES (?, ?, ?, ?, ?, FROM_UNIXTIME(?), ?)`,
+        [sellerId, e.type, courseIds[e.course], e.sourceId, e.actorId, when, i < UNREAD_DEMO_NOTIFICATIONS ? null : new Date(e.at)]
+      );
+    }
+
     await conn.commit();
   } catch (err) {
     await conn.rollback();
@@ -322,7 +366,7 @@ async function main() {
   console.log(
     `${SCRIPT}: done. ${COURSES.length} courses, ${COURSES.length * LESSONS_PER_COURSE} lessons, ` +
       `${salesHistory().length} past sales to ${DEMO_LEARNERS} demo learners (last ${HISTORY_MONTHS} months), ` +
-      `${reviewPlan(salesHistory()).length} reviews.`
+      `${reviewPlan(salesHistory()).length} reviews, ${commentPlan(salesHistory()).comments.length + 1} comments.`
   );
   console.log(`  instructor: ${SELLER.email}`);
   console.log(`  student:    ${STUDENT.email}`);

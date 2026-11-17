@@ -129,4 +129,84 @@
     display: flex;
     gap: 10px;
   }
+
+  /* ---------- Comments (watch page) ---------- */
+  .comments {
+    display: grid;
+    gap: 16px;
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: var(--lm-border-w) solid var(--lm-line);
+  }
+  .comments h2 {
+    margin: 0;
+    font-family: var(--lm-font-display);
+    font-size: 18px;
+  }
+  .comment-form {
+    display: grid;
+    gap: 10px;
+  }
+  .comment-badge {
+    position: static;
+    font-size: 10px;
+  }
+  .comment-delete {
+    margin-left: auto;
+    padding: 0;
+    font-size: 12px;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  /* ---------- Notifications (header bell + page) ---------- */
+  .nav-notifications {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .nav-badge {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    display: inline-grid;
+    place-items: center;
+    color: var(--lm-on-accent);
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    background: var(--lm-accent);
+    border: var(--lm-border-w) solid var(--lm-line-strong);
+    border-radius: var(--lm-radius-pill);
+  }
+  .notification-list {
+    display: grid;
+    gap: 14px;
+    margin: 0 0 14px;
+    padding: 0;
+    list-style: none;
+  }
+  .notification {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .notification p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .notification time {
+    color: var(--lm-muted);
+    font-size: 12px;
+  }
+  .notification.is-unread p {
+    font-weight: 600;
+  }
+  .notification.is-unread .stat-icon {
+    outline: 2px solid var(--lm-accent-2);
+    outline-offset: 2px;
+  }
 }
