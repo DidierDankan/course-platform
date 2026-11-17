@@ -380,8 +380,39 @@
     background: var(--lm-accent);
     border-radius: 50%;
   }
+  /* The lesson is a free preview: top-left, so it never covers the "missing details" warning (top-right) */
+  .video-tile-preview {
+    position: absolute;
+    top: -7px;
+    left: -7px;
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    color: var(--lm-inverse-fg);
+    background: var(--lm-inverse-bg);
+    border-radius: 50%;
+  }
   .video-preview {
     max-height: 50vh;
+  }
+  /* A checkbox with a label and a hint (the lesson dialog's "Free preview") */
+  .checkbox-field {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .checkbox-field input {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    accent-color: var(--lm-accent-2);
+  }
+  .checkbox-field small {
+    display: block;
+    color: var(--lm-muted);
+    font-size: 12px;
   }
   .avatar-field {
     display: flex;

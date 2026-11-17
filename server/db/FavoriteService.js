@@ -1,4 +1,5 @@
 import db from "./connection.js";
+import { ratingColumns, withRating } from "./ratings.js";
 
 class FavoriteService {
   async listByUser(userId) {
@@ -9,7 +10,10 @@ class FavoriteService {
         f.favorited_at,
         c.title, c.description, c.price, c.seller_id, c.created_at,
         MAX(CASE WHEN m.type = 'image' THEN m.url END) AS thumbnail_url,
-        COALESCE(SUM(CASE WHEN m.type = 'video' THEN m.duration END), 0) AS total_duration
+        COALESCE(SUM(CASE WHEN m.type = 'video' THEN m.duration END), 0) AS total_duration,
+        -- the card shows "By <name>" and the stars like Browse: the profile name (never the email) and the rating
+        (SELECT up.full_name FROM user_profiles up WHERE up.user_id = c.seller_id) AS tutor_name,
+        ${ratingColumns("c")}
       FROM favorites f
       JOIN courses c ON c.id = f.course_id
       LEFT JOIN course_media m ON m.course_id = c.id
@@ -19,7 +23,7 @@ class FavoriteService {
       `,
       [userId]
     );
-    return rows;
+    return rows.map(withRating);
   }
 
   // Returns false if the course doesn't exist (the controller answers 404). FOR SHARE keeps the course from being

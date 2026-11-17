@@ -6,7 +6,9 @@
   /* The look is the theme's .text-link (a boxed label in brutal, plain in cinematic), the same for the <a> and the
      <button> variant of BackLink; this only adds the space below it and fits it to its content. */
   .back-link {
-    display: inline-flex;
+    /* .text-link sets display: flex (it wins over this file), which made the <a> variant as wide as the page;
+       width: fit-content isn't set by .text-link, so the link stays the size of its text in every page layout */
+    width: fit-content;
     margin-bottom: 14px;
     cursor: pointer;
   }

@@ -24,6 +24,7 @@ const normalizeVideos = (videos) =>
     title: v.title || "",
     description: v.description || "",
     duration: v.duration,
+    isPreview: Number(v.is_preview) === 1,
   }));
 
 function ThumbnailField({ file, currentUrl, onPick }) {
@@ -70,7 +71,7 @@ const CourseModal = ({ open, onClose, course }) => {
     const newFiles = await Promise.all(
       Array.from(e.target.files).map(async (file) => {
         const duration = await getVideoDuration(file);
-        return { file, title: "", description: "", duration };
+        return { file, title: "", description: "", duration, isPreview: false };
       })
     );
     setFieldValue("videos", [...values.videos, ...newFiles]);

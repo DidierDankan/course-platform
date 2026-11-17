@@ -23,6 +23,7 @@ export const buildCourseFormData = (values) => {
         title: v.title ?? "",
         description: v.description ?? "",
         duration: v.duration ?? null,
+        is_preview: Boolean(v.isPreview),
       });
     } else if (v.id && !v.file) {
       // EXISTING (metadata-only update)
@@ -31,6 +32,7 @@ export const buildCourseFormData = (values) => {
         title: v.title ?? "",
         description: v.description ?? "",
         duration: v.duration ?? null,
+        is_preview: Boolean(v.isPreview),
       });
     }
   });

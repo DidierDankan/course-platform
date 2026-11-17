@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Film, Plus } from "lucide-react";
+import { AlertTriangle, Eye, Film, Plus } from "lucide-react";
+import { Field } from "formik";
 import Modal from "@components/ui/Modal";
 import FormField from "@components/ui/Form/FormField";
 import useObjectUrl from "@hooks/useObjectUrl";
@@ -52,11 +53,16 @@ const CourseVideos = ({ videos, onAdd, onRemove }) => {
               type="button"
               className="video-tile"
               onClick={() => setSelectedIndex(index)}
-              aria-label={isIncomplete ? `${name}, missing details` : name}
+              aria-label={`${name}${video.isPreview ? ", free preview" : ""}${isIncomplete ? ", missing details" : ""}`}
               title={name}
             >
               <Film size={22} aria-hidden="true" />
               <small>{index + 1}</small>
+              {video.isPreview && (
+                <span className="video-tile-preview" aria-hidden="true">
+                  <Eye size={12} />
+                </span>
+              )}
               {isIncomplete && (
                 <span className="video-tile-warning" aria-hidden="true">
                   <AlertTriangle size={12} />
@@ -110,6 +116,14 @@ const CourseVideos = ({ videos, onAdd, onRemove }) => {
               rows={3}
               maxLength={LIMITS.lessonDescription}
             />
+            {/* A free preview plays on the course page for anyone, before buying (server: protectVideos) */}
+            <label className="checkbox-field">
+              <Field type="checkbox" name={`videos[${selectedIndex}].isPreview`} />
+              <span>
+                Free preview
+                <small>Anyone can watch this lesson on the course page, before buying.</small>
+              </span>
+            </label>
           </div>
         )}
       </Modal>

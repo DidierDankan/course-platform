@@ -147,7 +147,8 @@ class CourseService {
                 'type', m.type,
                 'duration', m.duration,
                 'title', m.title,
-                'description', m.description   
+                'description', m.description,
+                'is_preview', m.is_preview
               )
             END
           ) AS CHAR
@@ -205,13 +206,15 @@ class CourseService {
   }
 
   // Only touches the row if it belongs to courseId, so a video id from another course is ignored.
-  async updateVideoMeta(id, courseId, { title, description, duration }, q = db) {
+  // is_preview: true/false switches the free preview; undefined leaves it as it is.
+  async updateVideoMeta(id, courseId, { title, description, duration, is_preview: isPreview }, q = db) {
     const fields = [];
     const vals = [];
 
     if (title !== undefined) { fields.push("title = ?"); vals.push(title); }
     if (description !== undefined) { fields.push("description = ?"); vals.push(description); }
     if (duration !== undefined) { fields.push("duration = ?"); vals.push(duration); }
+    if (isPreview !== undefined) { fields.push("is_preview = ?"); vals.push(isPreview ? 1 : 0); }
 
     if (!fields.length) return 0;
 
@@ -286,11 +289,12 @@ class CourseService {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const meta = metaArray[i] || {};
-      const { title = null, description = null, duration = null } = meta;
+      const { title = null, description = null, duration = null, is_preview: isPreview = false } = meta;
 
+      // is_preview: the seller's "Free preview" checkbox; a preview lesson's file is open to anyone (protectVideos)
       await q.query(
-        `INSERT INTO course_media (course_id, type, url, uploaded_at, title, description, duration, order_index)
-        VALUES (?, 'video', ?, NOW(), ?, ?, ?, ?)`,
+        `INSERT INTO course_media (course_id, type, url, uploaded_at, title, description, duration, order_index, is_preview)
+        VALUES (?, 'video', ?, NOW(), ?, ?, ?, ?, ?)`,
         [
           courseId,
           `/uploads/${file.filename}`,
@@ -298,6 +302,7 @@ class CourseService {
           description,
           duration,
           next,
+          isPreview ? 1 : 0,
         ]
       );
 
@@ -396,7 +401,7 @@ class CourseService {
 
     // 2️⃣ Get media for this course
     const [media] = await db.query(
-      `SELECT id, type, url, title, description, duration, uploaded_at
+      `SELECT id, type, url, title, description, duration, is_preview, uploaded_at
       FROM course_media
       WHERE course_id = ?
       ORDER BY uploaded_at ASC`,

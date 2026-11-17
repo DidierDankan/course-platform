@@ -8,8 +8,10 @@ import { formatDuration } from "@utils/duration";
 import ReviewForm from "./ReviewForm";
 import CourseComments from "./CourseComments";
 import BackLink from "@components/ui/BackLink";
+import useKeepSessionAlive from "@hooks/useKeepSessionAlive";
 
 const API_ORIGIN = import.meta.env.VITE_API_URL;
+const VIDEO_RECOVERY_GUARD_MS = 30 * 1000;
 
 const toAbsoluteUrl = (url) => {
   if (!url) return "";
@@ -71,6 +73,30 @@ export default function WatchCourse() {
     el.addEventListener("loadedmetadata", onLoaded);
     return () => el.removeEventListener("loadedmetadata", onLoaded);
   }, [activeLessonId, enrollment, activeLesson]);
+
+  // Long lessons: the <video> loads the file with the 15-minute access cookie and can't refresh it itself. Keep the
+  // session alive while this page is open, and if a video request still fails (a laptop woke from sleep), renew the
+  // session, reload the file and continue at the same second. One recovery per VIDEO_RECOVERY_GUARD_MS, so a file
+  // that is really missing doesn't loop.
+  const renewSession = useKeepSessionAlive();
+  const lastRecovery = useRef(0);
+  const playingRef = useRef(false);
+
+  const handleVideoError = async () => {
+    const el = videoRef.current;
+    if (!el || Date.now() - lastRecovery.current < VIDEO_RECOVERY_GUARD_MS) return;
+    lastRecovery.current = Date.now();
+    const resumeAt = el.currentTime;
+    const wasPlaying = playingRef.current;
+    if (!(await renewSession())) return; // the session is really over: the next API request shows the login
+    const resume = () => {
+      if (resumeAt > 0) el.currentTime = resumeAt;
+      // Browsers may refuse to start playback without a click; then the user presses play, nothing else is lost.
+      if (wasPlaying) el.play().catch(() => {});
+    };
+    el.addEventListener("loadedmetadata", resume, { once: true });
+    el.load();
+  };
 
   const debouncedSave = (payload) => {
     if (!enrollment) return; // owner/admin preview: nothing to save
@@ -172,9 +198,11 @@ export default function WatchCourse() {
           src={toAbsoluteUrl(activeLesson?.url)}
           controls
           className="watch-video"
-          onPause={handleTimeUpdate}
+          onPlay={() => { playingRef.current = true; }}
+          onPause={() => { playingRef.current = false; handleTimeUpdate(); }}
           onTimeUpdate={handleTimeUpdate}
           onEnded={handleEnded}
+          onError={handleVideoError}
         />
 
         {activeLesson.description && <p className="watch-description">{activeLesson.description}</p>}

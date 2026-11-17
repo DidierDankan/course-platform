@@ -37,8 +37,16 @@ describe("access token", () => {
     expect(res.status).toBe(200);
   });
 
-  it("no cookie -> 401", async () => {
+  // A logged-out visitor is a normal state, not an error: /me says "nobody" with 200, so the app doesn't log two 401s
+  // and try a refresh on every first visit. A role-guarded route still answers 401 without a cookie (see "roles").
+  it("no cookie at all -> 200 { user: null }", async () => {
     const res = await request(app).get("/api/auth/me");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ user: null });
+  });
+
+  it("only a refresh cookie (the access token expired) -> 401, so the client refreshes", async () => {
+    const res = await request(app).get("/api/auth/me").set("Cookie", `refreshToken=${refresh}`);
     expect(res.status).toBe(401);
   });
 

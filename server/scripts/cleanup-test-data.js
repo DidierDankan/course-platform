@@ -7,8 +7,9 @@
 //   (NODE_ENV=production also needs --force)
 //
 // Idempotent: a second run finds nothing and changes nothing.
+import path from "node:path";
 import db from "../db/connection.js";
-import { refuseProductionUnlessForced, removeUploadFile, runScript, uploadPathFromUrl } from "./lib.js";
+import { UPLOADS_URL_PREFIX, refuseProductionUnlessForced, removeUploadFile, runScript, uploadPathFromUrl } from "./lib.js";
 
 const SCRIPT = "cleanup-test-data";
 // LIKE narrows the query; the regex is the real check ("_" and "%" are LIKE wildcards).
@@ -47,7 +48,9 @@ async function main() {
     media.forEach((m) => urls.add(m.url));
   }
   const [profiles] = await db.query("SELECT profile_image FROM user_profiles WHERE user_id IN (?)", [userIds]);
-  profiles.forEach((p) => p.profile_image && urls.add(p.profile_image));
+  // profile_image holds a bare file name ("uuid.png"), not "/uploads/uuid.png" like course media: without the prefix the
+  // safety check below dropped every profile photo, so they stayed on disk (found 2026-11-09, fixed 2026-11-17).
+  profiles.forEach((p) => p.profile_image && urls.add(`${UPLOADS_URL_PREFIX}${path.basename(p.profile_image)}`));
   const [certs] = await db.query("SELECT certificate_url FROM qualifications WHERE user_id IN (?)", [userIds]);
   certs.forEach((c) => c.certificate_url && urls.add(c.certificate_url));
   const files = [...urls].filter((url) => uploadPathFromUrl(url));

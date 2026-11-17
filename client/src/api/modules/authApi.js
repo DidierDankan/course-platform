@@ -16,6 +16,11 @@ export const authApi = apiSlice.injectEndpoints({
         body: data,
       }),
     }),
+    // Renews the session cookies (the refresh token is rotated on the server). Used where the browser itself loads
+    // protected files, like <video>, which can't trigger the app's 401 -> refresh retry.
+    refreshSession: builder.mutation({
+      query: () => ({ url: '/auth/refresh', method: 'POST' }),
+    }),
     logout: builder.mutation({
       query: (data) => ({
         url: '/auth/logout',
@@ -36,6 +41,7 @@ export const {
   useLoginMutation,
   useRegisterMutation,
   useLogoutMutation,
-  useGetCurrentUserQuery
+  useGetCurrentUserQuery,
+  useRefreshSessionMutation,
 } = authApi;
 

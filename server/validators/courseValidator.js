@@ -45,6 +45,8 @@ const lessonFields = (list) => [
     .isLength({ max: LIMITS.lessonDescription })
     .withMessage(`A lesson description can be at most ${LIMITS.lessonDescription} characters`),
   secondsRule(body(`${list}.*.duration`).optional({ values: "null" }), "A lesson duration"),
+  // "Free preview": a real boolean after this (the text "false" must not count as true); missing = leave / not a preview
+  body(`${list}.*.is_preview`).optional().isBoolean().withMessage("Free preview must be true or false").bail().toBoolean(true),
 ];
 
 export const courseValidation = [
