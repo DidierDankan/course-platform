@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import CourseCard from "@components/ui/CourseCard";
 import CourseCardPlaceholders from "@components/ui/CourseCardPlaceholders";
 import { useGetMyFavoritesQuery } from "@api/modules/favoritesApi";
+import BackLink from "@components/ui/BackLink";
 
 export default function FavoritesPage() {
   const { data, isLoading, isError, refetch } = useGetMyFavoritesQuery();
@@ -46,6 +47,7 @@ export default function FavoritesPage() {
 
   return (
     <main className="page-main">
+      <BackLink fallback="/user/dashboard" fallbackLabel="Back to dashboard" />
       <header className="page-heading">
         <span className="section-index">Favorites</span>
         <h1>Saved courses</h1>

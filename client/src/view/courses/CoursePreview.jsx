@@ -7,6 +7,7 @@ import Rating from "@components/ui/Rating";
 import CourseReviews from "./CourseReviews";
 import FavoriteButton from "@components/ui/FavoriteButton";
 import { formatDuration } from "@utils/duration";
+import BackLink from "@components/ui/BackLink";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -99,6 +100,7 @@ export default function CoursePreview() {
 
   return (
     <main className="page-main page-main-narrow">
+      <BackLink fallback="/courses" fallbackLabel="Back to courses" />
       <header className="page-heading">
         <span className="section-index">Course preview</span>
         <h1>{course.title}</h1>
@@ -111,9 +113,6 @@ export default function CoursePreview() {
           <CourseCTA courseId={course.id} price={course.price} sellerId={course.seller_id} />
         </div>
         <FavoriteButton courseId={course.id} />
-        <Link to="/courses" className="text-link">
-          Back to courses
-        </Link>
       </div>
 
       <section className="panel preview-player">

@@ -5,6 +5,7 @@ import {
   useNotificationsInfiniteQuery,
   useUnreadNotificationsQuery,
 } from "@api/modules/notificationApi";
+import BackLink from "@components/ui/BackLink";
 
 const timeFormat = new Intl.DateTimeFormat("en-US", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
@@ -19,6 +20,7 @@ export default function Notifications() {
 
   return (
     <main className="page-main page-main-narrow">
+      <BackLink fallback="/profile/dashboard" fallbackLabel="Back to dashboard" />
       <header className="page-heading">
         <span className="section-index">Notifications</span>
         <h1>What&apos;s new on your courses</h1>

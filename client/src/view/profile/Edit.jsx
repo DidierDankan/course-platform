@@ -9,6 +9,7 @@ import PhoneInputField from "@components/ui/Form/PhoneInputField";
 import SkillsSelectionField from "@components/ui/Form/SkillsSelectionField";
 import QualificationsFieldArray from "@components/ui/Form/QualificationsFieldArray";
 import FormField from "@components/ui/Form/FormField";
+import BackLink from "@components/ui/BackLink";
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -44,6 +45,7 @@ const EditProfile = () => {
 
   return (
     <main className="page-main page-main-narrow">
+      <BackLink fallback="/profile/dashboard" fallbackLabel="Back to dashboard" />
       <header className="page-heading">
         <span className="section-index">Update your profile</span>
         <h1>Edit your details</h1>

@@ -5,6 +5,7 @@ import { ArrowRight, Clock } from "lucide-react";
 import { useGetMyEnrollmentsQuery } from "@api/modules/enrollmentApi";
 import ProgressBar from "@components/ui/ProgressBar";
 import { formatPrice } from "@utils/currency";
+import BackLink from "@components/ui/BackLink";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -128,6 +129,7 @@ export default function MyCourses() {
 
   return (
     <main className="page-main page-main-narrow">
+      <BackLink fallback="/user/dashboard" fallbackLabel="Back to dashboard" />
       <header className="page-heading">
         <span className="section-index">My courses</span>
         <h1>{name}&apos;s courses</h1>

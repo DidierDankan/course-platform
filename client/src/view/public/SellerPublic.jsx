@@ -4,6 +4,7 @@ import { ArrowRight, ExternalLink, Lock } from "lucide-react";
 import { useGetSellerPublicQuery } from "@api/modules/publicApi";
 import CourseCard from "@components/ui/CourseCard";
 import Rating from "@components/ui/Rating";
+import BackLink from "@components/ui/BackLink";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const FALLBACK_NAME = "Instructor";
@@ -162,6 +163,7 @@ const SellerPublic = () => {
 
   return (
     <main className="page-main">
+      <BackLink fallback="/courses" fallbackLabel="Back to courses" />
       <header className="page-heading">
         <span className="section-index">Instructor</span>
         <h1>{name}</h1>

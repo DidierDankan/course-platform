@@ -6,6 +6,8 @@ import CourseCard from "@components/ui/CourseCard";
 import CourseCardPlaceholders from "@components/ui/CourseCardPlaceholders";
 import { useBrowseCoursesInfiniteQuery } from "@api/modules/courseApi";
 import { useLoadMoreTrigger } from "@hooks/useLoadMoreTrigger";
+import useRestoreScroll from "@hooks/useRestoreScroll";
+import BackToTop from "@components/ui/BackToTop";
 import { EMPTY_FILTERS, parseFilters, serializeFilters, toApiParams } from "@utils/courseFilters";
 
 export default function BrowseCourses() {
@@ -36,6 +38,9 @@ export default function BrowseCourses() {
   const courses = useMemo(() => data?.pages.flat() ?? [], [data]);
   const isRefreshing = isFetching && !isFetchingNextPage;
   const loadFailed = isError && !isFetchNextPageError;
+
+  // Coming back with Back returns to the same place in the list (the loaded pages are still cached).
+  useRestoreScroll(courses.length > 0);
 
   // No automatic retry after a failed page: it would loop forever while the server is down.
   const loadMoreRef = useLoadMoreTrigger(fetchNextPage, hasNextPage && !isFetching && !isFetchNextPageError);
@@ -96,10 +101,13 @@ export default function BrowseCourses() {
   const showRefreshing = isRefreshing && courses.length > 0;
 
   return (
-    <main className="page-main">
+    <main className="page-main page-main-with-fab">
       <header className="page-heading">
         <span className="section-index">Browse courses</span>
-        <h1>Find your next lesson</h1>
+        {/* tabIndex -1: "Back to top" moves keyboard focus here after scrolling up */}
+        <h1 id="browse-title" tabIndex={-1}>
+          Find your next lesson
+        </h1>
         <p>Search, filter, and pick the right course for you.</p>
       </header>
 
@@ -113,6 +121,8 @@ export default function BrowseCourses() {
         )}
         {results}
       </section>
+
+      <BackToTop focusId="browse-title" />
     </main>
   );
 }

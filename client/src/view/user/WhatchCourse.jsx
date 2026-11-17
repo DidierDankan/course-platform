@@ -7,6 +7,7 @@ import { ListVideo } from "lucide-react";
 import { formatDuration } from "@utils/duration";
 import ReviewForm from "./ReviewForm";
 import CourseComments from "./CourseComments";
+import BackLink from "@components/ui/BackLink";
 
 const API_ORIGIN = import.meta.env.VITE_API_URL;
 
@@ -163,9 +164,7 @@ export default function WatchCourse() {
             <h1>{course.title}</h1>
             <p>{activeLesson.title}</p>
           </header>
-          <Link to={backLink.to} className="text-link">
-            {backLink.label}
-          </Link>
+          <BackLink fallback={backLink.to} fallbackLabel={`Back to ${backLink.label.toLowerCase()}`} />
         </div>
 
         <video

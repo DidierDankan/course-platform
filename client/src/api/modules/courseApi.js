@@ -29,6 +29,9 @@ export const courseApi = apiSlice.injectEndpoints({
       },
       query: ({ queryArg, pageParam }) => coursesUrl({ ...queryArg, page: pageParam, limit: COURSE_PAGE_SIZE }),
       providesTags: ["Courses"],
+      // Back to Browse restores the scroll position into these pages; the default 60 s would drop them while the
+      // user is still on a course page. 5 minutes covers a normal look at a course.
+      keepUnusedDataFor: 300,
     }),
     getCourses: builder.query({
       query: (sellerId) => `/courses?seller_id=${sellerId}`,

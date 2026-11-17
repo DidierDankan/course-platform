@@ -7,6 +7,7 @@ import { useGetCoursesQuery, useDeleteCourseMutation } from "@api/modules/course
 import CourseModal from "@components/ui/CourseModal";
 import Modal from "@components/ui/Modal";
 import { formatPrice } from "@utils/currency";
+import BackLink from "@components/ui/BackLink";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -126,6 +127,7 @@ const PortfolioPage = () => {
 
   return (
     <main className="page-main">
+      <BackLink fallback="/profile/dashboard" fallbackLabel="Back to dashboard" />
       <div className="portfolio-head">
         <header className="page-heading">
           <span className="section-index">Your teaching portfolio</span>
