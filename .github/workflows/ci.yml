@@ -1,0 +1,108 @@
+# Lint + build the client, and run the server's tests against a real MySQL, on every push and every pull request to main.
+# Every value below is a CI-only stand-in, not a secret: the tokens it signs, the Stripe key (never called: no test
+# reaches Stripe) and the database password all exist only inside this run's throwaway containers. Nothing comes from
+# GitHub Secrets, so a pull request from a fork can't read anything.
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+# A newer push to the same branch cancels the run that is still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  client:
+    name: client (lint + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - name: build
+        run: npm run build
+        env:
+          VITE_API_URL: http://localhost:3001 # pasted into the bundle at build time; this build is never served
+
+  server:
+    name: server (tests, ${{ matrix.mode.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # one SQL mode failing shouldn't hide whether the others pass
+      matrix:
+        mode:
+          - { name: strict, sql: "" } # empty = vitest.config.js's default strict mode
+          - { name: loose, sql: "NO_ENGINE_SUBSTITUTION" }
+          - { name: ansi, sql: "ANSI,TRADITIONAL" }
+    services:
+      mysql:
+        image: mysql:8.4 # what Aiven runs (8.4 LTS); keep in step with the live service's SELECT VERSION()
+        env:
+          MYSQL_ROOT_PASSWORD: ci-only-root
+          MYSQL_DATABASE: lumen_ci # for the boot check; the tests build lumen_test themselves
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-only-root"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    defaults:
+      run:
+        working-directory: server
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASS: ci-only-root
+      DB_NAME: lumen_ci # vitest.config.js switches the tests to lumen_test
+      JWT_ACCESS_SECRET: ci-only-jwt-secret-not-used-anywhere-else
+      STRIPE_SECRET_KEY: sk_test_ci_dummy
+      STRIPE_WEBHOOK_SECRET: whsec_ci_dummy
+      CLIENT_URL: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - name: npm test
+        run: npm test
+        env:
+          TEST_SQL_MODE: ${{ matrix.mode.sql }}
+      # A green npm test doesn't prove the server starts (Vitest resolves imports Node refuses), so start it for real.
+      - name: server boots
+        run: |
+          npm run migrate
+          node index.js > boot.log 2>&1 &
+          server_pid=$!
+          for attempt in $(seq 1 20); do
+            if curl -sf http://localhost:3001/ > /dev/null; then
+              echo "server answered on attempt $attempt"
+              kill "$server_pid"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "server did not answer within 20 s:"
+          cat boot.log
+          exit 1

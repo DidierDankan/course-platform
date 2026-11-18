@@ -68,6 +68,8 @@ cd server && npm run load        # local-only load test (list + login); start th
 # frontend (port 5173)
 cd client && npm run dev
 cd client && npm run lint && npm run build
+# CI: .github/workflows/ci.yml runs the client lint + build and the server tests (3 SQL modes, mysql:8.4) on every push.
+#     A new env variable in server/config.js REQUIRED must get a CI stand-in value there too, or every run fails at boot.
 # Stripe webhooks locally
 stripe listen --forward-to http://localhost:3001/api/payments/webhook
 ```
@@ -132,7 +134,7 @@ Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list i
 2. **Schema:** resolved in Stage 2 (2026-11-10). `schema.sql` is gone; `001_initial.sql` builds the same tables (minus reviews, comments and subscriptions) on InnoDB. Bad input answering 500 on strict MySQL: resolved in Stage 2b (2026-11-12), tested in all three SQL modes.
 3. **Hardening:** no database SSL yet *(DEPLOY.txt 2.1)*.
 4. **Hardcoded styling:** resolved in Phase 2 (2026-11-09). No arbitrary hex classes remain in `client/src`; colors live only in the theme files.
-5. **No CI.** Tests exist since Stage 2c (2026-11-12); the money-path and authorization tests are done (2026-11-18); still open: GitHub Actions running lint + build + `npm test` *(TODO: Stage 5)*.
+5. **CI:** `.github/workflows/ci.yml` (2026-11-18): client lint + build; server `npm test` in all three SQL modes on `mysql:8.4` (Aiven's version) plus a boot check. Its values are CI-only stand-ins, no GitHub Secrets. Open: the first green run on GitHub and a deliberate red one *(TODO: "GitHub Actions")*.
 6. **Enrollment depending only on the webhook:** resolved 2026-11-17. `POST /api/payments/confirm` reads the session from Stripe (never from the browser), checks it is the caller's and paid, and records it through `PaymentService.recordPaidPurchase`, the same transaction the webhook uses. Tests in `test/paymentConfirm.test.js`.
 7. **Error logs leak data:** resolved 2026-11-12 (`lib/logError.js`, final error handler in `app.js`). Still open from that sweep, decided not to patch: login timing hints whether an email exists (register's 409 already says so by design; the real fix is email verification), and `updateCourse` is not one transaction *(TODO: LEAK SWEEP 2026-11-12)*.
 
