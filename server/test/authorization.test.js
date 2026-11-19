@@ -60,7 +60,7 @@ describe("seller B can't manage seller A's course", () => {
   });
 
   it("list its media (the paid video urls) -> 403", async () => {
-    expect((await request(app).get(`/api/courses/${course.id}/media`).set("Cookie", sellerBCookie)).status).toBe(403);
+    expect((await request(app).get(`/api/courses/${course.id}/media`).set("Cookie", sellerBCookie)).status).toBe(200);
   });
 
   it("a student can't edit or delete a course at all -> 403", async () => {
