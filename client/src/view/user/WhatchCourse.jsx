@@ -123,6 +123,12 @@ export default function WatchCourse() {
   };
 
   const handleEnded = async () => {
+    // A save still waiting from the last timeupdate would land after these and point back at the finished lesson.
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+
+    const idx = lessons.findIndex((l) => l.id === activeLessonId);
+    const next = lessons[idx + 1];
+
     if (enrollment) {
       await updateProgress({
         courseId,
@@ -130,12 +136,14 @@ export default function WatchCourse() {
         lastWatchedMediaId: activeLessonId,
         lastPositionSeconds: 0,               // reset on completion
       });
+      // Resume at the next lesson from now on, even if the tab closes before it plays a second
+      // (the pointer otherwise only moves on the next lesson's first timeupdate save).
+      if (next) {
+        await updateProgress({ courseId, completed: false, lastWatchedMediaId: next.id, lastPositionSeconds: 0 });
+      }
     }
 
-    // Auto-next lesson
-    const idx = lessons.findIndex((l) => l.id === activeLessonId);
-    const next = lessons[idx + 1];
-    if (next) setActiveLessonId(next.id);
+    if (next) setActiveLessonId(next.id); // auto-next lesson
   };
 
   if (isLoading) {

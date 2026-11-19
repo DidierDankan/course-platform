@@ -133,19 +133,16 @@ async function main() {
     await conn.beginTransaction();
 
     const sellerId = await upsertUser(conn, DEMO_SELLER, passwordHash);
-    const studentId = await upsertUser(conn, DEMO_STUDENT, passwordHash);
+    await upsertUser(conn, DEMO_STUDENT, passwordHash);
     // Instructor profile pages need at least one qualification (RequireProfileCompletion).
     await conn.query(
       `INSERT IGNORE INTO qualifications (user_id, title, institution) VALUES (?, ?, ?)`,
       [sellerId, DEMO_SELLER.qualification.title, DEMO_SELLER.qualification.institution]
     );
-    const learnerIds = [];
     for (let n = 1; n <= DEMO_LEARNERS; n += 1) {
-      learnerIds.push(await upsertUser(conn, { email: learnerEmail(n), role: "user", fullName: `Demo learner ${n}` }, passwordHash));
+      await upsertUser(conn, { email: learnerEmail(n), role: "user", fullName: `Demo learner ${n}` }, passwordHash);
     }
 
-    const courseIds = [];
-    const firstLessonIds = [];
     let videoIndex = 0;
     for (const course of DEMO_COURSES) {
       // A course is identified by (seller, title): re-runs update it in place.
@@ -176,7 +173,6 @@ async function main() {
         ]);
         courseId = res.insertId;
       }
-      courseIds.push(courseId);
 
       const thumbUrl = await copyToUploads(path.join(THUMBS_DIR, course.thumbnail));
       copied.push(thumbUrl);
@@ -189,18 +185,20 @@ async function main() {
         const video = videos[videoIndex++ % videos.length]; // fewer files than lessons: reuse them
         const url = await copyToUploads(video.full);
         copied.push(url);
-        const [res] = await conn.query(
+        await conn.query(
           `INSERT INTO course_media (course_id, type, url, title, description, duration, order_index, is_preview)
            VALUES (?, 'video', ?, ?, ?, ?, ?, ?)`,
           [courseId, url, course.lessons[i], `Lesson ${i + 1} of ${course.title}`, video.duration, i + 1, i === 0 ? 1 : 0]
         );
-        if (i === 0) firstLessonIds.push(res.insertId);
       }
     }
 
     // Purchases, progress, reviews, comments, notifications: the same code as the daily reset, which also records the
-    // time, so a server with DEMO_RESET_HOURS set doesn't reset again right after a seed.
-    await DemoService.rebuildActivity(conn, { sellerId, studentId, learnerIds, courseIds, firstLessonIds });
+    // time, so a server with DEMO_RESET_HOURS set doesn't reset again right after a seed. findDemo reads the ids back on
+    // this transaction's connection, so seed and reset work from the same lookup.
+    const demo = await DemoService.findDemo(conn);
+    if (!demo) throw new Error(`${SCRIPT}: the demo just written can't be found again (findDemo).`);
+    await DemoService.rebuildActivity(conn, demo);
 
     await conn.commit();
   } catch (err) {

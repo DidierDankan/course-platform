@@ -54,3 +54,10 @@ export const LESSONS_PER_COURSE = 2;
 export const ENROLLED_COURSE = 1;
 export const FAVORITE_COURSE = 0;
 export const STUDENT_PROGRESS = 50; // 1 of 2 lessons completed, matching how the server computes progress
+
+// Where the student's "Continue" opens: lesson 2 (lessons = the enrolled course's videos, in order, { id, duration }),
+// a third of the way in, so the resume visibly seeks. The real length, so the point is always inside the video.
+export const studentResumePoint = (lessons) => ({
+  lessonId: lessons[1].id,
+  seconds: Math.floor(lessons[1].duration / 3),
+});
