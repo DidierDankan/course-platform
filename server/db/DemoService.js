@@ -13,7 +13,9 @@ import {
   DEMO_STUDENT_EMAIL,
   ENROLLED_COURSE,
   FAVORITE_COURSE,
+  LESSONS_PER_COURSE,
   STUDENT_PROGRESS,
+  studentResumePoint,
 } from "../lib/demoContent.js";
 import { DEMO_LEARNERS, UNREAD_DEMO_NOTIFICATIONS, commentPlan, learnerEmail, reviewPlan, salesHistory } from "../lib/demoHistory.js";
 
@@ -28,7 +30,8 @@ class DemoService {
   }
 
   // The ids of what the seed created, or null when the seed hasn't run here (then there is nothing to reset).
-  // demo = { sellerId, studentId, learnerIds, courseIds, firstLessonIds }, courseIds in DEMO_COURSES order.
+  // demo = { sellerId, studentId, learnerIds, courseIds, lessons, firstLessonIds }, courseIds in DEMO_COURSES order;
+  // lessons[i] = course i's videos in order ({ id, duration }), firstLessonIds[i] = lessons[i][0].id.
   async findDemo(q = db) {
     const [users] = await q.query("SELECT id, email FROM users WHERE is_demo = 1 AND email IN (?)", [
       [DEMO_INSTRUCTOR_EMAIL, DEMO_STUDENT_EMAIL, ...LEARNER_EMAILS],
@@ -47,15 +50,17 @@ class DemoService {
     const courseIds = DEMO_COURSES.map((c) => courseOf.get(c.title));
     if (courseIds.some((id) => !id)) return null;
 
-    const [lessons] = await q.query(
-      "SELECT course_id, id FROM course_media WHERE course_id IN (?) AND type = 'video' AND order_index = 1",
+    const [videos] = await q.query(
+      "SELECT course_id, id, duration FROM course_media WHERE course_id IN (?) AND type = 'video' ORDER BY order_index, id",
       [courseIds]
     );
-    const lessonOf = new Map(lessons.map((l) => [l.course_id, l.id]));
-    const firstLessonIds = courseIds.map((id) => lessonOf.get(id));
-    if (firstLessonIds.some((id) => !id)) return null;
+    const lessons = courseIds.map((courseId) =>
+      videos.filter((v) => v.course_id === courseId).map(({ id, duration }) => ({ id, duration: Number(duration) || 0 }))
+    );
+    if (lessons.some((list) => list.length < LESSONS_PER_COURSE)) return null;
+    const firstLessonIds = lessons.map((list) => list[0].id);
 
-    return { sellerId, studentId, learnerIds, courseIds, firstLessonIds };
+    return { sellerId, studentId, learnerIds, courseIds, lessons, firstLessonIds };
   }
 
   // Run inside a transaction (q = its connection). Removes what anyone did with the demo accounts, and every review and
@@ -98,20 +103,22 @@ class DemoService {
   // The seeded activity: the student's half-done course and favorite, a year of sales, reviews, comments and the
   // instructor's notifications. Called on empty tables (rebuildActivity clears them first).
   async #writeActivity(q, demo, now) {
-    const { sellerId, studentId, learnerIds, courseIds, firstLessonIds } = demo;
+    const { sellerId, studentId, learnerIds, courseIds, lessons, firstLessonIds } = demo;
 
-    await q.query("INSERT INTO enrollments (user_id, course_id, progress, last_watched_media_id) VALUES (?, ?, ?, ?)", [
-      studentId,
-      courseIds[ENROLLED_COURSE],
-      STUDENT_PROGRESS,
-      firstLessonIds[ENROLLED_COURSE],
-    ]);
-    // Same columns the server writes (EnrollmentService.updateProgress).
-    await q.query("INSERT INTO lesson_progress (user_id, course_media_id, completed, completed_at) VALUES (?, ?, 1, ?)", [
-      studentId,
-      firstLessonIds[ENROLLED_COURSE],
-      now,
-    ]);
+    // Lesson 1 done, part way into lesson 2: where a real student stands after finishing lesson 1 (the watch page moves
+    // the resume point to the next lesson), so "Continue" opens lesson 2 there.
+    const resume = studentResumePoint(lessons[ENROLLED_COURSE]);
+    await q.query(
+      `INSERT INTO enrollments (user_id, course_id, progress, last_watched_media_id, last_position_seconds)
+       VALUES (?, ?, ?, ?, ?)`,
+      [studentId, courseIds[ENROLLED_COURSE], STUDENT_PROGRESS, resume.lessonId, resume.seconds]
+    );
+    // Same rows the server writes (EnrollmentService.updateProgress): lesson 1 completed, lesson 2 started.
+    await q.query(
+      `INSERT INTO lesson_progress (user_id, course_media_id, completed, completed_at, last_position_seconds)
+       VALUES (?, ?, 1, ?, 0), (?, ?, 0, NULL, ?)`,
+      [studentId, firstLessonIds[ENROLLED_COURSE], now, studentId, resume.lessonId, resume.seconds]
+    );
     await q.query("INSERT INTO favorites (user_id, course_id) VALUES (?, ?)", [studentId, courseIds[FAVORITE_COURSE]]);
 
     // Sales history: the rows checkout + the webhook write (a paid payment and its enrollment), dated in the past.

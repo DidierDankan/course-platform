@@ -223,6 +223,16 @@ async function activityOf({ sellerId, studentId, learnerIds, courseIds }) {
   return {
     studentEnrollments: await one("SELECT COUNT(*) n FROM enrollments WHERE user_id = ?", [studentId]),
     studentProgress: await one("SELECT progress n FROM enrollments WHERE user_id = ? AND course_id = ?", [studentId, courseIds[ENROLLED_COURSE]]),
+    // "Continue" opens the second lesson part way in (the first is the completed one)
+    studentResumesSecondLesson:
+      (await one("SELECT last_watched_media_id n FROM enrollments WHERE user_id = ? AND course_id = ?", [studentId, courseIds[ENROLLED_COURSE]])) ===
+      (await one("SELECT id n FROM course_media WHERE course_id = ? AND type = 'video' ORDER BY order_index LIMIT 1 OFFSET 1", [courseIds[ENROLLED_COURSE]])),
+    studentResumesInsideThatLesson: await one(
+      `SELECT e.last_position_seconds <= COALESCE(cm.duration, 0) n
+         FROM enrollments e JOIN course_media cm ON cm.id = e.last_watched_media_id
+        WHERE e.user_id = ? AND e.course_id = ?`,
+      [studentId, courseIds[ENROLLED_COURSE]]
+    ),
     studentFavorites: await one("SELECT COUNT(*) n FROM favorites WHERE user_id = ?", [studentId]),
     studentReviewsAndComments:
       (await one("SELECT COUNT(*) n FROM reviews WHERE user_id = ?", [studentId])) +
@@ -241,6 +251,8 @@ function seededActivity(sales) {
   return {
     studentEnrollments: 1,
     studentProgress: 50,
+    studentResumesSecondLesson: true,
+    studentResumesInsideThatLesson: 1,
     studentFavorites: 1,
     studentReviewsAndComments: 0,
     paidSales: sales.length,
