@@ -117,4 +117,13 @@ describe("recording the purchase", () => {
     expect([a.status, b.status]).toEqual([200, 200]);
     expect(await counts(buyer.id, course.id)).toEqual({ enrollments: 1, payments: ["paid"] });
   });
+
+  // The success page in development (StrictMode runs its effect twice), or two tabs on the same return URL
+  it("two confirms at the same moment -> both 200, one of each", async () => {
+    stripeReturns(session);
+    const answers = await Promise.all([confirm(buyerCookie), confirm(buyerCookie)]);
+    expect(answers.map((res) => res.status)).toEqual([200, 200]);
+    expect(answers.map((res) => res.body.courseId)).toEqual([course.id, course.id]);
+    expect(await counts(buyer.id, course.id)).toEqual({ enrollments: 1, payments: ["paid"] });
+  });
 });
