@@ -21,7 +21,8 @@ import {
   refuseProductionUnlessForced,
   removeUploadFile,
   runScript,
-  DEMO_STUDENT_EMAIL
+  DEMO_STUDENT_EMAIL,
+  DEMO_INSTRUCTOR_EMAIL,
 } from "./lib.js";
 import {
   DEMO_LEARNERS,
@@ -46,7 +47,7 @@ const STUDENT_PROGRESS = 50; // 1 of 2 lessons completed, matching how the serve
 
 // .test is a reserved TLD: these addresses can never belong to a real person.
 const SELLER = {
-  email: "demo-instructor@lumen.test",
+  email: DEMO_INSTRUCTOR_EMAIL,
   role: "seller",
   fullName: "Maya Chen",
   bio: "Photographer and ceramicist. I teach the slow, hands-on version of every craft.",
