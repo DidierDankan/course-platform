@@ -20,7 +20,7 @@ const setRefreshCookie = (res, token) =>
 const clearLegacyRefreshCookie = (res) => res.clearCookie('refreshToken', { ...cookieBase, path: '/' });
 
 // The only user fields any auth answer contains (never iat/exp, never the hash).
-const publicUser = (user) => ({ id: user.id, email: user.email, role: user.role });
+const publicUser = (user) => ({ id: user.id, email: user.email, role: user.role, isDemo: Number(user.is_demo) === 1 });
 
 class AuthController {
   async register(req, res) {

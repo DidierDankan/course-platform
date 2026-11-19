@@ -6,6 +6,7 @@ import upload from "../middleware/uploadMiddleware.js";
 import { authenticate } from "../middleware/authMiddleware.js";
 import { authorizeRoles } from "../middleware/authMiddleware.js";
 import { requireCourseOwner, requireMediaOwner } from "../middleware/courseOwnership.js";
+import { refuseDemoAccount } from "../middleware/demoAccount.js";
 import validateRequest from "../middleware/validateRequest.js";
 import { courseListValidation, courseValidation } from "../validators/courseValidator.js";
 import { validId } from "../validators/idParam.js";
@@ -36,6 +37,7 @@ router.get("/:id/media", validId("id"), requireCourseOwner, CourseController.get
 router.post(
   "/",
   authorizeRoles("admin", "seller"),
+  refuseDemoAccount, // before upload: a refused demo request saves no files
   upload.fields([
     { name: "thumbnail", maxCount: 1 },
     { name: "videos", maxCount: 20 },
@@ -48,6 +50,7 @@ router.put(
   "/:id",
   authorizeRoles("admin", "seller"),
   validId("id"),
+  refuseDemoAccount,
   requireCourseOwner, // before upload, so refused requests don't save files
   upload.fields([
     { name: "thumbnail", maxCount: 1 },
@@ -57,8 +60,8 @@ router.put(
   validateRequest,
   CourseController.updateCourse
 );
-router.delete("/:id", authorizeRoles("admin", "seller"), validId("id"), requireCourseOwner, CourseController.deleteCourse);
-router.delete("/media/:mediaId", authorizeRoles("admin", "seller"), validId("mediaId"), requireMediaOwner, CourseController.deleteMedia);
+router.delete("/:id", authorizeRoles("admin", "seller"), validId("id"), refuseDemoAccount, requireCourseOwner, CourseController.deleteCourse);
+router.delete("/media/:mediaId", authorizeRoles("admin", "seller"), validId("mediaId"), refuseDemoAccount, requireMediaOwner, CourseController.deleteMedia);
 
 router.get("/:id/watch", validId("id"), CourseController.watch);
 

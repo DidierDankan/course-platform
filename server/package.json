@@ -10,6 +10,7 @@
     "dev": "nodemon index.js",
     "migrate": "node scripts/migrate.js",
     "seed:demo": "node scripts/seed-demo.js",
+    "reset:demo": "node scripts/reset-demo.js",
     "cleanup:test-data": "node scripts/cleanup-test-data.js",
     "load": "node scripts/load.js"
   },

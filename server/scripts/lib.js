@@ -10,10 +10,8 @@ export const SERVER_DIR = path.resolve(SCRIPTS_DIR, "..");
 // Same folder the server serves at /uploads (CourseService and multer write there).
 export const UPLOADS_DIR = config.uploadDir;
 export const UPLOADS_URL_PREFIX = "/uploads/";
-// The demo accounts created by seed-demo.js; load.js logs in as the student. The login page lists both
-// (client/src/utils/demo/index.js): keep the two files in sync.
-export const DEMO_STUDENT_EMAIL = "demo-student@lumen.test";
-export const DEMO_INSTRUCTOR_EMAIL = "demo-instructor@lumen.test";
+// The demo accounts seed-demo.js creates (defined in lib/demoContent.js); load.js logs in as the student.
+export { DEMO_INSTRUCTOR_EMAIL, DEMO_STUDENT_EMAIL } from "../lib/demoContent.js";
 
 export class ScriptStop extends Error {}
 

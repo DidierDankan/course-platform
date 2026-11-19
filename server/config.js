@@ -41,9 +41,20 @@ const proxyHopsFrom = (name) => {
   return hops;
 };
 
+// Optional: how often the server resets the public demo (DemoService.resetIfDue). Unset = never, which is what a local
+// database wants (a reset removes reviews and comments on the demo courses). The live server sets 24.
+const demoResetHoursFrom = (name) => {
+  const raw = process.env[name];
+  if (!raw) return null;
+  const hours = Number(raw);
+  if (!Number.isFinite(hours) || hours <= 0) fail(`${name} must be a number of hours above 0, or unset.`);
+  return hours;
+};
+
 const config = Object.freeze({
   port: portFrom("PORT", 3001),
   trustProxyHops: proxyHopsFrom("TRUST_PROXY_HOPS"),
+  demoResetHours: demoResetHoursFrom("DEMO_RESET_HOURS"),
   isProduction: process.env.NODE_ENV === "production",
   clientUrl: process.env.CLIENT_URL,
   // Where uploaded files are stored. A relative UPLOAD_DIR is read from server/, never from the folder the process started in.
