@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useConfirmPaymentMutation } from "@api/modules/paymentApi";
@@ -22,11 +22,12 @@ export default function PaymentSuccess() {
   const myCourses = STUDENT_AREA_ROLES.includes(role) ? "/user/courses" : "/courses";
   const [confirmPayment] = useConfirmPaymentMutation();
   const [state, setState] = useState(sessionId ? "confirming" : "unknown"); // confirming | confirmed | processing | failed | unknown
-  const started = useRef(false); // StrictMode runs effects twice in development; confirming twice is harmless but noisy
 
+  // No "already started" guard: StrictMode (development) runs this effect, cancels it, and runs it again. A guard would
+  // stop the second run while the first one's answer is ignored as cancelled, and the page would wait forever. Each
+  // run sends its own request instead; confirming is idempotent (one enrollment however often it's called).
   useEffect(() => {
-    if (!sessionId || started.current) return;
-    started.current = true;
+    if (!sessionId) return;
     let cancelled = false;
 
     (async () => {
