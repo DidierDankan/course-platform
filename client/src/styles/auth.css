@@ -87,6 +87,74 @@
     font-size: 14px;
     font-weight: 600;
   }
+  /* Demo accounts under the login form (components/ui/DemoAccounts.jsx) */
+  .demo-accounts {
+    margin-top: 22px;
+  }
+  .demo-accounts h2 {
+    margin: 0 0 14px;
+  }
+  .demo-account-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  /* Text and button in two columns, so both buttons line up whatever the email's length; stacked on phones. */
+  .demo-account {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    align-items: center;
+    gap: 14px;
+  }
+  @media (max-width: 480px) {
+    .demo-account {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+    }
+    .demo-account .button {
+      justify-self: start;
+    }
+  }
+  .demo-account-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .demo-account-role {
+    font-weight: 700;
+  }
+  .demo-account-hint {
+    color: var(--lm-muted);
+    font-size: 13px;
+  }
+  .demo-accounts code {
+    font-family: var(--lm-font-mono);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+  .demo-facts {
+    margin: 18px 0 0;
+    padding-top: 14px;
+    border-top: var(--lm-border-w) solid var(--lm-line);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 13px;
+  }
+  .demo-facts dt {
+    color: var(--lm-muted);
+    font-family: var(--lm-font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .demo-facts dd {
+    margin: 2px 0 0;
+  }
   .auth-hint {
     margin: 22px 0 0;
     color: var(--lm-muted);
