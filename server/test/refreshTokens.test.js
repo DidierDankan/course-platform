@@ -77,7 +77,7 @@ describe("refresh rotates the token", () => {
     expect(second).toBeDefined();
     expect(second).not.toBe(first);
     expect(valueOf(res, "token")).toBeDefined();
-    expect(res.body.user).toEqual({ id: user.id, email: user.email, role: "user" });
+    expect(res.body.user).toEqual({ id: user.id, email: user.email, role: "user", isDemo: false });
 
     const old = await rowOf(first);
     const replacement = await rowOf(second);

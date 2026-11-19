@@ -1,12 +1,13 @@
-// server/scripts/demoHistory.js
-// Used by seed-demo.js. Its own module so a test can check the plan without running the seed.
+// server/lib/demoHistory.js
+// The demo's history plan (sales, reviews, comments), used by db/DemoService.js for seed:demo and the daily reset.
+// Its own module so a test can check the plan without a database.
 
 // A year of sales for the seller dashboard's charts: demo learners who bought courses, more each quarter.
 // Deterministic (the same rows every run) and dated back from the current month, so a re-run keeps the history inside
 // the dashboard's last 12 months. Each learner buys a course at most once (enrollments and payments are unique per pair).
 export const DEMO_LEARNERS = 24;
 export const HISTORY_MONTHS = 12;
-// Indexes into seed-demo.js's COURSES (4 courses): course 1 sells best.
+// Indexes into lib/demoContent.js's DEMO_COURSES (4 courses): course 1 sells best.
 const COURSE_POPULARITY = [1, 0, 1, 2, 1, 3, 0, 1, 2, 1];
 export const learnerEmail = (n) => `demo-learner-${String(n).padStart(2, "0")}@lumen.test`;
 

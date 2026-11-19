@@ -1,7 +1,7 @@
-// The demo seed's sales plan (scripts/demoHistory.js): what the seller dashboard shows on the live demo.
+// The demo seed's sales plan (lib/demoHistory.js): what the seller dashboard shows on the live demo.
 import { describe, expect, it } from "vitest";
 import { statsWindow } from "../db/SellerStatsService.js";
-import { DEMO_LEARNERS, commentPlan, reviewPlan, salesHistory } from "../scripts/demoHistory.js";
+import { DEMO_LEARNERS, commentPlan, reviewPlan, salesHistory } from "../lib/demoHistory.js";
 
 const monthOf = (date) => date.toISOString().slice(0, 7);
 

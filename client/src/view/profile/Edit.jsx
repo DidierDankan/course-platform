@@ -10,11 +10,14 @@ import SkillsSelectionField from "@components/ui/Form/SkillsSelectionField";
 import QualificationsFieldArray from "@components/ui/Form/QualificationsFieldArray";
 import FormField from "@components/ui/Form/FormField";
 import BackLink from "@components/ui/BackLink";
+import DemoNotice from "@components/ui/DemoNotice";
+import { useIsDemoAccount } from "@hooks/useIsDemoAccount";
 
 const EditProfile = () => {
   const navigate = useNavigate();
   const [editUser] = useEditProfileMutation();
   const { data: profile, isLoading, isError, refetch } = useGetProfileQuery();
+  const isDemo = useIsDemoAccount(); // the server refuses profile changes on the demo account
 
   if (isLoading) {
     return (
@@ -52,6 +55,7 @@ const EditProfile = () => {
         <p>Keep your personal and professional info up to date.</p>
       </header>
 
+      <DemoNotice what="editing the profile" />
       <section className="panel">
         <Formik
           initialValues={{
@@ -97,7 +101,7 @@ const EditProfile = () => {
               <div className="form-actions">
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isDemo}
                   aria-busy={isSubmitting}
                   className={`button button-primary ${isSubmitting ? "is-loading" : ""}`}
                 >

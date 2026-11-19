@@ -28,7 +28,7 @@ const insertToken = async (q, { userId, familyId }) => {
 
 const loadUser = async (q, userId) => {
   // The database decides who the user is now: a role change applies at the next refresh.
-  const [[user]] = await q.query("SELECT id, email, role FROM users WHERE id = ?", [userId]);
+  const [[user]] = await q.query("SELECT id, email, role, is_demo FROM users WHERE id = ?", [userId]);
   return user ?? null;
 };
 

@@ -428,6 +428,32 @@
     font-size: 15px;
     line-height: 1.6;
   }
+  /* On the demo accounts: what's switched off on this page (components/ui/DemoNotice.jsx) */
+  .demo-notice {
+    margin: 0 0 20px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: var(--lm-ink);
+    background: var(--lm-surface-2);
+    border: var(--lm-border-w) solid var(--lm-line);
+    border-radius: var(--lm-radius-input);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .demo-notice svg {
+    flex: none;
+    margin-top: 1px;
+  }
+  .demo-notice a {
+    font-weight: 700;
+    text-decoration: underline;
+  }
+  .demo-notice a:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 2px;
+  }
   .panel {
     padding: 22px;
     color: var(--lm-ink);

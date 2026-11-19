@@ -1,95 +1,37 @@
 // server/scripts/seed-demo.js
 // Demo data for the live site and screenshots: 1 demo instructor, 1 demo student, 4 courses with
 // thumbnails (cut from the reference contact sheet) and 2 lessons each (the first is a free preview),
-// plus one enrollment at 50% so "Continue learning" has something to show.
+// a year of sales to 24 demo learners, reviews, comments and the instructor's notifications.
 //
 //   DEMO_PASSWORD=... npm run seed:demo      (NODE_ENV=production also needs --force)
 //
 // Videos: put royalty-free .mp4 files (< 50 MB each) in server/scripts/seed-assets/. They are not
 // committed. With none there, the script stops before touching anything.
 // Idempotent: re-running updates the same rows instead of adding copies.
+//
+// What the accounts and courses are: lib/demoContent.js. This script writes them (it needs the video files); the
+// activity (purchases, progress, reviews, comments, notifications) comes from DemoService.rebuildActivity, the same code
+// the server's daily reset runs. Every account here is marked is_demo, so the server refuses the writes that would
+// break the demo (middleware/demoAccount.js).
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
 import db from "../db/connection.js";
-import {
-  ScriptStop,
-  UPLOADS_DIR,
-  UPLOADS_URL_PREFIX,
-  refuseProductionUnlessForced,
-  removeUploadFile,
-  runScript,
-  DEMO_STUDENT_EMAIL,
-  DEMO_INSTRUCTOR_EMAIL,
-} from "./lib.js";
-import {
-  DEMO_LEARNERS,
-  HISTORY_MONTHS,
-  UNREAD_DEMO_NOTIFICATIONS,
-  commentPlan,
-  learnerEmail,
-  reviewPlan,
-  salesHistory,
-} from "./demoHistory.js";
+import DemoService from "../db/DemoService.js";
+import { ScriptStop, UPLOADS_DIR, UPLOADS_URL_PREFIX, refuseProductionUnlessForced, removeUploadFile, runScript } from "./lib.js";
+import { DEMO_COURSES, DEMO_SELLER, DEMO_STUDENT, LESSONS_PER_COURSE } from "../lib/demoContent.js";
+import { DEMO_LEARNERS, HISTORY_MONTHS, commentPlan, learnerEmail, reviewPlan, salesHistory } from "../lib/demoHistory.js";
 
 const SCRIPT = "seed-demo";
 const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
-const ASSETS_DIR = path.join(SCRIPTS_DIR, "seed-assets");
+// SEED_ASSETS_DIR: another folder of demo videos (the tests point it at a temp folder; seed-assets isn't committed)
+const ASSETS_DIR = process.env.SEED_ASSETS_DIR || path.join(SCRIPTS_DIR, "seed-assets");
 const THUMBS_DIR = path.join(SCRIPTS_DIR, "seed-data", "thumbnails");
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 const MIN_PASSWORD_LENGTH = 8;
 const BCRYPT_ROUNDS = 10; // same cost as UserService.createUser
-const LESSONS_PER_COURSE = 2;
-const STUDENT_PROGRESS = 50; // 1 of 2 lessons completed, matching how the server computes progress
-
-
-// .test is a reserved TLD: these addresses can never belong to a real person.
-const SELLER = {
-  email: DEMO_INSTRUCTOR_EMAIL,
-  role: "seller",
-  fullName: "Maya Chen",
-  bio: "Photographer and ceramicist. I teach the slow, hands-on version of every craft.",
-  qualification: { title: "BA Fine Arts", institution: "Lumen Demo Academy" },
-};
-const STUDENT = { email: DEMO_STUDENT_EMAIL, role: "user", fullName: "Sam Rivera" };
-
-// Titles, copy and prices from the reference designs (design/*/src/App.tsx). Thumbnails are the
-// cinematic contact-sheet tiles: one image per course, like a seller would upload.
-const COURSES = [
-  {
-    title: "Form & fire: the art of hand-built ceramics",
-    description: "Learn hand-building techniques and create beautiful, useful pieces without a wheel.",
-    price: 89,
-    thumbnail: "ceramics.jpg",
-    lessons: ["Wedging and pinch pots", "Coil building a vessel"],
-  },
-  {
-    title: "Cinema in stills: visual storytelling",
-    description: "Find your visual voice and tell honest stories through everyday moments.",
-    price: 74,
-    thumbnail: "film.jpg",
-    lessons: ["Seeing in frames", "Light, shadow and mood"],
-  },
-  {
-    title: "Bold marks: abstract painting in motion",
-    description: "Build a playful studio practice through colour, composition, and expressive mark-making.",
-    price: 65,
-    thumbnail: "painting.jpg",
-    lessons: ["Colour before composition", "Gesture and the loaded brush"],
-  },
-  {
-    title: "Slow bread: sourdough from scratch",
-    description: "Master a dependable starter, intuitive dough handling, and the perfect golden crust.",
-    price: 59,
-    thumbnail: "bread.jpg",
-    lessons: ["Building a starter", "Shaping and the first bake"],
-  },
-];
-// The student is enrolled in this course (index into COURSES) and has favorited another.
-const ENROLLED_COURSE = 1;
-const FAVORITE_COURSE = 0;
 
 async function findVideos() {
   let names;
@@ -158,10 +100,12 @@ async function copyToUploads(source) {
   return `${UPLOADS_URL_PREFIX}${name}`;
 }
 
+// Every seeded account is a demo account (is_demo = 1): its password is public, so the server keeps it read-only where
+// that matters. The demo learners share the password too, so they are marked as well.
 async function upsertUser(conn, account, passwordHash) {
   await conn.query(
-    `INSERT INTO users (email, password, role) VALUES (?, ?, ?)
-     ON DUPLICATE KEY UPDATE password = VALUES(password), role = VALUES(role)`,
+    `INSERT INTO users (email, password, role, is_demo) VALUES (?, ?, ?, 1)
+     ON DUPLICATE KEY UPDATE password = VALUES(password), role = VALUES(role), is_demo = 1`,
     [account.email, passwordHash, account.role]
   );
   const [[user]] = await conn.query("SELECT id FROM users WHERE email = ?", [account.email]);
@@ -178,7 +122,7 @@ async function main() {
   // Every check that can fail runs before the first write.
   const videos = await findVideos();
   const password = demoPassword();
-  for (const course of COURSES) await fs.access(path.join(THUMBS_DIR, course.thumbnail));
+  for (const course of DEMO_COURSES) await fs.access(path.join(THUMBS_DIR, course.thumbnail));
   await fs.mkdir(UPLOADS_DIR, { recursive: true });
 
   const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
@@ -188,18 +132,22 @@ async function main() {
   try {
     await conn.beginTransaction();
 
-    const sellerId = await upsertUser(conn, SELLER, passwordHash);
-    const studentId = await upsertUser(conn, STUDENT, passwordHash);
+    const sellerId = await upsertUser(conn, DEMO_SELLER, passwordHash);
+    const studentId = await upsertUser(conn, DEMO_STUDENT, passwordHash);
     // Instructor profile pages need at least one qualification (RequireProfileCompletion).
     await conn.query(
       `INSERT IGNORE INTO qualifications (user_id, title, institution) VALUES (?, ?, ?)`,
-      [sellerId, SELLER.qualification.title, SELLER.qualification.institution]
+      [sellerId, DEMO_SELLER.qualification.title, DEMO_SELLER.qualification.institution]
     );
+    const learnerIds = [];
+    for (let n = 1; n <= DEMO_LEARNERS; n += 1) {
+      learnerIds.push(await upsertUser(conn, { email: learnerEmail(n), role: "user", fullName: `Demo learner ${n}` }, passwordHash));
+    }
 
     const courseIds = [];
     const firstLessonIds = [];
     let videoIndex = 0;
-    for (const course of COURSES) {
+    for (const course of DEMO_COURSES) {
       // A course is identified by (seller, title): re-runs update it in place.
       const [[existing]] = await conn.query("SELECT id FROM courses WHERE seller_id = ? AND title = ?", [
         sellerId,
@@ -212,8 +160,7 @@ async function main() {
           course.price,
           courseId,
         ]);
-        // Replace the media. Explicit deletes (also of the progress rows that point at it) because
-        // the local database may be MyISAM, where nothing cascades.
+        // Replace the media, and the progress rows that point at it (anyone's: those lessons are gone).
         const [oldMedia] = await conn.query("SELECT id, url FROM course_media WHERE course_id = ?", [courseId]);
         if (oldMedia.length) {
           await conn.query("DELETE FROM lesson_progress WHERE course_media_id IN (?)", [oldMedia.map((m) => m.id)]);
@@ -251,108 +198,9 @@ async function main() {
       }
     }
 
-    // Student state: one course half done, one favorite.
-    const enrolledId = courseIds[ENROLLED_COURSE];
-    // Look up, then update or insert, so running the seed again keeps a single enrollment
-    // even on a database without the (user_id, course_id) unique key.
-    const [[enrollment]] = await conn.query("SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?", [
-      studentId,
-      enrolledId,
-    ]);
-    if (enrollment) {
-      await conn.query("UPDATE enrollments SET progress = ?, last_watched_media_id = ? WHERE id = ?", [
-        STUDENT_PROGRESS,
-        firstLessonIds[ENROLLED_COURSE],
-        enrollment.id,
-      ]);
-    } else {
-      await conn.query(
-        "INSERT INTO enrollments (user_id, course_id, progress, last_watched_media_id) VALUES (?, ?, ?, ?)",
-        [studentId, enrolledId, STUDENT_PROGRESS, firstLessonIds[ENROLLED_COURSE]]
-      );
-    }
-    // Same columns the server writes (EnrollmentService.updateProgress).
-    await conn.query(
-      `INSERT INTO lesson_progress (user_id, course_media_id, completed, completed_at) VALUES (?, ?, 1, NOW())
-       ON DUPLICATE KEY UPDATE completed = 1`,
-      [studentId, firstLessonIds[ENROLLED_COURSE]]
-    );
-    await conn.query("INSERT IGNORE INTO favorites (user_id, course_id) VALUES (?, ?)", [
-      studentId,
-      courseIds[FAVORITE_COURSE],
-    ]);
-
-    // Sales history: the rows checkout + the webhook write (a paid payment and its enrollment), dated in the past.
-    const learnerIds = [];
-    for (let n = 1; n <= DEMO_LEARNERS; n += 1) {
-      learnerIds.push(await upsertUser(conn, { email: learnerEmail(n), role: "user", fullName: `Demo learner ${n}` }, passwordHash));
-    }
-    const sales = salesHistory();
-    for (const sale of sales) {
-      const userId = learnerIds[sale.learner];
-      const course = COURSES[sale.course];
-      const courseId = courseIds[sale.course];
-      const when = Math.floor(sale.at.getTime() / 1000);
-      await conn.query(
-        `INSERT INTO payments (user_id, course_id, status, amount, stripe_session_id, payment_date)
-         VALUES (?, ?, 'paid', ?, ?, FROM_UNIXTIME(?))
-         ON DUPLICATE KEY UPDATE status = 'paid', amount = VALUES(amount), payment_date = VALUES(payment_date)`,
-        [userId, courseId, course.price, `cs_demo_${userId}_${courseId}`, when]
-      );
-      await conn.query(
-        `INSERT INTO enrollments (user_id, course_id, enrolled_at) VALUES (?, ?, FROM_UNIXTIME(?))
-         ON DUPLICATE KEY UPDATE enrolled_at = VALUES(enrolled_at)`,
-        [userId, courseId, when]
-      );
-    }
-
-    // Reviews from some of those buyers (Stage 4), dated a few days after the purchase.
-    const reviews = reviewPlan(sales);
-    for (const r of reviews) {
-      const when = Math.floor(r.at.getTime() / 1000);
-      await conn.query(
-        `INSERT INTO reviews (course_id, user_id, rating, body, created_at, updated_at)
-         VALUES (?, ?, ?, ?, FROM_UNIXTIME(?), FROM_UNIXTIME(?))
-         ON DUPLICATE KEY UPDATE rating = VALUES(rating), body = VALUES(body), created_at = VALUES(created_at), updated_at = VALUES(updated_at)`,
-        [courseIds[r.course], learnerIds[r.learner], r.rating, r.body, when, when]
-      );
-    }
-
-    // Discussion (Stage 4b) and the instructor's notifications (Stage 4c). Neither has a unique key to upsert on, so the
-    // rows this seed wrote last time are replaced: only demo authors on demo courses are touched.
-    await conn.query("DELETE FROM comments WHERE course_id IN (?) AND user_id IN (?)", [courseIds, [...learnerIds, sellerId]]);
-    await conn.query("DELETE FROM notifications WHERE user_id = ? AND actor_id IN (?)", [sellerId, learnerIds]);
-
-    const events = []; // what the instructor is told about, like the app does inside each save
-    for (const r of reviews) {
-      const [[row]] = await conn.query("SELECT id FROM reviews WHERE user_id = ? AND course_id = ?", [learnerIds[r.learner], courseIds[r.course]]);
-      events.push({ type: "review", course: r.course, sourceId: row.id, actorId: learnerIds[r.learner], at: r.at });
-    }
-    const discussion = commentPlan(sales);
-    for (const c of discussion.comments) {
-      const [res] = await conn.query(
-        "INSERT INTO comments (course_id, user_id, body, created_at) VALUES (?, ?, ?, FROM_UNIXTIME(?))",
-        [courseIds[c.course], learnerIds[c.learner], c.body, Math.floor(c.at.getTime() / 1000)]
-      );
-      events.push({ type: "comment", course: c.course, sourceId: res.insertId, actorId: learnerIds[c.learner], at: c.at });
-    }
-    if (discussion.answer) {
-      await conn.query("INSERT INTO comments (course_id, user_id, body, created_at) VALUES (?, ?, ?, FROM_UNIXTIME(?))", [
-        courseIds[discussion.answer.course],
-        sellerId,
-        discussion.answer.body,
-        Math.floor(discussion.answer.at.getTime() / 1000),
-      ]); // the instructor's own comment notifies no one
-    }
-    events.sort((a, b) => b.at - a.at);
-    for (const [i, e] of events.entries()) {
-      const when = Math.floor(e.at.getTime() / 1000);
-      await conn.query(
-        `INSERT INTO notifications (user_id, type, course_id, source_id, actor_id, created_at, read_at)
-         VALUES (?, ?, ?, ?, ?, FROM_UNIXTIME(?), ?)`,
-        [sellerId, e.type, courseIds[e.course], e.sourceId, e.actorId, when, i < UNREAD_DEMO_NOTIFICATIONS ? null : new Date(e.at)]
-      );
-    }
+    // Purchases, progress, reviews, comments, notifications: the same code as the daily reset, which also records the
+    // time, so a server with DEMO_RESET_HOURS set doesn't reset again right after a seed.
+    await DemoService.rebuildActivity(conn, { sellerId, studentId, learnerIds, courseIds, firstLessonIds });
 
     await conn.commit();
   } catch (err) {
@@ -364,13 +212,14 @@ async function main() {
   }
   await Promise.all(replaced.map(removeUploadFile));
 
+  const sales = salesHistory();
   console.log(
-    `${SCRIPT}: done. ${COURSES.length} courses, ${COURSES.length * LESSONS_PER_COURSE} lessons, ` +
-      `${salesHistory().length} past sales to ${DEMO_LEARNERS} demo learners (last ${HISTORY_MONTHS} months), ` +
-      `${reviewPlan(salesHistory()).length} reviews, ${commentPlan(salesHistory()).comments.length + 1} comments.`
+    `${SCRIPT}: done. ${DEMO_COURSES.length} courses, ${DEMO_COURSES.length * LESSONS_PER_COURSE} lessons, ` +
+      `${sales.length} past sales to ${DEMO_LEARNERS} demo learners (last ${HISTORY_MONTHS} months), ` +
+      `${reviewPlan(sales).length} reviews, ${commentPlan(sales).comments.length + 1} comments.`
   );
-  console.log(`  instructor: ${SELLER.email}`);
-  console.log(`  student:    ${STUDENT.email}`);
+  console.log(`  instructor: ${DEMO_SELLER.email}`);
+  console.log(`  student:    ${DEMO_STUDENT.email}`);
   console.log(`  password:   the DEMO_PASSWORD you set`);
 }
 

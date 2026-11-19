@@ -8,6 +8,8 @@ import CourseModal from "@components/ui/CourseModal";
 import Modal from "@components/ui/Modal";
 import { formatPrice } from "@utils/currency";
 import BackLink from "@components/ui/BackLink";
+import DemoNotice from "@components/ui/DemoNotice";
+import { useIsDemoAccount } from "@hooks/useIsDemoAccount";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -17,6 +19,7 @@ const PortfolioPage = () => {
     skip: !profile?.id,
   });
   const [deleteCourse, { isLoading: isDeleting }] = useDeleteCourseMutation();
+  const isDemo = useIsDemoAccount(); // the server refuses course changes on the demo account
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -75,7 +78,7 @@ const PortfolioPage = () => {
         <div className="empty-state">
           <h3>No courses yet</h3>
           <p>Create your first course and it will show up here.</p>
-          <button type="button" className="button button-primary" onClick={() => openEditor(null)}>
+          <button type="button" className="button button-primary" onClick={() => openEditor(null)} disabled={isDemo}>
             Create your first course
           </button>
         </div>
@@ -106,13 +109,14 @@ const PortfolioPage = () => {
                 <Link to={`/courses/${course.id}/watch`} className="button button-secondary button-small">
                   <Eye size={16} aria-hidden="true" /> View
                 </Link>
-                <button type="button" className="button button-secondary button-small" onClick={() => openEditor(course)}>
+                <button type="button" className="button button-secondary button-small" onClick={() => openEditor(course)} disabled={isDemo}>
                   <Pencil size={16} aria-hidden="true" /> Edit
                 </button>
                 <button
                   type="button"
                   className="icon-button-danger"
                   onClick={() => askToDelete(course)}
+                  disabled={isDemo}
                   aria-label={`Delete ${course.title}`}
                 >
                   <Trash2 size={18} aria-hidden="true" />
@@ -134,11 +138,12 @@ const PortfolioPage = () => {
           <h1>Manage your courses</h1>
           <p>Add, update or remove your published courses.</p>
         </header>
-        <button type="button" className="button button-primary" onClick={() => openEditor(null)}>
+        <button type="button" className="button button-primary" onClick={() => openEditor(null)} disabled={isDemo}>
           <Plus size={18} aria-hidden="true" /> Add course
         </button>
       </div>
 
+      <DemoNotice what="adding, editing and deleting courses" />
       {renderContent()}
 
       <CourseModal open={editorOpen} onClose={closeEditor} course={selectedCourse} />

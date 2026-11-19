@@ -7,8 +7,10 @@ const ALGORITHM = "HS256";
 const ACCESS = { type: "access", secret: config.jwt.accessSecret, expiresIn: "15m" };
 export const ACCESS_TOKEN_MAX_AGE_MS = 15 * 60 * 1000; // the access cookie lives as long as the token
 
+// isDemo only changes what the client shows (a note on the demo account). Authorization never reads it: the demo guard
+// (middleware/demoAccount.js) asks the database, so a token can't lift the restriction.
 const sign = (user, kind) =>
-  jwt.sign({ id: user.id, email: user.email, role: user.role, type: kind.type }, kind.secret, {
+  jwt.sign({ id: user.id, email: user.email, role: user.role, isDemo: Number(user.is_demo) === 1, type: kind.type }, kind.secret, {
     algorithm: ALGORITHM,
     expiresIn: kind.expiresIn,
   });
