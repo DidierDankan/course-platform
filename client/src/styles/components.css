@@ -428,8 +428,10 @@
     font-size: 15px;
     line-height: 1.6;
   }
-  /* On the demo accounts: what's switched off on this page (components/ui/DemoNotice.jsx) */
-  .demo-notice {
+  /* On the demo accounts: what's switched off on this page (components/ui/DemoNotice.jsx). The profile notice
+     (ProfileCompletionNotice.jsx: what a seller must add before selling) shares the look, with an accent edge */
+  .demo-notice,
+  .profile-notice {
     margin: 0 0 20px;
     padding: 12px 14px;
     display: flex;
@@ -442,7 +444,15 @@
     font-size: 14px;
     line-height: 1.5;
   }
-  .demo-notice svg {
+  .profile-notice {
+    border-left: 6px solid var(--lm-accent);
+  }
+  .profile-notice:focus-visible {
+    outline: 2px solid var(--lm-focus);
+    outline-offset: 2px;
+  }
+  .demo-notice svg,
+  .profile-notice svg {
     flex: none;
     margin-top: 1px;
   }

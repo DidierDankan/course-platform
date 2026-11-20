@@ -11,6 +11,7 @@ import QualificationsFieldArray from "@components/ui/Form/QualificationsFieldArr
 import FormField from "@components/ui/Form/FormField";
 import BackLink from "@components/ui/BackLink";
 import DemoNotice from "@components/ui/DemoNotice";
+import ProfileCompletionNotice from "@components/ui/ProfileCompletionNotice";
 import { useIsDemoAccount } from "@hooks/useIsDemoAccount";
 
 const EditProfile = () => {
@@ -56,6 +57,7 @@ const EditProfile = () => {
       </header>
 
       <DemoNotice what="editing the profile" />
+      <ProfileCompletionNotice profile={profile} />
       <section className="panel">
         <Formik
           initialValues={{
