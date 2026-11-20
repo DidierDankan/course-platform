@@ -64,6 +64,7 @@ flowchart LR
 - **Reviews:** one rating per enrolled student per course (never the instructor's own). "Top rated" uses a damped average, so a single 5-star review doesn't outrank hundreds at 4.8.
 - **Comments and notifications:** a discussion under each video. Instructors get a notification for each new review and comment, written in the same transaction; the header bell polls while the tab is visible.
 - **Instructor dashboard:** students and revenue over the last 12 months and the top courses, drawn as hand-built, accessible SVG charts (keyboard focus and a data table for screen readers).
+- **Search and link previews:** a title, description and canonical link per page, schema.org `Course` data on course pages, an Open Graph preview image, and a `sitemap.xml` built from the real courses.
 - **Two themes:** `brutal` (neo-brutalist) and `cinematic` (dark). One set of design tokens; the theme only switches the values.
 - **Public demo:** demo accounts with a published password. The server blocks the writes that would break the demo for the next visitor, and puts the demo back once a day.
 
@@ -80,6 +81,7 @@ flowchart LR
 | **Tests against real MySQL, no mocks** | The bugs found were MySQL behaviour (strict mode, unique keys, foreign keys, gap-lock deadlocks) that a mock can't reproduce. | Tests need a MySQL server; CI runs one as a service container. |
 | **Polling instead of WebSockets for notifications** | A badge that updates within a minute is enough; no extra infrastructure on a free host. | Up to 60 s delay. |
 | **Rate limits in memory** | One server instance; no Redis to run. | Counters reset on restart and aren't shared between instances. |
+| **SEO on a single-page app: static tags + per-page tags, no server rendering** | `index.html` carries the description, Open Graph image and favicon, which is all that link previews and most AI crawlers (they don't run JavaScript) ever see. Each page then sets its own title, description, canonical link and schema.org data for Google, which does run JavaScript. The server writes `robots.txt` and `sitemap.xml` from the real courses; `llms.txt` describes the site for AI tools. | A crawler that doesn't run JavaScript sees the same title and preview on every page. The full fix is server rendering (e.g. Next.js), a framework change that isn't worth it for this project. |
 | **Stripe one-time payments only** | Subscriptions bring proration, dunning and `past_due` states, which is a project of its own. | No subscription model. |
 
 ---
@@ -164,6 +166,7 @@ The server checks the required variables at start-up and stops with the name of 
 
 ```env
 VITE_API_URL=http://localhost:3001
+VITE_SITE_URL=http://localhost:5173   # the address visitors use, no trailing slash (canonical links, link previews)
 VITE_DEMO_PASSWORD=         # optional: shows the demo accounts on the login page (same value as DEMO_PASSWORD)
 ```
 

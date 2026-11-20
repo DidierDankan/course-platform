@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Lumen</title>
+  <!-- Brutal theme mark: yellow tile, black outline and hard shadow, the "L" and the logo's red dot -->
+  <rect x="7" y="7" width="54" height="54" rx="8" fill="#111111"/>
+  <rect x="3" y="3" width="54" height="54" rx="8" fill="#ffd23f" stroke="#111111" stroke-width="4"/>
+  <path d="M17 13h9v26h15v9H17z" fill="#111111"/>
+  <rect x="38" y="37" width="11" height="11" rx="2" fill="#ff5a36"/>
+</svg>

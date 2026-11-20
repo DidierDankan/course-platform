@@ -1,5 +1,6 @@
 // src/view/courses/BrowseCourses.jsx
 import { useCallback, useMemo } from "react";
+import usePageMeta from "@hooks/usePageMeta";
 import { useSearchParams } from "react-router-dom";
 import CourseFilters from "@components/ui/CourseFilters";
 import CourseCard from "@components/ui/CourseCard";
@@ -99,6 +100,10 @@ export default function BrowseCourses() {
   }
 
   const showRefreshing = isRefreshing && courses.length > 0;
+  usePageMeta({
+    title: "Browse courses",
+    description: "Browse every video course: search by topic or instructor, filter by price and length, sort by rating or popularity.",
+  });
 
   return (
     <main className="page-main page-main-with-fab">

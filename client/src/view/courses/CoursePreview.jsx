@@ -7,7 +7,11 @@ import Rating from "@components/ui/Rating";
 import CourseReviews from "./CourseReviews";
 import FavoriteButton from "@components/ui/FavoriteButton";
 import { formatDuration } from "@utils/duration";
+import { APP_NAME } from "@utils/brand";
 import BackLink from "@components/ui/BackLink";
+import StructuredData from "@components/ui/StructuredData";
+import usePageMeta from "@hooks/usePageMeta";
+import { courseSchema } from "@utils/seo";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -64,6 +68,12 @@ export default function CoursePreview() {
   const course = data?.course;
   const lessons = useMemo(() => course?.lessons ?? [], [course?.lessons]);
   const previewLesson = useMemo(() => lessons.find((l) => l.is_preview === 1 && l.url) ?? null, [lessons]);
+  const notFound = !isValidId || (isError && error?.status === 404) || (!isLoading && !isError && !course);
+  usePageMeta(
+    course
+      ? { title: course.title, description: course.description || `A video course on ${APP_NAME}.` }
+      : { title: notFound ? "Course not found" : undefined }
+  );
 
   if (!isValidId) return <CourseNotFound />;
 
@@ -100,6 +110,7 @@ export default function CoursePreview() {
 
   return (
     <main className="page-main page-main-narrow">
+      <StructuredData data={courseSchema(course)} />
       <BackLink fallback="/courses" fallbackLabel="Back to courses" />
       <header className="page-heading">
         <span className="section-index">Course preview</span>

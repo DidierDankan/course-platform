@@ -1,0 +1,29 @@
+# Lumen
+
+> Lumen is a two-sided video-course marketplace and a full-stack portfolio project. Instructors publish video courses; students buy them one at a time through Stripe Checkout and watch them with saved progress, reviews and comments. Payments run in Stripe test mode: nobody is ever charged.
+
+The pages are rendered in the browser (a React single-page app), so the public data is also available as JSON from the API listed below.
+
+## Pages
+
+- [Home](/): the most popular courses
+- [Browse courses](/courses): every course, with search, filters and sorting
+- Course page: `/courses/{id}`, with its lessons, the free preview lesson, price and reviews
+- Instructor page: `/sellers/{id}`, with the instructor's courses and rating
+- [Sitemap](/sitemap.xml): every course and instructor page
+
+## Public API (JSON, no sign-in)
+
+- `/api/courses/all?limit=12&sort=popular`: course list (also `sort=newest`, `top_rated`, `price_asc`, `price_desc`)
+- `/api/courses/{id}/public`: one course with its lessons
+- `/api/courses/{id}/reviews`: a course's reviews
+- `/api/public/sellers/{id}`: an instructor and their courses
+
+## Try it
+
+The login page shows a demo student and a demo instructor account, and Stripe's test card (4242 4242 4242 4242).
+
+## About the project
+
+- [Source code and README](https://github.com/DidierDankan/course-platform): architecture, decisions and trade-offs, security, tests
+- Stack: React 19, Vite, Redux Toolkit, Express 5, MySQL 8.4, Stripe Checkout, Vitest + Supertest

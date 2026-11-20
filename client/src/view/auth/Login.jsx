@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import usePageMeta from "@hooks/usePageMeta";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { Formik, Form } from "formik";
@@ -19,6 +20,7 @@ const Login = () => {
 
   // A demo account fills the real form and submits it: same validation, route and rate limit as typing it in.
   const formRef = useRef(null);
+  usePageMeta({ title: "Log in" });
   const signInAs = async (credentials) => {
     const form = formRef.current;
     if (!form || form.isSubmitting) return;

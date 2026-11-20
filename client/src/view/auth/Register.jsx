@@ -1,4 +1,5 @@
 import { Formik, Form, Field, ErrorMessage } from "formik";
+import usePageMeta from "@hooks/usePageMeta";
 import { useRegisterMutation } from "@api/modules/authApi";
 import { Link, useNavigate } from "react-router-dom";
 import { RegisterSchema } from "@utils/form/auth/registerValidation";
@@ -15,6 +16,7 @@ const PASSWORD_HINT = "At least 6 characters, with a number and one of !@#$%^&*"
 export default function Register() {
   const [registerUser, { isLoading }] = useRegisterMutation();
   const navigate = useNavigate();
+  usePageMeta({ title: "Create an account" });
 
   return (
     <main className="page-main page-main-form">

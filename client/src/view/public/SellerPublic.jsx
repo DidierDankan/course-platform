@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import usePageMeta from "@hooks/usePageMeta";
+import { APP_NAME } from "@utils/brand";
 import { Link, useParams } from "react-router-dom";
 import { ArrowRight, ExternalLink, Lock } from "lucide-react";
 import { useGetSellerPublicQuery } from "@api/modules/publicApi";
@@ -107,6 +109,12 @@ const SellerPublic = () => {
   const seller = data?.seller || null;
   const courses = Array.isArray(data?.courses) ? data.courses : [];
   const isAuthed = !!data?.isAuthenticated;
+  const metaName = seller?.full_name || FALLBACK_NAME;
+  usePageMeta(
+    seller
+      ? { title: metaName, description: `Video courses by ${metaName} on ${APP_NAME}.` }
+      : { title: error?.status === 404 ? "Instructor not found" : undefined }
+  );
 
   const skills = useMemo(() => {
     const s = seller?.skills;
