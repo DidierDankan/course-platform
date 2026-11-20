@@ -1,13 +1,17 @@
 import { setCredentials } from '@store/slices/authSlice';
+import { startPageAfterRegister } from '@utils/routes/startPage';
 
 const EMAIL_TAKEN = 409;
 
-export const handleRegisterSubmit = (registerUser, navigate) => {
+// The server signs the new account in (same cookies as login), so the user goes straight to their start page.
+export const handleRegisterSubmit = (registerUser, navigate, dispatch) => {
   return async (values, { setSubmitting, setErrors, setStatus }) => {
     setStatus(undefined);
     try {
-      await registerUser(values).unwrap();
-      navigate('/auth/login');
+      const response = await registerUser(values).unwrap();
+      dispatch(setCredentials({ user: response.user }));
+      navigate(startPageAfterRegister(response.user.role), { replace: true });
+      return; // this page is gone: no state left to update
     } catch (err) {
       const message = err?.data?.message || 'Registration failed. Please try again.';
       // Only "email already registered" belongs to a field; the rest concern the whole form.

@@ -1,8 +1,10 @@
 import { Formik, Form } from "formik";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { ProfileSchema } from "@utils/form/profile/editValidation";
 import { useEditProfileMutation, useGetProfileQuery } from "@api/modules/userApi";
 import { handleEditSubmit } from "@utils/form/profile/editHandler";
+import { dashboardFor } from "@utils/routes/startPage";
 
 import ImageUploadField from "@components/ui/Form/ImageUploadField";
 import PhoneInputField from "@components/ui/Form/PhoneInputField";
@@ -19,6 +21,7 @@ const EditProfile = () => {
   const [editUser] = useEditProfileMutation();
   const { data: profile, isLoading, isError, refetch } = useGetProfileQuery();
   const isDemo = useIsDemoAccount(); // the server refuses profile changes on the demo account
+  const dashboardPath = dashboardFor(useSelector((s) => s.auth.user?.role));
 
   if (isLoading) {
     return (
@@ -49,7 +52,7 @@ const EditProfile = () => {
 
   return (
     <main className="page-main page-main-narrow">
-      <BackLink fallback="/profile/dashboard" fallbackLabel="Back to dashboard" />
+      <BackLink fallback={dashboardPath} fallbackLabel="Back to dashboard" />
       <header className="page-heading">
         <span className="section-index">Update your profile</span>
         <h1>Edit your details</h1>
@@ -74,7 +77,7 @@ const EditProfile = () => {
               })) || [],
           }}
           validationSchema={ProfileSchema}
-          onSubmit={(values, helpers) => handleEditSubmit(editUser, navigate)(values, helpers)}
+          onSubmit={(values, helpers) => handleEditSubmit(editUser, navigate, dashboardPath)(values, helpers)}
         >
           {({ isSubmitting, status }) => (
             <Form className="seller-form">
@@ -112,7 +115,7 @@ const EditProfile = () => {
                 </button>
 
                 {hasProfileData && (
-                  <button type="button" className="button button-secondary" onClick={() => navigate("/profile/dashboard")}>
+                  <button type="button" className="button button-secondary" onClick={() => navigate(dashboardPath)}>
                     Cancel
                   </button>
                 )}
