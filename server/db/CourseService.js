@@ -1,14 +1,10 @@
 import db from "./connection.js";
-import fs from "fs";
-import path from "path";
-import config from "../config.js";
 import { logError } from "../lib/logError.js";
 import { httpError } from "../lib/answerError.js";
-import { deleteFileIfExists } from "../utils/fileUtils.js";
+import storage from "../lib/storage.js";
+import { uploadUrl } from "../lib/mediaTypes.js";
 import { withTransaction } from "./transaction.js";
 import { dampedRatingSql, ratingColumns, withRating } from "./ratings.js";
-
-const UPLOADS_DIR = config.uploadDir;
 
 // Whitelist: ?sort= value -> fixed ORDER BY. The request value never reaches the SQL.
 // c.id DESC breaks ties so paging never repeats or skips a course.
@@ -27,17 +23,15 @@ const SORT_ORDER = Object.freeze({
 
 // Best effort, and only ever AFTER the database change is committed: the row is what matters, and a file that's already
 // gone is fine. Removing the file first would leave a lesson pointing at a missing video if the delete then failed.
-const removeStoredFile = (url) => {
-  if (!url) return;
-  try {
-    fs.unlinkSync(path.join(UPLOADS_DIR, path.basename(url)));
-  } catch {
-    /* nothing to remove */
-  }
-};
+// A storage error is logged, not thrown: the save it follows has already succeeded.
+const removeStoredFiles = (urls) =>
+  Promise.all(
+    urls.filter(Boolean).map((url) => storage.remove(url).catch((err) => logError("Remove stored file", err)))
+  );
 
-// multer saved this request's files before the controller ran; when the save rolls back, nothing points at them.
-const removeUploads = (files) => Promise.all(files.filter(Boolean).map((file) => deleteFileIfExists(file.path)));
+// This request's uploads, when its save rolls back: nothing points at them. Disk: multer's files in the uploads folder;
+// Supabase: the objects saveUploads sent (the temp copies go when the response ends).
+const removeUploads = (files) => removeStoredFiles(files.filter(Boolean).map((file) => file.filename));
 
 class CourseService {
 
@@ -242,7 +236,7 @@ class CourseService {
 
     const [current, ...extras] = images;
     await q.query("UPDATE course_media SET url = ?, uploaded_at = NOW() WHERE id = ?", [
-      `/uploads/${file.filename}`,
+      uploadUrl(file.filename),
       current.id,
     ]);
     const unused = [current.url];
@@ -268,7 +262,7 @@ class CourseService {
       [
         courseId,
         type, // ✅ now "image" or "video", matches ENUM
-        `/uploads/${file.filename}`,
+        uploadUrl(file.filename),
         title,
         description,
         duration,
@@ -298,7 +292,7 @@ class CourseService {
         VALUES (?, 'video', ?, NOW(), ?, ?, ?, ?, ?)`,
         [
           courseId,
-          `/uploads/${file.filename}`,
+          uploadUrl(file.filename),
           title,
           description,
           duration,
@@ -333,6 +327,7 @@ class CourseService {
   // Returns the new course id.
   async createCourse({ sellerId, title, description, price, thumbnail, videos = [], lessons = [] }) {
     try {
+      await storage.saveUploads([thumbnail, ...videos]);
       return await withTransaction(async (conn) => {
         const courseId = await this.insertCourse({ title, description, price, sellerId }, conn);
         if (thumbnail) await this.insertCourseMedia(courseId, thumbnail, {}, conn);
@@ -352,6 +347,7 @@ class CourseService {
   ) {
     let unusedUrls;
     try {
+      await storage.saveUploads([thumbnail, ...videos]);
       unusedUrls = await withTransaction(async (conn) => {
         const unused = [];
         await this.updateCourseById(courseId, { title, description, price }, conn);
@@ -368,7 +364,7 @@ class CourseService {
       await removeUploads([thumbnail, ...videos]);
       throw err;
     }
-    unusedUrls.forEach(removeStoredFile);
+    await removeStoredFiles(unusedUrls);
   }
 
   // Deletes the course and its media rows (favorites go with it, ON DELETE CASCADE). A course with any enrollment, free
@@ -388,13 +384,13 @@ class CourseService {
       await this.deleteCourseRow(courseId, conn);
       return rows.map((row) => row.url);
     });
-    urls.forEach(removeStoredFile);
+    await removeStoredFiles(urls);
   }
 
   // Deletes one lesson (or image) of courseId. Returns false if it wasn't there.
   async deleteLesson(mediaId, courseId) {
     const url = await withTransaction((conn) => this.deleteMediaRow(mediaId, courseId, conn));
-    removeStoredFile(url);
+    await removeStoredFiles([url]);
     return url !== null;
   }
 

@@ -1,34 +1,28 @@
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
-import config from '../config.js';
+import fileStorage from '../lib/storage.js';
+import { IMAGE_TYPES, VIDEO_TYPES } from '../lib/mediaTypes.js';
 
-// Allowed file types per form field. The saved extension comes from this list,
+// Allowed file types per form field (lib/mediaTypes.js). The saved extension comes from that list,
 // never from the uploader's file name, so "page.html" can't be stored as a web page.
-const IMAGE_TYPES = {
-  'image/jpeg': '.jpg',
-  'image/png': '.png',
-  'image/webp': '.webp',
-  'image/gif': '.gif',
-};
-const VIDEO_TYPES = {
-  'video/mp4': '.mp4',
-  'video/webm': '.webm',
-  'video/quicktime': '.mov',
-};
 const FIELD_TYPES = {
   profile_image: IMAGE_TYPES,
   thumbnail: IMAGE_TYPES,
   videos: VIDEO_TYPES,
 };
 
-export const MAX_FILE_SIZE_MB = 200; // per file; applies to every field
+// Per file, on every field. 50 MB is Supabase's per-file limit on the free plan (the live storage), so the server
+// refuses a bigger file with a readable 400 instead of failing at the storage step.
+export const MAX_FILE_SIZE_MB = 50;
 
 // Thrown for a file type or field we don't accept; index.js turns it into a 400.
 export class UploadError extends Error {}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, config.uploadDir); // ✅ must exist: created by the seed script locally, by test/globalSetup.js in tests
+    // Must exist. Disk: the uploads folder (made by the seed script locally, by test/globalSetup.js in tests).
+    // Supabase: a temp folder lib/storage.js creates; the file is sent on and removed after the response.
+    cb(null, fileStorage.uploadDestination);
   },
   filename: (req, file, cb) => {
     const ext = FIELD_TYPES[file.fieldname][file.mimetype]; // already checked in fileFilter

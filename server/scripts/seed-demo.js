@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
 import db from "../db/connection.js";
 import DemoService from "../db/DemoService.js";
-import { ScriptStop, UPLOADS_DIR, UPLOADS_URL_PREFIX, refuseProductionUnlessForced, removeUploadFile, runScript } from "./lib.js";
+import { ScriptStop, refuseProductionUnlessForced, removeUploadFile, runScript, storeFileCopy } from "./lib.js";
 import { DEMO_COURSES, DEMO_SELLER, DEMO_STUDENT, LESSONS_PER_COURSE } from "../lib/demoContent.js";
 import { DEMO_LEARNERS, HISTORY_MONTHS, commentPlan, learnerEmail, reviewPlan, salesHistory } from "../lib/demoHistory.js";
 
@@ -93,12 +93,8 @@ function demoPassword() {
   return password;
 }
 
-// Copies a file into uploads/ under a server-chosen name, like the upload middleware does.
-async function copyToUploads(source) {
-  const name = `${randomUUID()}${path.extname(source).toLowerCase()}`;
-  await fs.copyFile(source, path.join(UPLOADS_DIR, name));
-  return `${UPLOADS_URL_PREFIX}${name}`;
-}
+// Stores a copy of a file under a server-chosen name, like the upload middleware does (uploads folder or Supabase).
+const copyToUploads = (source) => storeFileCopy(source, `${randomUUID()}${path.extname(source).toLowerCase()}`);
 
 // Every seeded account is a demo account (is_demo = 1): its password is public, so the server keeps it read-only where
 // that matters. The demo learners share the password too, so they are marked as well.
@@ -123,7 +119,6 @@ async function main() {
   const videos = await findVideos();
   const password = demoPassword();
   for (const course of DEMO_COURSES) await fs.access(path.join(THUMBS_DIR, course.thumbnail));
-  await fs.mkdir(UPLOADS_DIR, { recursive: true });
 
   const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
   const copied = []; // files written in this run, removed again if the transaction fails

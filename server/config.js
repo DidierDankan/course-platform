@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -51,6 +52,20 @@ const demoResetHoursFrom = (name) => {
   return hours;
 };
 
+// Optional: Supabase Storage for uploads (the live site; Render's disk is wiped on every deploy). Both variables or
+// neither: unset = files stay in the local uploads folder, which is what dev and the tests use.
+const supabaseFrom = () => {
+  const url = process.env.SUPABASE_URL || "";
+  const secretKey = process.env.SUPABASE_SECRET_KEY || "";
+  if (!url && !secretKey) return null;
+  if (!url || !secretKey) fail("set both SUPABASE_URL and SUPABASE_SECRET_KEY, or neither.");
+  if (!/^https:\/\/[^/\s]+$/.test(url.replace(/\/$/, ""))) fail("SUPABASE_URL must look like https://<project>.supabase.co");
+  const raw = process.env.SIGNED_URL_TTL_SECONDS;
+  const ttl = raw ? Number(raw) : 900;
+  if (!Number.isInteger(ttl) || ttl < 60 || ttl > 86400) fail("SIGNED_URL_TTL_SECONDS must be a whole number from 60 to 86400.");
+  return { url: url.replace(/\/$/, ""), secretKey, signedUrlTtlSeconds: ttl };
+};
+
 const config = Object.freeze({
   port: portFrom("PORT", 3001),
   trustProxyHops: proxyHopsFrom("TRUST_PROXY_HOPS"),
@@ -59,6 +74,9 @@ const config = Object.freeze({
   clientUrl: process.env.CLIENT_URL,
   // Where uploaded files are stored. A relative UPLOAD_DIR is read from server/, never from the folder the process started in.
   uploadDir: path.resolve(SERVER_DIR, process.env.UPLOAD_DIR || "uploads"),
+  // With Supabase on, multer writes each upload here first; the server sends it on and removes it (lib/storage.js).
+  uploadTempDir: path.join(os.tmpdir(), "lumen-upload-temp"),
+  supabase: supabaseFrom(),
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET,
   },

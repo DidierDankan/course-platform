@@ -74,7 +74,7 @@ cd client && npm run lint && npm run build
 # Stripe webhooks locally
 stripe listen --forward-to http://localhost:3001/api/payments/webhook
 ```
-Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, CLIENT_URL, optional TRUST_PROXY_HOPS, DB_SQL_MODE, UPLOAD_DIR, DEMO_RESET_HOURS), `client/.env` (VITE_API_URL, VITE_SITE_URL, optional VITE_DEMO_PASSWORD). `server/config.js` validates them at boot; DEPLOY.txt section 4 lists the live set. Both are gitignored. **Never print, commit or hardcode secrets.**
+Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, CLIENT_URL, optional TRUST_PROXY_HOPS, DB_SQL_MODE, UPLOAD_DIR, DEMO_RESET_HOURS, SUPABASE_URL + SUPABASE_SECRET_KEY, SIGNED_URL_TTL_SECONDS), `client/.env` (VITE_API_URL, VITE_SITE_URL, optional VITE_DEMO_PASSWORD). `server/config.js` validates them at boot; DEPLOY.txt section 4 lists the live set. Both are gitignored. **Never print, commit or hardcode secrets.**
 
 ### Tests (`server/test/`)
 
@@ -101,7 +101,7 @@ Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, STRIPE_SECRET_KEY, STRIPE_WEB
 ## Already done (don't redo, don't re-flag)
 
 - Paid videos gated by `server/middleware/protectVideos.js` (owner / admin / enrolled / `is_preview`), `Cache-Control: private, no-store`, unknown video files → 404.
-- Uploads: MIME whitelist → server-chosen extension, 200 MB cap, `nosniff`, multer errors → 400.
+- Uploads: MIME whitelist → server-chosen extension, 50 MB cap (Supabase free limit), `nosniff`, multer errors → 400.
 - Stripe: checkout → verified webhook → idempotent enrollment (`INSERT … ON DUPLICATE KEY`), only when `payment_status === "paid"`. Free-only `POST /api/enrollments`. Can't buy your own course; checkout answers 409 if you already own it. The buyer's return (`/payment/success` → `POST /api/payments/confirm`) records the purchase too, so a late webhook doesn't leave a paying buyer without access; both paths share `PaymentService.recordPaidPurchase` (one transaction).
 - Auth tokens: the access token is a 15-minute JWT (only `helpers/tokens.js` signs or verifies it; `type` claim, pinned algorithm). Missing, invalid or expired → 401; 403 only for authenticated but not allowed. `server/config.js` stops the server if a required variable is missing.
 - Refresh tokens (Stage 3, 2026-11-14): 32 random bytes in an HttpOnly cookie at `Path=/api/auth`, stored only as SHA-256 in `refresh_tokens` (migration 002). Each works once (`POST /api/auth/refresh` rotates it in one locked transaction); a replaced token replayed after a 30 s grace window revokes its whole family (one login); logout revokes the family on the server. The user's role is read from the database at every refresh. Logic in `db/RefreshTokenService.js`; tests in `test/refreshTokens.test.js`.
@@ -112,6 +112,7 @@ Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, STRIPE_SECRET_KEY, STRIPE_WEB
 - Currency: **USD everywhere** (`server/lib/currency.js` ↔ `client/src/utils/currency/index.js`, `formatPrice`).
 - Client API base comes from `VITE_API_URL` everywhere (no localhost fallbacks). `jsconfig.json` uses `./src/...` paths, no `baseUrl`.
 - Owner/admin can watch their own course without an enrollment (no progress saved); progress PATCH requires an enrollment.
+- Storage (2026-11-20, DEPLOY 2.2): every stored file goes through `server/lib/storage.js` (disk by default; Supabase when `SUPABASE_URL` + `SUPABASE_SECRET_KEY` are set). Never `fs` on uploads in services or scripts. Stored URLs stay `/uploads/<uuid>.<ext>` (`lib/mediaTypes.js` `uploadUrl`, also the one file-type list); with Supabase, `protectVideos` answers 302 after its checks (signed link for videos, public URL for images). Uploads reach the bucket before the database save; removals go after the commit. Tests always use disk (`vitest.config.js` empties the variables, `guard.js` refuses Supabase); the backend and the redirects are tested with a stand-in client in `test/storage.test.js`.
 - Uploads folder: one setting, `config.uploadDir` (`UPLOAD_DIR`, default `server/uploads` resolved from `config.js`, not the cwd). Deletes use `path.basename`, so a stored URL can't reach outside it.
 - Parallel profile saves don't deadlock: `UserService.replaceRows` locks the user's row (`SELECT … FOR UPDATE`) before its DELETE + INSERT. Proven by `test/concurrency.test.js`.
 - Test suite (Stage 2c, 2026-11-12): see "Tests" above. Parallel webhooks give one enrollment, parallel favorites one row, 30 parallel wrong logins exactly 10 × 401.

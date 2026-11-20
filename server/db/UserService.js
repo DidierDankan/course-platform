@@ -1,9 +1,8 @@
 // server/services/UserService.js
 import db from '../db/connection.js';
 import bcrypt from 'bcryptjs';
-import path from 'path'
-import { deleteFileIfExists } from '../utils/fileUtils.js';
-import config from '../config.js';
+import storage from '../lib/storage.js';
+import { logError } from '../lib/logError.js';
 
 // user_profiles columns the profile form may set (user_id comes from the session, never from the form).
 const PROFILE_COLUMNS = ["full_name", "bio", "phone", "website", "profile_image"];
@@ -86,18 +85,23 @@ class UserService {
     return rows.length ? rows[0].profile_image : null;
   }
 
-  async deleteProfileImage(userId) {
+  // Saves the profile fields and, when one was uploaded, the new photo. Order matters: the new photo is stored first,
+  // then the row points at it, and only then the old photo is removed. (It used to delete the old photo first, so a
+  // failed save left the profile with no photo.) A failed row update removes the new photo again.
+  async updateProfileWithImage(userId, updates, imageFile) {
+    if (!imageFile) return this.updateUserProfile(userId, updates);
+
     const oldImage = await UserService.getProfileImage(userId);
-    if (!oldImage) return;
-
-    const oldPath = path.join(config.uploadDir, path.basename(oldImage));
-    await deleteFileIfExists(oldPath);
-
-    // Optionally clear DB column
-    await db.query(
-      "UPDATE user_profiles SET profile_image = NULL WHERE user_id = ?",
-      [userId]
-    );
+    await storage.saveUploads([imageFile]);
+    try {
+      await this.updateUserProfile(userId, { ...updates, profile_image: imageFile.filename });
+    } catch (err) {
+      await storage.remove(imageFile.filename).catch((removeErr) => logError("Remove unsaved profile photo", removeErr));
+      throw err;
+    }
+    if (oldImage && oldImage !== imageFile.filename) {
+      await storage.remove(oldImage).catch((err) => logError("Remove old profile photo", err));
+    }
   }
 
   // Columns are named from this fixed list, never from the keys of `updates`, so a field the controller didn't put

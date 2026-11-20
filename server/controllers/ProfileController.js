@@ -36,14 +36,8 @@ class UserController {
         ...(website !== undefined && { website }), // may be "": the user can remove their website
       };
 
-      // ✅ Handle profile image replacement
-      if (profileImageFile) {
-        await UserService.deleteProfileImage(userId);
-        updates.profile_image = profileImageFile.filename;
-      }
-
-      // ✅ Update user profile data
-      await UserService.updateUserProfile(userId, updates);
+      // Profile fields, plus the new photo when one was uploaded (the old photo goes only after the save).
+      await UserService.updateProfileWithImage(userId, updates, profileImageFile);
 
       // Only lists that were actually sent are replaced, so a partial request can't wipe the others.
       if (Array.isArray(skills)) {

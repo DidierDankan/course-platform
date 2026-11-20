@@ -19,6 +19,8 @@ import { protectVideos } from "./middleware/protectVideos.js";
 import multer from "multer";
 import { UploadError, MAX_FILE_SIZE_MB } from "./middleware/uploadMiddleware.js";
 import { logError } from "./lib/logError.js";
+import { removeTempUploadsWhenDone } from "./lib/storage.js";
+import { UPLOADS_URL_PREFIX } from "./lib/mediaTypes.js";
 
 export const app = express();
 app.set('trust proxy', config.trustProxyHops);
@@ -40,6 +42,8 @@ app.use(cors({
 }));
 
 app.use(express.json());
+// With Supabase storage, multer's temp copy of every upload is removed when the response ends (no-op on disk).
+app.use(removeTempUploadsWhenDone);
 
 // ✅ Mount your routes here
 app.use('/api/auth', authRoutes);
@@ -51,7 +55,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/public", publicRoutes);
-app.use('/uploads', protectVideos, express.static(config.uploadDir));
+app.use(UPLOADS_URL_PREFIX.slice(0, -1), protectVideos, express.static(config.uploadDir));
 app.use(seoRoutes); // /robots.txt and /sitemap.xml for the client's pages
 
 

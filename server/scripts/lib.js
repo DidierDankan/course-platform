@@ -1,15 +1,13 @@
 // server/scripts/lib.js
 // Helpers shared by the data scripts (seed-demo.js, cleanup-test-data.js). Not used by the server.
-import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import config from "../config.js";
+import storage from "../lib/storage.js";
+import { UPLOADS_URL_PREFIX, fileNameOf, uploadUrl } from "../lib/mediaTypes.js";
 
 const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const SERVER_DIR = path.resolve(SCRIPTS_DIR, "..");
-// Same folder the server serves at /uploads (CourseService and multer write there).
-export const UPLOADS_DIR = config.uploadDir;
-export const UPLOADS_URL_PREFIX = "/uploads/";
+export { UPLOADS_URL_PREFIX };
 // The demo accounts seed-demo.js creates (defined in lib/demoContent.js); load.js logs in as the student.
 export { DEMO_INSTRUCTOR_EMAIL, DEMO_STUDENT_EMAIL } from "../lib/demoContent.js";
 
@@ -25,24 +23,23 @@ export function refuseProductionUnlessForced(scriptName) {
   }
 }
 
-// "/uploads/abc.mp4" -> absolute path inside UPLOADS_DIR, or null for anything else
-// (external URLs, "../" tricks): a script must never delete a file outside the uploads folder.
-export function uploadPathFromUrl(url) {
-  if (typeof url !== "string" || !url.startsWith(UPLOADS_URL_PREFIX)) return null;
-  const resolved = path.resolve(UPLOADS_DIR, url.slice(UPLOADS_URL_PREFIX.length));
-  return resolved.startsWith(UPLOADS_DIR + path.sep) ? resolved : null;
+// True only for "/uploads/<name>" with a plain file name: external URLs and "../" tricks are never ours to delete.
+export function isStoredUploadUrl(url) {
+  if (typeof url !== "string" || !url.startsWith(UPLOADS_URL_PREFIX)) return false;
+  const name = url.slice(UPLOADS_URL_PREFIX.length);
+  return name !== "" && fileNameOf(name) === name;
 }
 
+// Removes a stored file from wherever the storage keeps it (lib/storage.js: the uploads folder or Supabase).
+// True if it was there; already gone is the goal state.
 export async function removeUploadFile(url) {
-  const file = uploadPathFromUrl(url);
-  if (!file) return false;
-  try {
-    await fs.unlink(file);
-    return true;
-  } catch (err) {
-    if (err.code === "ENOENT") return false; // already gone: the goal state
-    throw err;
-  }
+  return isStoredUploadUrl(url) ? storage.remove(url) : false;
+}
+
+// Stores a copy of a local file under a server-chosen name, like an upload, and returns its "/uploads/..." URL.
+export async function storeFileCopy(source, name) {
+  await storage.putFile(source, name);
+  return uploadUrl(name);
 }
 
 // Runs main(), prints ScriptStop messages without a stack trace, and closes the DB pool if one was given.
