@@ -10,7 +10,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { app } from "../app.js";
 import db from "../db/connection.js";
 import PaymentService from "../db/PaymentService.js";
-import storage, { BUCKETS, createSupabaseStorage } from "../lib/storage.js";
+import storage, { BUCKETS, createSupabaseStorage, removeStaleTempUploads } from "../lib/storage.js";
 import { IMAGE, VIDEO, login, makeUser, resetTables } from "./helpers.js";
 
 // A stand-in for supabase.storage: answers like the SDK ({ data, error }) and records every call.
@@ -266,5 +266,22 @@ describe("temp uploads are removed when the response ends", () => {
 
     expect((await createCourse()).status).toBe(500);
     await vi.waitFor(async () => expect(await exists(seen[0])).toBe(false));
+  });
+});
+
+// At start-up (Supabase mode) the temp folder is tidied, but only of OLD copies: another server process may share the
+// folder and be mid-upload (found in the real check: a restart that emptied the folder failed a running upload).
+describe("start-up tidy-up of the temp folder", () => {
+  it("removes copies older than an hour and keeps recent ones", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "lumen-stale-test-"));
+    const old = path.join(dir, "old.mp4"), fresh = path.join(dir, "fresh.mp4");
+    await fs.writeFile(old, VIDEO);
+    await fs.writeFile(fresh, VIDEO);
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    await fs.utimes(old, twoHoursAgo, twoHoursAgo);
+
+    removeStaleTempUploads(dir);
+
+    expect(await fs.readdir(dir)).toEqual(["fresh.mp4"]);
   });
 });

@@ -8,7 +8,7 @@
 // Buckets (DEPLOY.txt 1.1): images in a PUBLIC bucket (thumbnails and profile photos are shown to everyone anyway),
 // videos in a PRIVATE one: a video link is signed by this server after protectVideos' checks, and it expires.
 import fs from "node:fs/promises";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import config from "../config.js";
@@ -101,9 +101,26 @@ export function createSupabaseStorage({ client, tempDir, signedUrlTtlSeconds }) 
   };
 }
 
+// Copies left by a run that stopped mid-request (a crash or a restart skips the end-of-response cleanup). Only old ones:
+// another server process may share this folder and be mid-upload right now (a second local server, or the previous
+// instance still answering during a Render deploy), and wiping its file would fail that upload.
+const STALE_TEMP_UPLOAD_MS = 60 * 60 * 1000;
+export function removeStaleTempUploads(dir) {
+  const cutoff = Date.now() - STALE_TEMP_UPLOAD_MS;
+  for (const name of readdirSync(dir)) {
+    const file = path.join(dir, name);
+    try {
+      if (statSync(file).mtimeMs < cutoff) rmSync(file, { force: true });
+    } catch (err) {
+      logError("Remove stale temp upload", err); // a start-up tidy-up: never a reason to stop the server
+    }
+  }
+}
+
 function createConfiguredStorage() {
   if (!config.supabase) return createDiskStorage(config.uploadDir);
   mkdirSync(config.uploadTempDir, { recursive: true }); // multer's destination must exist
+  removeStaleTempUploads(config.uploadTempDir);
   const client = createClient(config.supabase.url, config.supabase.secretKey, {
     auth: { persistSession: false, autoRefreshToken: false }, // a server key: no user session to keep
   });
