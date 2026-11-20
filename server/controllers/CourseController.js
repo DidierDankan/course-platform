@@ -3,6 +3,7 @@ import EnrollmentService from "../db/EnrollmentService.js";
 import { parsePagination } from "../lib/pagination.js";
 import { nonNegativeOrUndefined } from "../lib/queryNumbers.js";
 import { logError } from "../lib/logError.js";
+import { answerError } from "../lib/answerError.js";
 
 class CourseController {
 
@@ -137,8 +138,7 @@ class CourseController {
       await CourseService.deleteCourse(Number(req.params.id));
       res.json({ message: "Course and media deleted successfully" });
     } catch (err) {
-      logError("Delete course", err);
-      res.status(500).json({ message: "Failed to delete course" });
+      answerError(res, "Delete course", err);
     }
   }
 

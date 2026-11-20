@@ -9,7 +9,8 @@ import { app } from "../app.js";
 import config from "../config.js";
 import db from "../db/connection.js";
 import CourseService from "../db/CourseService.js";
-import { IMAGE, VIDEO, login, makeUser, resetTables } from "./helpers.js";
+import PaymentService from "../db/PaymentService.js";
+import { IMAGE, VIDEO, enroll, login, makeCourse, makeUser, resetTables } from "./helpers.js";
 
 const filesOnDisk = () => new Set(fs.readdirSync(config.uploadDir));
 const fileOf = (url) => path.join(config.uploadDir, path.basename(url));
@@ -126,6 +127,39 @@ describe("delete course", () => {
     expect(res.status).toBe(500);
     expect(await mediaOf(course.id)).toEqual(rowsBefore);
     for (const m of rowsBefore) expect(fs.existsSync(fileOf(m.url))).toBe(true);
+  });
+
+  it("a free course with an enrolled student -> 409, course, lessons, files and the enrollment are all still there", async () => {
+    const course = await courseWithTwoLessons();
+    const student = await makeUser("user");
+    await enroll(await login(student), course.id);
+    const rowsBefore = await mediaOf(course.id);
+
+    const res = await request(app).delete(`/api/courses/${course.id}`).set("Cookie", seller);
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toMatch(/enrolled/);
+    expect(await mediaOf(course.id)).toEqual(rowsBefore);
+    for (const m of rowsBefore) expect(fs.existsSync(fileOf(m.url))).toBe(true);
+    const [enrollments] = await db.query("SELECT id FROM enrollments WHERE course_id = ?", [course.id]);
+    expect(enrollments).toHaveLength(1);
+  });
+
+  it("a paid course with a buyer -> 409 for the owner and for an admin; the payment record stays", async () => {
+    const course = await makeCourse(seller, { price: "19.99" });
+    const buyer = await makeUser("user");
+    // What checkout + webhook do for a paid purchase (the Stripe calls themselves can't run in tests).
+    await PaymentService.upsertPendingPayment({ userId: buyer.id, courseId: course.id, amount: 19.99, sessionId: "cs_test_delete" });
+    await PaymentService.recordPaidPurchase({ userId: buyer.id, courseId: course.id, sessionId: "cs_test_delete" });
+    const admin = await login(await makeUser("admin"));
+
+    expect((await request(app).delete(`/api/courses/${course.id}`).set("Cookie", seller)).status).toBe(409);
+    expect((await request(app).delete(`/api/courses/${course.id}`).set("Cookie", admin)).status).toBe(409);
+
+    const [payments] = await db.query("SELECT status FROM payments WHERE course_id = ?", [course.id]);
+    expect(payments).toEqual([{ status: "paid" }]);
+    const [enrollments] = await db.query("SELECT user_id FROM enrollments WHERE course_id = ?", [course.id]);
+    expect(enrollments).toEqual([{ user_id: buyer.id }]);
   });
 
   it("success -> course, rows and files are gone", async () => {

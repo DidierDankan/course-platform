@@ -47,6 +47,8 @@ class EnrollmentService {
       );
     } catch (err) {
       if (err.code === "ER_DUP_ENTRY") throw httpError(409, "User is already enrolled in this course.");
+      // The course was deleted between step 1 and this insert (the delete holds its row lock until it commits).
+      if (err.code === "ER_NO_REFERENCED_ROW_2") throw httpError(404, "Course not found.");
       throw err;
     }
   }
