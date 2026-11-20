@@ -19,6 +19,13 @@ const setRefreshCookie = (res, token) =>
 // so it is cleared on every login, refresh and logout. Remove this 7 days after Stage 3 ships (no such cookie left).
 const clearLegacyRefreshCookie = (res) => res.clearCookie('refreshToken', { ...cookieBase, path: '/' });
 
+// A new login (one refresh-token family): the access cookie plus a fresh refresh token. Used by login and register.
+const startSession = async (res, user) => {
+  setAccessCookie(res, user);
+  setRefreshCookie(res, await RefreshTokenService.issue(user.id));
+  clearLegacyRefreshCookie(res);
+};
+
 // The only user fields any auth answer contains (never iat/exp, never the hash).
 const publicUser = (user) => ({ id: user.id, email: user.email, role: user.role, isDemo: Number(user.is_demo) === 1 });
 
@@ -58,15 +65,10 @@ class AuthController {
         role: normalizedRole,
       });
 
-      // 6️⃣ Return success + minimal safe info
-      return res.status(201).json({
-        message: "User registered successfully.",
-        user: {
-          id: newUser.id,
-          email: newUser.email,
-          role: newUser.role,
-        },
-      });
+      // 6️⃣ Sign the new user in, exactly as login does: they just proved the password by choosing it, so a second
+      // form would add nothing. The register limit still counts this request.
+      await startSession(res, newUser);
+      return res.status(201).json({ message: "User registered successfully.", user: publicUser(newUser) });
     } catch (err) {
       logError("Register", err);
       return res.status(500).json({ message: "Server error." });
@@ -87,10 +89,7 @@ class AuthController {
         return res.status(401).json({ message: "Invalid credentials." });
       }
 
-      setAccessCookie(res, user);
-      setRefreshCookie(res, await RefreshTokenService.issue(user.id));
-      clearLegacyRefreshCookie(res);
-
+      await startSession(res, user);
       return res.json({ message: "Login successful", user: publicUser(user) });
     } catch (err) {
       logError("Login", err);

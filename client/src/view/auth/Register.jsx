@@ -2,6 +2,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import usePageMeta from "@hooks/usePageMeta";
 import { useRegisterMutation } from "@api/modules/authApi";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { RegisterSchema } from "@utils/form/auth/registerValidation";
 import { handleRegisterSubmit } from "@utils/form/auth/registerHandler";
 import FormField from "@components/ui/Form/FormField";
@@ -16,6 +17,7 @@ const PASSWORD_HINT = "At least 6 characters, with a number and one of !@#$%^&*"
 export default function Register() {
   const [registerUser, { isLoading }] = useRegisterMutation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   usePageMeta({ title: "Create an account" });
 
   return (
@@ -30,7 +32,7 @@ export default function Register() {
         <Formik
           initialValues={{ email: "", password: "", role: "user" }}
           validationSchema={RegisterSchema}
-          onSubmit={handleRegisterSubmit(registerUser, navigate)}
+          onSubmit={handleRegisterSubmit(registerUser, navigate, dispatch)}
         >
           {({ isSubmitting, status }) => {
             const busy = isSubmitting || isLoading;
