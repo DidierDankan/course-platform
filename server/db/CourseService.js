@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import config from "../config.js";
 import { logError } from "../lib/logError.js";
+import { httpError } from "../lib/answerError.js";
 import { deleteFileIfExists } from "../utils/fileUtils.js";
 import { withTransaction } from "./transaction.js";
 import { dampedRatingSql, ratingColumns, withRating } from "./ratings.js";
@@ -370,9 +371,18 @@ class CourseService {
     unusedUrls.forEach(removeStoredFile);
   }
 
-  // Deletes the course and its media rows; enrollments, favorites and payments go with it (ON DELETE CASCADE).
+  // Deletes the course and its media rows (favorites go with it, ON DELETE CASCADE). A course with any enrollment, free
+  // or paid, is refused with 409: the cascade would silently take away students' access and the payment records.
+  // The course row is locked first, so an enrollment can't commit between the check and the delete: its foreign-key
+  // check needs a shared lock on that row and waits, then fails because the course is gone.
   async deleteCourse(courseId) {
     const urls = await withTransaction(async (conn) => {
+      await conn.query("SELECT id FROM courses WHERE id = ? FOR UPDATE", [courseId]);
+      // A locking read sees the latest committed enrollment, not this transaction's snapshot.
+      const [[enrolled]] = await conn.query("SELECT 1 FROM enrollments WHERE course_id = ? LIMIT 1 FOR SHARE", [courseId]);
+      if (enrolled) {
+        throw httpError(409, "Students are enrolled in this course, so it can't be deleted. Their access and purchases stay.");
+      }
       const [rows] = await conn.query("SELECT url FROM course_media WHERE course_id = ? FOR UPDATE", [courseId]);
       await conn.query("DELETE FROM course_media WHERE course_id = ?", [courseId]);
       await this.deleteCourseRow(courseId, conn);

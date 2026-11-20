@@ -85,6 +85,31 @@ describe("free enrollment", () => {
   });
 });
 
+describe("course delete racing enrollments", () => {
+  it("10 students enroll while the seller deletes -> never a 200 delete next to a 201 enrollment, no orphan rows", async () => {
+    const course = await makeCourse(sellerCookie);
+    const students = await Promise.all(Array.from({ length: 10 }, () => makeUser("user").then(login)));
+
+    const [deleted, ...enrollments] = await Promise.all([
+      request(app).delete(`/api/courses/${course.id}`).set("Cookie", sellerCookie),
+      ...students.map((cookie) => request(app).post("/api/enrollments").set("Cookie", cookie).send({ course_id: course.id })),
+    ]);
+
+    for (const res of enrollments) expect([201, 404]).toContain(res.status); // a lost race is "course not found", not a 500
+    const enrolled = enrollments.filter((res) => res.status === 201).length;
+    const [[{ n: rows }]] = await db.query("SELECT COUNT(*) AS n FROM enrollments WHERE course_id = ?", [course.id]);
+    const [[{ n: courseLeft }]] = await db.query("SELECT COUNT(*) AS n FROM courses WHERE id = ?", [course.id]);
+    if (deleted.status === 200) {
+      expect(enrolled).toBe(0); // nobody was told "enrolled" and then lost the course
+      expect(courseLeft).toBe(0);
+    } else {
+      expect(deleted.status).toBe(409);
+      expect(courseLeft).toBe(1);
+    }
+    expect(rows).toBe(enrolled); // every 201 has its row, and no row exists without one
+  });
+});
+
 describe("login limit under a flood", () => {
   it("30 wrong logins at once -> exactly 10 answer 401, the other 20 answer 429", async () => {
     const responses = await atOnce(30, () =>
