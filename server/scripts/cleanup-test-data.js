@@ -9,7 +9,7 @@
 // Idempotent: a second run finds nothing and changes nothing.
 import path from "node:path";
 import db from "../db/connection.js";
-import { UPLOADS_URL_PREFIX, refuseProductionUnlessForced, removeUploadFile, runScript, uploadPathFromUrl } from "./lib.js";
+import { UPLOADS_URL_PREFIX, isStoredUploadUrl, refuseProductionUnlessForced, removeUploadFile, runScript } from "./lib.js";
 
 const SCRIPT = "cleanup-test-data";
 // LIKE narrows the query; the regex is the real check ("_" and "%" are LIKE wildcards).
@@ -53,7 +53,7 @@ async function main() {
   profiles.forEach((p) => p.profile_image && urls.add(`${UPLOADS_URL_PREFIX}${path.basename(p.profile_image)}`));
   const [certs] = await db.query("SELECT certificate_url FROM qualifications WHERE user_id IN (?)", [userIds]);
   certs.forEach((c) => c.certificate_url && urls.add(c.certificate_url));
-  const files = [...urls].filter((url) => uploadPathFromUrl(url));
+  const files = [...urls].filter(isStoredUploadUrl);
 
   console.log(`${SCRIPT}: ${users.length} users, ${courses.length} courses, ${files.length} files`);
   users.forEach((u) => console.log(`  user   ${u.id}  ${u.email}`));

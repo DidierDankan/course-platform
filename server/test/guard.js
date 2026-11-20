@@ -15,4 +15,8 @@ export function assertTestUploadDir() {
   if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) {
     throw new Error(`Refusing to use "${config.uploadDir}" for test uploads: it must be inside ${os.tmpdir()}.`);
   }
+  // Tests upload and delete files: with Supabase on they would do it in the live buckets.
+  if (config.supabase) {
+    throw new Error("Refusing to run tests with Supabase storage on: SUPABASE_URL must be empty (vitest.config.js).");
+  }
 }

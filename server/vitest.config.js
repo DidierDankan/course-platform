@@ -15,6 +15,10 @@ process.env.DB_SQL_MODE =
   "ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION";
 // Uploads go to a throwaway folder; globalSetup empties it, so it must never be the real server/uploads.
 process.env.UPLOAD_DIR = path.join(os.tmpdir(), "lumen-test-uploads");
+// Never the live storage: empty beats whatever .env holds (dotenv skips set variables), so the tests use the disk.
+// test/guard.js refuses to run if Supabase is on anyway.
+process.env.SUPABASE_URL = "";
+process.env.SUPABASE_SECRET_KEY = "";
 
 
 export default defineConfig({
