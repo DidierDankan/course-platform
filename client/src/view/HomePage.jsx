@@ -7,6 +7,9 @@ import CourseCard from "@components/ui/CourseCard";
 import CourseCardPlaceholders from "@components/ui/CourseCardPlaceholders";
 import CourseCarousel from "@components/ui/CourseCarousel";
 import { APP_NAME } from "@utils/brand";
+import StructuredData from "@components/ui/StructuredData";
+import usePageMeta from "@hooks/usePageMeta";
+import { siteSchema } from "@utils/seo";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -185,9 +188,11 @@ function TeachSection() {
 export default function HomePage() {
   const { data, isLoading, isError, refetch } = useGetAllCoursesQuery({ limit: POPULAR_LIMIT, sort: "popular" });
   const courses = Array.isArray(data) ? data : [];
+  usePageMeta(); // index.html's title and description are Home's; this adds the canonical link
 
   return (
     <main>
+      <StructuredData data={siteSchema()} />
       <section className="hero">
         <Hero featured={courses[0]} />
         <SearchDock />

@@ -40,6 +40,7 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: http://localhost:3001 # pasted into the bundle at build time; this build is never served
+          VITE_SITE_URL: http://localhost:5173 # required by vite.config.js (canonical links, Open Graph)
 
   server:
     name: server (tests, ${{ matrix.mode.name }})

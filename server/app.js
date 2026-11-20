@@ -13,6 +13,7 @@ import paymentRoutes from "./routes/paymentRoutes.js"
 import publicRoutes from "./routes/publicRoutes.js"
 import favoriteRoutes from "./routes/favoriteRoutes.js"
 import notificationRoutes from "./routes/notificationRoutes.js";
+import seoRoutes from "./routes/seoRoutes.js";
 import PaymentController from "./controllers/PaymentController.js"
 import { protectVideos } from "./middleware/protectVideos.js";
 import multer from "multer";
@@ -51,6 +52,7 @@ app.use("/api/favorites", favoriteRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/public", publicRoutes);
 app.use('/uploads', protectVideos, express.static(config.uploadDir));
+app.use(seoRoutes); // /robots.txt and /sitemap.xml for the client's pages
 
 
 app.get('/', (req, res) => {
