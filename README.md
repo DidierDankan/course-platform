@@ -4,6 +4,8 @@
 
 A two-sided video-course marketplace. Instructors publish video courses; students buy them one at a time through Stripe Checkout and watch them with saved progress, reviews and a discussion under each video. There is also an admin role.
 
+**Live demo:** [lumen-dd.vercel.app](https://lumen-dd.vercel.app). The login page lists a demo instructor and a demo student with their password. The API runs on a free plan that sleeps when unused, so the first request after a quiet spell can take up to a minute.
+
 This is a portfolio project. The aim is production habits rather than feature count. Paid videos are gated on the server. Payments are recorded idempotently from two paths. Refresh tokens rotate and detect reuse. Every write that touches several tables runs in one transaction. A test suite runs against a real MySQL database in three SQL modes on every push.
 
 ---
@@ -15,12 +17,12 @@ This is a portfolio project. The aim is production habits rather than feature co
 | Frontend | React 19, Vite 7, React Router 7, Redux Toolkit + RTK Query, Formik + Yup, Tailwind CSS v4, Headless UI, lucide-react, Embla carousel |
 | Backend | Node.js (ES modules), Express 5, mysql2 (raw parameterized SQL, no ORM), express-validator, Multer, Helmet, express-rate-limit |
 | Auth | JWT access token (jsonwebtoken, 15 min, HttpOnly cookie) + rotating opaque refresh token (stored as a SHA-256 hash); bcryptjs for passwords |
-| Database | MySQL 8.4 (InnoDB, utf8mb4); schema in numbered SQL migrations |
+| Database | MySQL 8.4 locally and in CI; TiDB Cloud (MySQL-compatible) live, over verified TLS. Schema in numbered SQL migrations |
 | Payments | Stripe Checkout (one-time payments, USD, test mode) + a signed webhook |
 | Tests | Vitest + Supertest against a real MySQL test database; autocannon for a local load test |
 | CI | GitHub Actions: client lint + build; server tests in three SQL modes on `mysql:8.4`, plus a boot check. Required checks on `main` |
 
-Planned deployment: Vercel (client), Render (API), Aiven (MySQL), Supabase Storage (media).
+Deployment, all on free plans: Vercel (client, forwarding `/api` and `/uploads` to the API so the site is one origin), Render (API), TiDB Cloud Starter (database), Supabase Storage (media).
 
 ---
 
@@ -36,12 +38,13 @@ flowchart LR
     S["db/*Service<br/>(SQL only)"]
     MW --> C --> S
   end
-  DB[("MySQL")]
-  Files[("uploads<br/>videos · images")]
+  DB[("MySQL / TiDB Cloud")]
+  Files[("Supabase Storage<br/>videos · images")]
   Stripe["Stripe Checkout"]
 
   Browser -- "/api (cookies)" --> MW
-  Browser -- "/uploads (protectVideos gate)" --> Files
+  Browser -- "/uploads" --> MW
+  MW -- "after the protectVideos check:<br/>302 to a short-lived signed link" --> Files
   S --> DB
   C -- "create session / read session" --> Stripe
   Stripe -- "signed webhook" --> MW
@@ -82,6 +85,8 @@ flowchart LR
 | **Polling instead of WebSockets for notifications** | A badge that updates within a minute is enough; no extra infrastructure on a free host. | Up to 60 s delay. |
 | **Rate limits in memory** | One server instance; no Redis to run. | Counters reset on restart and aren't shared between instances. |
 | **SEO on a single-page app: static tags + per-page tags, no server rendering** | `index.html` carries the description, Open Graph image and favicon, which is all that link previews and most AI crawlers (they don't run JavaScript) ever see. Each page then sets its own title, description, canonical link and schema.org data for Google, which does run JavaScript. The server writes `robots.txt` and `sitemap.xml` from the real courses; `llms.txt` describes the site for AI tools. | A crawler that doesn't run JavaScript sees the same title and preview on every page. The full fix is server rendering (e.g. Next.js), a framework change that isn't worth it for this project. |
+| **TiDB Cloud for the live database, MySQL everywhere else** | The free MySQL-compatible option once Aiven dropped its free MySQL tier; the app code is unchanged. | TiDB differs in two places the queries had to respect: no shared row locks (`FOR UPDATE` instead of `FOR SHARE`) and stricter `GROUP BY` checks. The suite runs against TiDB too. |
+| **Files in Supabase Storage behind the API's gate** | Render's disk is wiped on every deploy. The API still decides who may see a file, then redirects to a public link (images) or a signed link that expires (paid videos). | A signed link works for anyone holding it until it expires (15 minutes). |
 | **Stripe one-time payments only** | Subscriptions bring proration, dunning and `past_due` states, which is a project of its own. | No subscription model. |
 
 ---
@@ -92,8 +97,9 @@ flowchart LR
 - **Auth answers:** missing, invalid or expired token → 401; signed in but not allowed → 403. The JWT algorithm is pinned and the token has a `type` claim.
 - **Brute force:** login and registration are rate limited per IP (429).
 - **Input:** every route validates its input before any SQL. All SQL is parameterized, and objects are never expanded into SQL.
-- **Uploads:** a MIME whitelist decides the file extension on the server; 200 MB cap; `nosniff`.
-- **Paid videos:** served only after the `protectVideos` check, with `Cache-Control: private, no-store`.
+- **Uploads:** a MIME whitelist decides the file extension on the server; 50 MB cap; `nosniff`.
+- **Paid videos:** served only after the `protectVideos` check, through a signed storage link that expires after 15 minutes, with `Cache-Control: private, no-store`.
+- **Database connection:** TLS with the server's certificate always verified; never an unverified fallback.
 - **Headers and origins:** Helmet sets security headers on every response; CORS allows only the client's origin.
 - **Payments:** the Stripe webhook signature is verified; a purchase is only recorded when Stripe says it's paid.
 - **Errors and logs:** clients get short JSON errors, never a stack trace; logs never include the SQL values (which can hold user data).
@@ -158,6 +164,11 @@ DEMO_RESET_HOURS=           # e.g. 24: the server resets the demo that often
 DB_SQL_MODE=                # pin MySQL's SQL mode
 UPLOAD_DIR=                 # default: server/uploads
 TRUST_PROXY_HOPS=           # behind a proxy (Render): the number of proxies in front
+DB_SSL=                     # true for a hosted database (TLS, certificate verified)
+DB_CA_CERT=                 # that provider's CA certificate, if it isn't publicly signed
+SUPABASE_URL=               # with SUPABASE_SECRET_KEY: store files in Supabase instead of server/uploads
+SUPABASE_SECRET_KEY=
+SIGNED_URL_TTL_SECONDS=     # how long a signed video link works (default 900)
 ```
 
 The server checks the required variables at start-up and stops with the name of any that's missing.
@@ -222,6 +233,4 @@ server/
 
 ## Roadmap
 
-- Deploy: Vercel + Render + Aiven + Supabase Storage, with a live demo link here.
-- Database connection over TLS (Aiven).
 - Email verification and a confirmation email on registration.
