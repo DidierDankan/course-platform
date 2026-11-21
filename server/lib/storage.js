@@ -141,6 +141,14 @@ export const uploadedFiles = (req) => {
   return Object.values(req.files ?? {}).flat();
 };
 
+// Removes the files multer wrote for a request that is refused before anything was saved (validateRequest). They are
+// local files in both backends: nothing has been sent to a bucket yet. A file that won't go is logged, never thrown.
+export async function discardUploads(req) {
+  await Promise.all(
+    uploadedFiles(req).map((file) => unlinkIfExists(file.path).catch((err) => logError("Discard refused upload", err)))
+  );
+}
+
 // With temp uploads, the copy multer wrote is removed once the response is over, whatever happened: saved, refused,
 // or failed. Registered before the routes; it reads the request's files only when the response closes.
 export function removeTempUploadsWhenDone(req, res, next) {
