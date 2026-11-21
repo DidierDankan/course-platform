@@ -81,7 +81,8 @@ class EnrollmentService {
       LEFT JOIN course_media m ON m.course_id = c.id
 
       WHERE e.user_id = ?
-      GROUP BY e.course_id
+      -- Both primary keys, so every selected column depends on the group (TiDB doesn't infer it from WHERE e.user_id).
+      GROUP BY e.id, c.id
       ORDER BY e.enrolled_at DESC
       `,
       [userId]
