@@ -52,6 +52,25 @@ const demoResetHoursFrom = (name) => {
   return hours;
 };
 
+// Optional: TLS to the database (hosted MySQL requires it). The server's certificate is ALWAYS verified: encryption
+// without verification would let anyone on the path pretend to be the database. Against what:
+//   DB_CA_CERT set   -> that CA only (a provider with its own CA, e.g. Aiven's ca.pem). The whole PEM text; line
+//                       breaks written as the two characters \n also work, for dashboards that keep one line.
+//   DB_CA_CERT unset -> the public certificate authorities Node trusts (a provider whose certificate is publicly
+//                       signed, e.g. TiDB Cloud).
+// Unset DB_SSL = no TLS, which is what a local MySQL wants.
+const dbSslFrom = () => {
+  const flag = (process.env.DB_SSL || "").trim().toLowerCase();
+  if (flag === "" || flag === "false") return null;
+  if (flag !== "true") fail("DB_SSL must be true, false, or unset.");
+  const ca = (process.env.DB_CA_CERT || "").replace(/\\n/g, "\n").trim();
+  if (!ca) return { rejectUnauthorized: true }; // Node's trusted public roots
+  if (!ca.includes("-----BEGIN CERTIFICATE-----") || !ca.includes("-----END CERTIFICATE-----")) {
+    fail("DB_CA_CERT must be the whole CA certificate (ca.pem), BEGIN and END lines included, or unset.");
+  }
+  return { ca, rejectUnauthorized: true };
+};
+
 // Optional: Supabase Storage for uploads (the live site; Render's disk is wiped on every deploy). Both variables or
 // neither: unset = files stay in the local uploads folder, which is what dev and the tests use.
 const supabaseFrom = () => {
@@ -87,6 +106,7 @@ const config = Object.freeze({
     password: process.env.DB_PASS ?? "", // WAMP's root user has no password
     name: process.env.DB_NAME,
     sqlMode: process.env.DB_SQL_MODE || null, // optional: pins the SQL mode (tests use strict; production can match Aiven)
+    ssl: dbSslFrom(), // null = plain connection (local MySQL)
   },
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY,
