@@ -61,7 +61,9 @@ describe("DB_SSL settings", () => {
   });
 });
 
-describe("a TLS connection with the wrong CA", () => {
+// These describe the local/CI MySQL: a self-signed certificate, and plain connections allowed. Against a hosted test
+// database (DB_SSL=true, e.g. the TiDB compatibility run) neither is true, so they're skipped there.
+describe.skipIf(config.db.ssl)("a TLS connection with the wrong CA", () => {
   const { host, port, user, password } = config.db;
 
   it("is refused: never a fallback to an unverified or plain connection", async () => {

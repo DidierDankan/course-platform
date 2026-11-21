@@ -119,11 +119,12 @@ class EnrollmentService {
         : 0;
 
       // The lesson must be a video of THIS course: otherwise a student enrolled in a free course could point their
-      // progress at any lesson id, including one from a paid course they never bought. FOR SHARE keeps the lesson
+      // progress at any lesson id, including one from a paid course they never bought. The lock keeps the lesson
       // from being deleted until commit, so the inserts below can't hit a missing row (no foreign-key 500).
+      // FOR UPDATE, not FOR SHARE: TiDB (the live database) has no shared row locks; exclusive is stronger.
       if (mediaId) {
         const [[lesson]] = await conn.query(
-          "SELECT id FROM course_media WHERE id = ? AND course_id = ? AND type = 'video' FOR SHARE",
+          "SELECT id FROM course_media WHERE id = ? AND course_id = ? AND type = 'video' FOR UPDATE",
           [mediaId, courseId]
         );
         if (!lesson) throw httpError(404, "Lesson not found in this course.");

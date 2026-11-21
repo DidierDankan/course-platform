@@ -108,7 +108,8 @@ class CourseService {
       LEFT JOIN user_profiles up ON up.user_id = c.seller_id
       LEFT JOIN course_media m ON m.course_id = c.id
       ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
-      GROUP BY c.id
+      -- one profile per seller, so up.full_name has one value per course; naming it lets stricter engines (TiDB) see that
+      GROUP BY c.id, up.full_name
       ${durationHaving.length ? `HAVING ${durationHaving.join(" AND ")}` : ""}
       ORDER BY ${orderBy}
       LIMIT ? OFFSET ?
@@ -374,8 +375,9 @@ class CourseService {
   async deleteCourse(courseId) {
     const urls = await withTransaction(async (conn) => {
       await conn.query("SELECT id FROM courses WHERE id = ? FOR UPDATE", [courseId]);
-      // A locking read sees the latest committed enrollment, not this transaction's snapshot.
-      const [[enrolled]] = await conn.query("SELECT 1 FROM enrollments WHERE course_id = ? LIMIT 1 FOR SHARE", [courseId]);
+      // A locking read sees the latest committed enrollment, not this transaction's snapshot. FOR UPDATE, not FOR SHARE:
+      // TiDB (the live database) has no shared row locks; the rows are about to be refused or deleted anyway.
+      const [[enrolled]] = await conn.query("SELECT 1 FROM enrollments WHERE course_id = ? LIMIT 1 FOR UPDATE", [courseId]);
       if (enrolled) {
         throw httpError(409, "Students are enrolled in this course, so it can't be deleted. Their access and purchases stay.");
       }

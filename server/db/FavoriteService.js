@@ -18,7 +18,9 @@ class FavoriteService {
       JOIN courses c ON c.id = f.course_id
       LEFT JOIN course_media m ON m.course_id = c.id
       WHERE f.user_id = ?
-      GROUP BY f.course_id
+      -- f.course_id, c.id and f.favorited_at have one value per group anyway; naming them lets stricter engines (TiDB)
+      -- see that (MySQL infers it from the join and the primary key)
+      GROUP BY f.course_id, c.id, f.favorited_at
       ORDER BY f.favorited_at DESC
       `,
       [userId]
@@ -26,13 +28,15 @@ class FavoriteService {
     return rows.map(withRating);
   }
 
-  // Returns false if the course doesn't exist (the controller answers 404). FOR SHARE keeps the course from being
+  // Returns false if the course doesn't exist (the controller answers 404). Locking the course row keeps it from being
   // deleted until commit, so the insert can't fail on the foreign key (that was a 500). Adding a favorite twice is fine.
+  // FOR UPDATE, not FOR SHARE: TiDB (the live database) has no shared row locks; an exclusive one is stronger, and
+  // favorites on the same course only queue for a moment.
   async add({ userId, courseId }) {
     const conn = await db.getConnection();
     try {
       await conn.beginTransaction();
-      const [[course]] = await conn.query("SELECT id FROM courses WHERE id = ? FOR SHARE", [courseId]);
+      const [[course]] = await conn.query("SELECT id FROM courses WHERE id = ? FOR UPDATE", [courseId]);
       if (!course) {
         await conn.rollback();
         return false;
