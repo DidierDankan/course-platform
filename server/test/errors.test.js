@@ -46,7 +46,9 @@ describe("logError never writes the values inside a database error", () => {
     const err = await insert().catch((e) => e);
     expect(err.code).toBe("ER_DUP_ENTRY");
     expect(err.sql).toContain(secretHash); // the raw error really does carry the values
-    expect(err.message).toContain(email);
+    // MySQL quotes the value in the message; TiDB Cloud already blanks it ("Duplicate entry '?'"). Either way the log
+    // below must not contain it.
+    expect(err.message.includes(email) || err.message.includes("'?'")).toBe(true);
 
     const lines = [];
     vi.spyOn(console, "error").mockImplementation((...args) => lines.push(args.join(" ")));
