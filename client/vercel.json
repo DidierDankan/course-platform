@@ -1,10 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://lumen-api.onrender.com/api/:path*" },
-    { "source": "/uploads/:path*", "destination": "https://lumen-api.onrender.com/uploads/:path*" },
-    { "source": "/robots.txt", "destination": "https://lumen-api.onrender.com/robots.txt" },
-    { "source": "/sitemap.xml", "destination": "https://lumen-api.onrender.com/sitemap.xml" },
+    { "source": "/api/:path*", "destination": "https://lumen-api-qblx.onrender.com/api/:path*" },
+    { "source": "/uploads/:path*", "destination": "https://lumen-api-qblx.onrender.com/uploads/:path*" },
+    { "source": "/robots.txt", "destination": "https://lumen-api-qblx.onrender.com/robots.txt" },
+    { "source": "/sitemap.xml", "destination": "https://lumen-api-qblx.onrender.com/sitemap.xml" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
