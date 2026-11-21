@@ -16,8 +16,9 @@ export default async function setup() {
   await fs.mkdir(config.uploadDir, { recursive: true });
 
   assertTestDatabase();
-  const { host, port, user, password, name } = config.db;
-  const conn = await mysql.createConnection({ host, port, user, password });
+  const { host, port, user, password, name, ssl } = config.db;
+  // Same TLS as the app (DB_SSL): a hosted test database (e.g. the TiDB compatibility run) refuses plain connections.
+  const conn = await mysql.createConnection({ host, port, user, password, ...(ssl && { ssl }) });
   try {
     await conn.query("DROP DATABASE IF EXISTS ??", [name]); // ?? = identifier placeholder
     await conn.query("CREATE DATABASE ?? CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", [name]);

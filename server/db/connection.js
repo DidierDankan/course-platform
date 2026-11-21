@@ -8,6 +8,7 @@ export const connectionOptions = {
   user: config.db.user,
   password: config.db.password,
   database: config.db.name,
+  ...(config.db.ssl && { ssl: config.db.ssl }), // TLS with a verified certificate when DB_SSL=true (config.js)
 };
 
 const pool = mysql.createPool({

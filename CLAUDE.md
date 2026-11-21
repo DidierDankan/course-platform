@@ -74,7 +74,7 @@ cd client && npm run lint && npm run build
 # Stripe webhooks locally
 stripe listen --forward-to http://localhost:3001/api/payments/webhook
 ```
-Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, CLIENT_URL, optional TRUST_PROXY_HOPS, DB_SQL_MODE, UPLOAD_DIR, DEMO_RESET_HOURS, SUPABASE_URL + SUPABASE_SECRET_KEY, SIGNED_URL_TTL_SECONDS), `client/.env` (VITE_API_URL, VITE_SITE_URL, optional VITE_DEMO_PASSWORD). `server/config.js` validates them at boot; DEPLOY.txt section 4 lists the live set. Both are gitignored. **Never print, commit or hardcode secrets.**
+Env: `server/.env` (PORT, DB_*, JWT_ACCESS_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, CLIENT_URL, optional TRUST_PROXY_HOPS, DB_SQL_MODE, UPLOAD_DIR, DEMO_RESET_HOURS, SUPABASE_URL + SUPABASE_SECRET_KEY, SIGNED_URL_TTL_SECONDS, DB_SSL + DB_CA_CERT), `client/.env` (VITE_API_URL, VITE_SITE_URL, optional VITE_DEMO_PASSWORD). `server/config.js` validates them at boot; DEPLOY.txt section 4 lists the live set. Both are gitignored. **Never print, commit or hardcode secrets.**
 
 ### Tests (`server/test/`)
 
@@ -138,7 +138,7 @@ Ordered by severity. Every item has a step-by-step plan in TODO.txt; this list i
 
 1. **Refresh tokens:** resolved in Stage 3 (2026-11-14), see "Already done". Left: the owner's browser check (several tabs, a session over 15 minutes) *(TODO: Stage 3 step 6)*.
 2. **Schema:** resolved in Stage 2 (2026-11-10). `schema.sql` is gone; `001_initial.sql` builds the same tables (minus reviews, comments and subscriptions) on InnoDB. Bad input answering 500 on strict MySQL: resolved in Stage 2b (2026-11-12), tested in all three SQL modes.
-3. **Hardening:** no database SSL yet *(DEPLOY.txt 2.1)*.
+3. **Hardening:** database TLS resolved 2026-11-21: `DB_SSL=true` (`config.js`), always verified (`rejectUnauthorized: true`): against `DB_CA_CERT` when set, else Node's trusted public roots (TiDB Cloud). Shared by the server, `migrate` and the test setup (`db/connection.js` `connectionOptions`); tests in `test/dbSsl.test.js`. Live database: TiDB Cloud Starter (free; Aiven retired free MySQL), being proven with the full suite (TODO GO-LIVE 5).
 4. **Hardcoded styling:** resolved in Phase 2 (2026-11-09). No arbitrary hex classes remain in `client/src`; colors live only in the theme files.
 5. **CI:** `.github/workflows/ci.yml` (2026-11-18): client lint + build; server `npm test` in all three SQL modes on `mysql:8.4` (Aiven's version) plus a boot check. Its values are CI-only stand-ins, no GitHub Secrets. Live since 2026-11-18; `main` has a ruleset requiring the four job names as checks, and a deliberately broken test (PR #2) turned the server jobs red. Rename a job and the ruleset must change too.
 6. **Enrollment depending only on the webhook:** resolved 2026-11-17. `POST /api/payments/confirm` reads the session from Stripe (never from the browser), checks it is the caller's and paid, and records it through `PaymentService.recordPaidPurchase`, the same transaction the webhook uses. Tests in `test/paymentConfirm.test.js`.

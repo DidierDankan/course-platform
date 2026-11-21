@@ -6,3 +6,4 @@ node_modules
 # demo lesson videos: provided locally, never committed
 scripts/seed-assets/*
 !scripts/seed-assets/README.txt
+.env.tidb
